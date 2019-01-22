@@ -3,6 +3,7 @@ py_binary(
         visibility = ["//visibility:public"],
         deps=[
                 "//src/python/testapp/mainfuncs:mainfuncs",
+                "//src/protos/testapp:py_testapp_pb",
         ],
         srcs=["testapp.py"],
 )
