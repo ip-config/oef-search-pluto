@@ -42,12 +42,7 @@ def getStatic(filepath):
     return static_file(filepath, root=root[0])
 
 def getRoot():
-    print("")
-    print(" GET ROOT")
-    print("")
-    print("")
     msg = say_hello.say_hello()
-    print("MSG={}".format(repr(msg)))
     r = a_pb2.A()
     r.ParseFromString(msg)
     return r.data
@@ -65,7 +60,6 @@ def main():
     certificate_file = sys.argv[2]
 
     msg = say_hello.say_hello()
-    print("MSG={}".format(repr(msg)))
     result = a_pb2.A()
     result.ParseFromString(msg)
     print(result.data)
