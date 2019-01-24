@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message Query {
+    string name = 1;
+}
