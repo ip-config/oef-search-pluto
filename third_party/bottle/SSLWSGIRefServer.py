@@ -1,4 +1,4 @@
-import bottle
+from third_party.bottle import bottle
 
 class SSLWSGIRefServer(bottle.ServerAdapter):
     def __init__(self, certificate_file=None, **kwargs):
@@ -8,7 +8,6 @@ class SSLWSGIRefServer(bottle.ServerAdapter):
     def run(self, handler):
         from wsgiref.simple_server import make_server, WSGIRequestHandler
         import ssl
-        import bottle
         if self.quiet:
             class QuietHandler(WSGIRequestHandler):
                 def log_request(*args, **kw):

@@ -22,11 +22,14 @@ from testapp.src.protos import a_pb2
 from testapp.src.python.mainfuncs import say_hello
 
 # Build me like this:
-#   bazel build src/python/testapp:testapp
+#   bazel build testapp/src/python:testapp
 #
 # Run me from the Workspace root like this:
-#   ./bazel-out/darwin-fastbuild/bin/src/python/testapp/testapp 5000 src/resources/testapp/ssl/server.pem 
+#   ./bazel-bin/testapp/src/python/testapp 5000 testapp/src/resources/ssl/server.pem 
 #
+# https://127.0.0.1:5000/
+#
+#   Accept the certificate.
 
 certificate_file = None
 port_number = None
