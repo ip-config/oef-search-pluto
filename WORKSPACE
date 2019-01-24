@@ -2,9 +2,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "com_google_protobuf",
-    sha256 = "1f8b9b202e9a4e467ff0b0f25facb1642727cdf5e69092038f15b37c75b99e45",
-    strip_prefix = "protobuf-3.5.1",
-    urls = ["https://github.com/google/protobuf/archive/v3.5.1.zip"],
+    sha256 = "9510dd2afc29e7245e9e884336f848c8a6600a14ae726adb6befdb4f786f0be2",
+    strip_prefix = "protobuf-3.6.1.3",
+    urls = ["https://github.com/google/protobuf/archive/v3.6.1.3.zip"],
 )
 
 http_archive(
@@ -42,7 +42,7 @@ py_library(
 
 new_http_archive(
     name = "protobuf_python",
-    url = "https://pypi.python.org/packages/14/03/ff5279abda7b46e9538bfb1411d42831b7e65c460d73831ed2445649bc02/protobuf-3.5.1.tar.gz",
+    url = "https://files.pythonhosted.org/packages/1b/90/f531329e628ff34aee79b0b9523196eb7b5b6b398f112bb0c03b24ab1973/protobuf-3.6.1.tar.gz",
     build_file_content = """
 py_library(
     name = "protobuf_python",
@@ -53,7 +53,7 @@ py_library(
     ],
 )
     """,
-    strip_prefix = "protobuf-3.5.1",
+    strip_prefix = "protobuf-3.6.1",
 )
 
 
