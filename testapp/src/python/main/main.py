@@ -5,20 +5,21 @@ import os
 import threading
 import sys
 
-from src.protos.testapp import a_pb2
-from src.python.testapp.mainfuncs import say_hello
-from src.third_party.bottle import SSLWSGIRefServer
-from src.third_party.bottle.bottle import abort
-from src.third_party.bottle.bottle import Bottle
-from src.third_party.bottle.bottle import error
-from src.third_party.bottle.bottle import hook
-from src.third_party.bottle.bottle import redirect
-from src.third_party.bottle.bottle import request
-from src.third_party.bottle.bottle import response
-from src.third_party.bottle.bottle import route
-from src.third_party.bottle.bottle import run
-from src.third_party.bottle.bottle import static_file
-from src.third_party.bottle.bottle import template
+from third_party.bottle import SSLWSGIRefServer
+from third_party.bottle.bottle import abort
+from third_party.bottle.bottle import Bottle
+from third_party.bottle.bottle import error
+from third_party.bottle.bottle import hook
+from third_party.bottle.bottle import redirect
+from third_party.bottle.bottle import request
+from third_party.bottle.bottle import response
+from third_party.bottle.bottle import route
+from third_party.bottle.bottle import run
+from third_party.bottle.bottle import static_file
+from third_party.bottle.bottle import template
+
+from testapp.src.protos import a_pb2
+from testapp.src.python.mainfuncs import say_hello
 
 # Build me like this:
 #   bazel build src/python/testapp:testapp
