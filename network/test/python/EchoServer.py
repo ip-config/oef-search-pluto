@@ -1,4 +1,4 @@
-from network.src.python.async_socket import run_server, communication_handler, Writer
+from network.src.python.async_socket.AsyncSocket import run_server, communication_handler, Writer
 
 
 @communication_handler
