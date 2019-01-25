@@ -13,7 +13,8 @@ py_binary(
     deps = [
         "//network/src/python/async_socket:async_socket",
         "//api/src/proto:py_api_pb",
-        "//api/src/python:backend_entry_point"
+        "//api/src/python:backend_entry_point",
+        "//third_party/bottle:bottle",
     ],
     srcs_version = "PY3",
 )
