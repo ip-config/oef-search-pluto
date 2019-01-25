@@ -65,8 +65,9 @@ def startWebServer(app):
 def main():
 
     parser = argparse.ArgumentParser(description='Test application for PLUTO.')
-    parser.add_argument("--certificate_file", type=str, help="specify an SSL certificate PEM file.")
-    parser.add_argument("--http_port", type=int, help="which port to run the HTTP interface on.")
+    parser.add_argument("--certificate_file", required=True, type=str, help="specify an SSL certificate PEM file.")
+    parser.add_argument("--http_port",        required=True, type=int, help="which port to run the HTTP interface on.")
+    parser.add_argument("--sqlite_db",        required=True, type=str, help="a sqlite DB file to use.")
     global args
     args = parser.parse_args()
 
