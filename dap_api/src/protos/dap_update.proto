@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+message DapUpdate {
+
+  message DapValue {
+    string s = 1;
+    int32 i = 2;
+    float f = 3;
+  }
+
+  message TableFieldValue {
+    string tablename = 1;
+    string fieldname = 2;
+    DapValue value = 3;
+  }
+
+  repeated TableFieldValue update = 2;
+};

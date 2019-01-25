@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message DapSubquery {
+  string data = 1;
+}

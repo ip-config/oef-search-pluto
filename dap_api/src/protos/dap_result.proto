@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "dap_api/src/protos/dap_agent_uri.proto";
+
+// One day this will support paging, size indicators and "more" flags.
+
+message DapResult {
+  repeated DapAgentUri agent = 1;
+}
