@@ -1,5 +1,5 @@
 from network.src.python.async_socket.AsyncSocket import Transport, handler, run_server
-from api.proto import query_pb2
+from api.src.proto import query_pb2
 import asyncio
 
 
