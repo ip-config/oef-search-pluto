@@ -1,10 +1,18 @@
-from network.src.python.async_socket.AsyncSocket import run_server, communication_handler, Writer
+from network.src.python.async_socket.AsyncSocket import Transport, handler, run_server
 from api.proto import query_pb2
-
-@communication_handler
-def handler(data: bytes, writer: Writer):
-    print("got message: ", data)
-    writer.write(data)
+import asyncio
 
 
-run_server("localhost", 7500)
+@handler
+async def on_connection(transport: Transport):
+    print("Got client")
+    data = await transport.read()
+    msg = query_pb2.Query()
+    msg.ParseFromString(data)
+    print("Got message from client: ", msg.name)
+    msg.name = "Server"
+    transport.write(msg.SerializeToString())
+    await transport.drain()
+    transport.close()
+
+asyncio.run(run_server(on_connection, "127.0.0.1", 7500))
