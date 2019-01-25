@@ -1,7 +1,7 @@
 
 from dap_api.src.protos import dap_description_pb2
 
-class InMemoryDap(object)
+class InMemoryDap(object):
 
     # structure is a map of tablename -> { fieldname -> type}
 
@@ -24,7 +24,7 @@ class InMemoryDap(object)
         for table_name, fields in self.structure.items():
             result_table = result.table.add()
             result_table.name = table_name
-            for field_name, field_type in fields:
+            for field_name, field_type in fields.items():
                 result_field = result_table.field.add()
                 result_field.name = field_name
                 result_field.type = field_type
@@ -52,5 +52,14 @@ class InMemoryDap(object)
     Returns:
       None
     """
-    def query(self, query, agents=None):
-        pass
+    def update(self, update_data):
+        for upd in update_data.update:
+            k = (upd.tablename, upd.key.agent_name, upd.key.core_uri, fieldname)
+
+            v = upd.value.i
+            if upd.HasField('f'):
+                v = upd.value.f
+            if upd.HasField('s'):
+                v = upd.value.s
+
+            store[k] = v
