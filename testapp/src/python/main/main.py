@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import functools
+import json
 import os
 import threading
 import sys
@@ -18,8 +19,12 @@ from third_party.bottle.bottle import run
 from third_party.bottle.bottle import static_file
 from third_party.bottle.bottle import template
 
+from google.protobuf import json_format
+
 from testapp.src.protos import a_pb2
 from testapp.src.python.mainfuncs import say_hello
+
+
 
 # Build me like this:
 #   bazel build testapp/src/python:testapp
@@ -49,7 +54,8 @@ def getRoot():
     msg = say_hello.say_hello()
     r = a_pb2.A()
     r.ParseFromString(msg)
-    return r.data
+    r = json.loads(json_format.MessageToJson(r))
+    return r
 
 def startWebServer(app):
     srv = SSLWSGIRefServer.SSLWSGIRefServer(host="0.0.0.0", port=port_number, certificate_file=certificate_file)
