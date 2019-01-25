@@ -1,10 +1,14 @@
 
-# We don't really need this, because it's DUCK TYPED, but this is the
-# interface definition for reference.
+from dap_api.src.protos import dap_description_pb2
 
-class DapInterface(object)
-    def __init__():
-        pass
+class InMemoryDap(object)
+
+    # structure is a map of tablename -> { fieldname -> type}
+
+    def __init__(self, name, structure):
+        self.store = {}
+        self.name = name
+        self.structure = structure
 
     """This function returns the DAP description which lists the
     tables it hosts, the fields within those tables and the result of
@@ -14,8 +18,17 @@ class DapInterface(object)
        DapDescription
     """
     def describe(self):
-        pass
+        result = dap_description_pb2.DapDescription()
+        result.name = self.name
 
+        for table_name, fields in self.structure.items():
+            result_table = result.table.add()
+            result_table.name = table_name
+            for field_name, field_type in fields:
+                result_field = result_table.field.add()
+                result_field.name = field_name
+                result_field.type = field_type
+        return result
 
     """This function queries one or more tables in this DAP, applying filtering and returns
     a list of all matching Agents which are in the pre-filtered list.
@@ -39,5 +52,5 @@ class DapInterface(object)
     Returns:
       None
     """
-    def update(self, update_data):
+    def query(self, query, agents=None):
         pass
