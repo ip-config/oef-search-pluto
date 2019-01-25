@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
+import argparse
 import functools
 import json
 import os
 import threading
 import sys
+import sqlite3
 
 from third_party.bottle import SSLWSGIRefServer
 from third_party.bottle.bottle import abort
@@ -36,8 +38,7 @@ from testapp.src.python.mainfuncs import say_hello
 #
 #   Accept the certificate.
 
-certificate_file = None
-port_number = None
+args = None
 
 def getStatic(filepath):
     root = [
@@ -58,16 +59,16 @@ def getRoot():
     return r
 
 def startWebServer(app):
-    srv = SSLWSGIRefServer.SSLWSGIRefServer(host="0.0.0.0", port=port_number, certificate_file=certificate_file)
+    srv = SSLWSGIRefServer.SSLWSGIRefServer(host="0.0.0.0", port=args.http_port, certificate_file=args.certificate_file)
     run(server=srv, app=app)
 
 def main():
 
-    global port_number
-    global certificate_file
-
-    port_number = sys.argv[1]
-    certificate_file = sys.argv[2]
+    parser = argparse.ArgumentParser(description='Test application for PLUTO.')
+    parser.add_argument("--certificate_file", type=str, help="specify an SSL certificate PEM file.")
+    parser.add_argument("--http_port", type=int, help="which port to run the HTTP interface on.")
+    global args
+    args = parser.parse_args()
 
     msg = say_hello.say_hello()
     result = a_pb2.A()
