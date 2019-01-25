@@ -32,7 +32,7 @@ from testapp.src.python.mainfuncs import say_hello
 #   bazel build testapp/src/python:testapp
 #
 # Run me from the Workspace root like this:
-#   ./bazel-bin/testapp/src/python/testapp 5000 testapp/src/resources/ssl/server.pem 
+#   ./bazel-bin/testapp/src/python/testapp --http_port 5000 --certificate_file ./testapp/src/resources/ssl/server.pem --sqlite_db foo.db
 #
 # https://127.0.0.1:5000/
 #
