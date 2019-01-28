@@ -1,7 +1,6 @@
 import unittest
 
 from dap_api.src.python import DapInterface
-from dap_api.src.python import DapQuery
 from dap_api.experimental.python import InMemoryDap
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
@@ -47,17 +46,13 @@ class QueryTest(unittest.TestCase):
         """Test case A. note that all test method names must begin with 'test.'"""
         self._setupAgents()
 
-        print(self.dap1.store)
-
         q = query_pb2.Query.ConstraintExpr()
 
         q.constraint.attribute_name = "wibble"
         q.constraint.relation.op = 0
         q.constraint.relation.val.s = "carrot"
 
-        dapQuery = DapQuery.DapQuery()
-        dapQuery.fromQueryProto(q)
+        dapQuery = self.dap1.makeQuery(q, "wibbles")
         results = list(self.dap1.query(dapQuery))
 
         print(results)
-        
