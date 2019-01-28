@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
+import argparse
 import functools
 import json
 import os
 import threading
 import sys
+import sqlite3
 
 from third_party.bottle import SSLWSGIRefServer
 from third_party.bottle.bottle import abort
@@ -30,14 +32,13 @@ from testapp.src.python.mainfuncs import say_hello
 #   bazel build testapp/src/python:testapp
 #
 # Run me from the Workspace root like this:
-#   ./bazel-bin/testapp/src/python/testapp 5000 testapp/src/resources/ssl/server.pem 
+#   ./bazel-bin/testapp/src/python/testapp --http_port 5000 --certificate_file ./testapp/src/resources/ssl/server.pem --sqlite_db foo.db
 #
 # https://127.0.0.1:5000/
 #
 #   Accept the certificate.
 
-certificate_file = None
-port_number = None
+args = None
 
 def getStatic(filepath):
     root = [
@@ -58,16 +59,17 @@ def getRoot():
     return r
 
 def startWebServer(app):
-    srv = SSLWSGIRefServer.SSLWSGIRefServer(host="0.0.0.0", port=port_number, certificate_file=certificate_file)
+    srv = SSLWSGIRefServer.SSLWSGIRefServer(host="0.0.0.0", port=args.http_port, certificate_file=args.certificate_file)
     run(server=srv, app=app)
 
 def main():
 
-    global port_number
-    global certificate_file
-
-    port_number = sys.argv[1]
-    certificate_file = sys.argv[2]
+    parser = argparse.ArgumentParser(description='Test application for PLUTO.')
+    parser.add_argument("--certificate_file", required=True, type=str, help="specify an SSL certificate PEM file.")
+    parser.add_argument("--http_port",        required=True, type=int, help="which port to run the HTTP interface on.")
+    parser.add_argument("--sqlite_db",        required=True, type=str, help="a sqlite DB file to use.")
+    global args
+    args = parser.parse_args()
 
     msg = say_hello.say_hello()
     result = a_pb2.A()

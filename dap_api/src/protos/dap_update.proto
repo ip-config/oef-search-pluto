@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+import "dap_api/src/protos/dap_agent_uri.proto";
+
+message DapUpdate {
+
+  message DapValue {
+    string s = 1;
+    int32 i = 2;
+    float f = 3;
+  }
+
+  message TableFieldValue {
+    string tablename = 1;
+    DapAgentUri key =2;
+    string fieldname = 3;
+    DapValue value = 4;
+  }
+
+  repeated TableFieldValue update = 2;
+};
+
+// Conceptually, A DAP table is a set of rows, one per agent and a set of columns.
+// A query matches columns and returns the keys which match all queries.
+// So an update writes into that sparse table structure to store values.
+//
+//
+// We need to work out what to do when an agent or OEF
+// de-registers. We need some API for that to kill all the relevant rows.
+

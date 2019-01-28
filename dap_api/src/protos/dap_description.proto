@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+message DapDescription {
+  message DapFieldDescription {
+    string name = 1;
+    string type = 2;
+  };
+
+  message DapResultDescription {
+    string name = 1; // basically this better be AgentIdentifier...
+  };
+
+  message DapTableDescription {
+    string name = 1;
+    DapResultDescription result = 2;
+    repeated DapFieldDescription field = 3;
+  };
+
+  string name = 1;
+  repeated DapTableDescription table = 2;
+};
