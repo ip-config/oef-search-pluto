@@ -5,8 +5,9 @@ from api.src.python.BackendRouter import BackendRouter
 from third_party.bottle import SSLWSGIRefServer
 from third_party.bottle import bottle
 import sys
-from api.src.python.EndpointSearchQuery import SearchQuery
-from utils.src.python.Logging import configure as configure_logging, get_logger
+from api.src.python.EndpointSearch import SearchQuery
+from api.src.python.EndpointUpdate import UpdateEndpoint, SearchEngine
+from utils.src.python.Logging import get_logger, configure as configure_logging
 
 
 def socket_handler(router: BackendRouter):
@@ -59,10 +60,15 @@ if __name__ == "__main__":
 
     #modules
     search_module = SearchQuery()
+    search_engine = SearchEngine()
+    update_module = UpdateEndpoint(search_engine)
+
     #router
     router_ = BackendRouter()
     router_.register_serializer("search", search_module)
     router_.register_handler("search", search_module)
+    router_.register_serializer("update", update_module)
+    router_.register_handler("update", update_module)
 
     executor.submit(run_socket_server, "0.0.0.0", socket_port_number, router_)
     executor.submit(run_http_server, "0.0.0.0", http_port_number, certificate_file, router_)
