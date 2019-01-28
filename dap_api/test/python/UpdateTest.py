@@ -14,8 +14,7 @@ class UpdateTest(unittest.TestCase):
         """Call after every test case."""
         pass
 
-    def testUpdate(self):
-        """Test case A. note that all test method names must begin with 'test.'"""
+    def _createUpdate(self):
         update = dap_update_pb2.DapUpdate()
         newvalue = update.update.add()
         newvalue.tablename = "wibbles"
@@ -24,22 +23,25 @@ class UpdateTest(unittest.TestCase):
         newvalue.value.s = "moo"
         newvalue.key.agent_name = "007/James/Bond"
         newvalue.key.core_uri.append("localhost:10000")
+        return update
 
+    def testUpdate(self):
+        """Test case A. note that all test method names must begin with 'test.'"""
+        update = self._createUpdate()
         self.dap1.update(update)
 
     def testUpdateBadType(self):
         """Test case A. note that all test method names must begin with 'test.'"""
-        update = dap_update_pb2.DapUpdate()
-        newvalue = update.update.add()
-        newvalue.tablename = "wibbles"
-        newvalue.fieldname = "wibble"
-        newvalue.value.type = 3
-        newvalue.value.i = 12345
-        newvalue.key.agent_name = "007/James/Bond"
-        newvalue.key.core_uri.append("localhost:10000")
+        update =self._createUpdate()
+        update.update[0].value.type = 3
+        update.update[0].value.i = 12345
 
         with self.assertRaises(Exception) as context:
             self.dap1.update(update)
 
-    #def testNoTableUpdate(self):
-    #    with self.assertRaises(Exception) as context:
+    def testNoTableUpdate(self):
+        update = self._createUpdate()
+
+        with self.assertRaises(Exception) as context:
+            self.dap2.update(update)
+
