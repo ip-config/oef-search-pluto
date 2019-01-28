@@ -13,6 +13,7 @@ py_library(
     deps = [
         "//dap_api/src/python:dap_api",
         "//dap_api/src/protos:py_dap_api_pb",
+        "//fetch_teams/oef_core_protocol:py_oef_protocol",
     ],
 )
 

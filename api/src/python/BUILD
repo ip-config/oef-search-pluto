@@ -16,7 +16,7 @@ py_library(
         "//api/src/python:interfaces",
         "//api/src/proto:py_api_pb",
         "//utils/src/python:py_utils",
-        "//oef/oef_core_protocol:py_oef_protocol"
+        "//fetch_teams/oef_core_protocol:py_oef_protocol"
     ],
 )
 
