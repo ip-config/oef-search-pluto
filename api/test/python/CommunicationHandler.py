@@ -1,16 +1,15 @@
 import asyncio
 from api.src.proto import query_pb2, response_pb2
-from network.src.python.async_socket.AsyncSocket import handler, run_client, Transport
+from network.src.python.async_socket.AsyncSocket import client_handler, run_client, ClientTransport
 
 
-@handler
-async def client(transport: Transport):
+@client_handler
+async def client(transport: ClientTransport):
     msg = query_pb2.Query()
     msg.name = "Client"
     await transport.write(msg.SerializeToString(), "search")
     response = await transport.read()
     resp = response_pb2.Response()
-    print(response)
     resp.ParseFromString(response)
     print("Response from server: ", resp.name)
     transport.close()
