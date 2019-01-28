@@ -38,7 +38,7 @@ py_binary(
         "//network/src/python/async_socket:async_socket",
         "//api/src/python:backend_router",
         "//api/src/python:endpoints",
-        "//third_party/bottle:bottle",
+        "//fetch_teams/bottle:bottle",
         "//utils/src/python:py_utils"
     ],
     srcs_version = "PY3",

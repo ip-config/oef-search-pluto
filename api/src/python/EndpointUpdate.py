@@ -1,7 +1,7 @@
 from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer
 from api.src.python.Serialization import serializer, deserializer
 from utils.src.python.Logging import has_logger
-from oef_core.oef_core_protocol import query_pb2
+from fetch_teams.oef_core_protocol import query_pb2
 from api.src.proto import response_pb2
 
 

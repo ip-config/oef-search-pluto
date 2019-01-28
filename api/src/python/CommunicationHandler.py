@@ -2,8 +2,8 @@ from concurrent.futures import ThreadPoolExecutor
 import asyncio
 from network.src.python.async_socket.AsyncSocket import run_server, handler, Transport
 from api.src.python.BackendRouter import BackendRouter
-from third_party.bottle import SSLWSGIRefServer
-from third_party.bottle import bottle
+from fetch_teams.bottle import SSLWSGIRefServer
+from fetch_teams.bottle import bottle
 import sys
 from api.src.python.EndpointSearch import SearchQuery
 from api.src.python.EndpointUpdate import UpdateEndpoint, SearchEngine
