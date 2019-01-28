@@ -49,10 +49,11 @@ class InMemoryDap(object):
     Returns:
       DapResult
     """
-    def query(self, query, agents=None):
-        print("wot")
-        pass
-
+    def query(self, dapQuery, agents=None):
+        for table_name, table in self.store.items():
+            for key, row in table.items():
+                if dapQuery.testRow(row):
+                    yield key
 
     def _typeOfDapValue(self, dap_value):
         return {
