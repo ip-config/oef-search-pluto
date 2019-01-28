@@ -6,12 +6,15 @@ from third_party.bottle import SSLWSGIRefServer
 from third_party.bottle import bottle
 import sys
 from api.src.python.EndpointSearchQuery import SearchQuery
+from utils.src.python.Logging import configure as configure_logging, get_logger
 
 
 def socket_handler(router: BackendRouter):
+    log = get_logger("SocketConnectionHandler")
+
     @handler
     async def on_connection(transport: Transport):
-        print("Got socket client")
+        log.info("Got socket client")
         path, data = await transport.read()
         response = await router.route(path, data)
         await transport.write(response)
@@ -24,13 +27,16 @@ def run_socket_server(host: str, port: str, router: BackendRouter):
 
 
 def http_json_handler(router):
+    log = get_logger("HttpJsonRequestHandler")
+
     def on_request(path=""):
+        log.info("Got json request over http")
         try:
             response = asyncio.run(router.route(path, bottle.request.json))
             bottle.response.headers['Content-Type'] = 'application/json'
             return response
         except bottle.HTTPError as e:
-            print("Not valid JSON request: ", e)
+            log.error("Not valid JSON request: ", e)
     return on_request
 
 
@@ -42,6 +48,8 @@ def run_http_server(host: str, port: int, crt_file: str, router: BackendRouter):
 
 
 if __name__ == "__main__":
+    configure_logging()
+
     executor = ThreadPoolExecutor(max_workers=2)
     http_port_number = int(sys.argv[1])
     certificate_file = sys.argv[2]

@@ -1,8 +1,10 @@
 from api.src.python.Serialization import JsonResponse
 from api.src.python.Interfaces import HasProtoSerializer, HasMessageHandler
+from utils.src.python.Logging import has_logger
 
 
 class BackendRouter:
+    @has_logger
     def __init__(self):
         self.__routing_serializer = {}
         self.__routing_handler = {}
@@ -23,8 +25,8 @@ class BackendRouter:
                     response = JsonResponse(response)
                 return await serializer.deserialize(response)
             else:
-                print("Message handler not register for path: ", path)
+                self.log.error("Message handler not register for path: ", path)
                 return []
         else:
-            print("Serializer not registered for path: ", path)
+            self.log.error("Serializer not registered for path: ", path)
             return []

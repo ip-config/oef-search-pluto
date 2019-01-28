@@ -28,8 +28,6 @@ def serializer(func):
             try:
                 msg = return_type()
                 msg.ParseFromString(data)
-                print("Got request: data", data)
-                print("Msg: ", msg)
                 return msg
             except Exception as e:
                 print("Exception while trying to parse data to protocol buffer!", e)
@@ -54,7 +52,6 @@ def deserializer(func):
                 print("Exception while trying to serialize protocol buffer to json!", e)
         else:
             try:
-                print("Sending response: ", msg)
                 return msg.SerializeToString()
             except Exception as e:
                 print("Exception while trying to serialize protocol buffer!", e)

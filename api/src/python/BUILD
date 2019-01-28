@@ -14,7 +14,8 @@ py_library(
     deps = [
         "//api/src/python:serialization",
         "//api/src/python:interfaces",
-        "//api/src/proto:py_api_pb"
+        "//api/src/proto:py_api_pb",
+        "//utils/src/python:py_utils"
     ],
 )
 
@@ -23,7 +24,8 @@ py_library(
     srcs = ["BackendRouter.py"],
     deps = [
         "//api/src/python:interfaces",
-        "//api/src/python:serialization"
+        "//api/src/python:serialization",
+        "//utils/src/python:py_utils"
     ],
 )
 
@@ -36,6 +38,7 @@ py_binary(
         "//api/src/python:backend_router",
         "//api/src/python:endpoints",
         "//third_party/bottle:bottle",
+        "//utils/src/python:py_utils"
     ],
     srcs_version = "PY3",
 )
