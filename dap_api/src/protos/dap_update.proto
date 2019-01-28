@@ -5,9 +5,11 @@ import "dap_api/src/protos/dap_agent_uri.proto";
 message DapUpdate {
 
   message DapValue {
-    string s = 1;
-    int32 i = 2;
-    float f = 3;
+    int32 type = 1;
+    // type 1 == NONE, all others match fieldname below.
+    string s = 2;
+    int32 i = 3;
+    float f = 4;
   }
 
   message TableFieldValue {

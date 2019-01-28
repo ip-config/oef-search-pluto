@@ -1,5 +1,5 @@
 
-from dap_api.play.src.python import InMemoryDap
+from dap_api.experimental.python import InMemoryDap
 from google.protobuf import json_format
 
 
