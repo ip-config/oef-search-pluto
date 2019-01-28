@@ -1,3 +1,6 @@
 [submodule "oef_core/oef_core_protocol"]
 	path = oef_core/oef_core_protocol
 	url = https://github.com/uvue-git/oef-core-protocol/
+[submodule "oef-core-protocol"]
+	path = oef-core-protocol
+	url = https://github.com/uvue-git/oef-core-protocol
