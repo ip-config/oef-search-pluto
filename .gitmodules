@@ -1,0 +1,3 @@
+[submodule "external/oef-core-protocol"]
+	path = external/oef-core-protocol
+	url = https://github.com/uvue-git/oef-core-protocol/
