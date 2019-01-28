@@ -8,24 +8,44 @@ class Transport:
     def __init__(self, reader, writer):
         self._reader = reader
         self._writer = writer
+        self._int_size = len(struct.pack("I", 0))
 
-    def write(self, data: bytes):
+    async def write(self, data: bytes, path: str = ""):
+        if len(path) > 0:
+            set_path_cmd = struct.pack("I", -len(path))
+            await self.drain()
+            self._writer.write(set_path_cmd)
+            await self.drain()
+            self._writer.write(path.encode())
         size_packed = struct.pack("I", len(data))
+        await self.drain()
         self._writer.write(size_packed)
+        await self.drain()
         self._writer.write(data)
 
     async def drain(self):
         return await self._writer.drain()
 
-    async def read(self) -> bytes:
+    async def _read_size(self) -> int:
+        size_packed = await self._reader.read(self._int_size)
+        if len(size_packed) == 0:
+            return 0
+        size = struct.unpack("I", size_packed)[0]
+        return size
+
+    async def read(self) -> tuple:
         try:
-            size_packed = await self._reader.read(len(struct.pack("I", 0)))
-            if len(size_packed) == 0:
-                return []
-            size = struct.unpack("I", size_packed)[0]
-            return await self._reader.read(size)
+            size = await self._read_size()
+            if size == 0:
+                return "", []
+            path = ""
+            if size < 0:
+                path = await self._reader.read(-size)
+                path = path.decode()
+                size = await self._read_size()
+            return path, await self._reader.read(size)
         except ConnectionResetError:
-            return []
+            return "", []
 
     def close(self):
         self._writer.close()
