@@ -11,6 +11,12 @@ class DapConstraintFactory(object):
         self.add("string", "<=", "string", lambda a,b: a <= b)
         self.add("string", ">=", "string", lambda a,b: a >= b)
 
+        self.add("bool", "==", "bool", lambda a,b: a == b)
+        self.add("bool", "!=", "bool", lambda a,b: a != b)
+
+        self.add("location", "==", "location", lambda a,b: a == b)
+        self.add("location", "!=", "location", lambda a,b: a != b)
+
         self.add("int", "==", "int", lambda a,b: a == b)
         self.add("int", "!=", "int", lambda a,b: a == b)
         self.add("int", "<",  "int", lambda a,b: a == b)
@@ -24,6 +30,23 @@ class DapConstraintFactory(object):
         self.add("float", ">",  "float", lambda a,b: a > b)
         self.add("float", "<=", "float", lambda a,b: a <= b)
         self.add("float", ">=", "float", lambda a,b: a >= b)
+
+        self.add("float",    "IN",    "float_list",    lambda a,b: a in b)
+        self.add("float",    "NOTIN", "float_list",    lambda a,b: a not in b)
+        self.add("int",      "IN",    "int_list",      lambda a,b: a in b)
+        self.add("int"  ,    "NOTIN", "int_list",      lambda a,b: a not in b)
+        self.add("string",   "IN",    "string_list",   lambda a,b: a in b)
+        self.add("string",   "NOTIN", "string_list",   lambda a,b: a not in b)
+        self.add("location", "IN",    "location_list", lambda a,b: a in b)
+        self.add("location", "NOTIN", "location_list", lambda a,b: a not in b)
+
+        self.add("float",    "IN", "float_range",    lambda a,b: a > b[0] and a < b[1])
+        self.add("int",      "IN", "int_range",      lambda a,b: a > b[0] and a < b[1])
+        self.add("string",   "IN", "string_range",   lambda a,b: a > b[0] and a < b[1])
+        self.add("location", "IN", "location_range", lambda a,b:
+                     a[0] > b[0][0] and a[0] < b[1][0] and
+                     a[1] > b[0][1] and a[1] < b[1][1]
+                     )
 
     def add(self, field_type, comparator, constant_type, truth_function):
         k = (field_type, comparator, constant_type)

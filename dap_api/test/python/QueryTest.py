@@ -55,4 +55,27 @@ class QueryTest(unittest.TestCase):
         dapQuery = self.dap1.makeQuery(q, "wibbles")
         results = list(self.dap1.query(dapQuery))
 
+        assert len(results) == 2
+
+    def testQueryOr(self):
+        """Test case A. note that all test method names must begin with 'test.'"""
+        self._setupAgents()
+
+        qOr = query_pb2.Query.ConstraintExpr()
+        q1 = qOr.or_.expr.add()
+        q2 = qOr.or_.expr.add()
+
+        q1.constraint.attribute_name = "wibble"
+        q1.constraint.relation.op = 0
+        q1.constraint.relation.val.s = "carrot"
+
+        q2.constraint.attribute_name = "wibble"
+        q2.constraint.relation.op = 0
+        q2.constraint.relation.val.s = "apple"
+
+
+        dapQuery = self.dap1.makeQuery(qOr, "wibbles")
+        results = list(self.dap1.query(dapQuery))
+
         print(results)
+        assert len(results) == 3
