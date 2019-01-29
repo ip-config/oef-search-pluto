@@ -42,6 +42,7 @@ class Transport:
             if size < 0:
                 path = await self._reader.read(-size)
                 path = path.decode()
+                path = path.replace("\f", "")
                 size = await self._read_size()
             return path, await self._reader.read(size)
         except ConnectionResetError:
