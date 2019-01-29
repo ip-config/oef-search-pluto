@@ -4,12 +4,19 @@ import "dap_api/src/protos/dap_agent_uri.proto";
 
 message DapUpdate {
 
+  message Vector {
+    repeated double v = 1;
+  }
+
   message DapValue {
     int32 type = 1;
     // type 1 == NONE, all others match fieldname below.
     string s = 2;
-    int32 i = 3;
+    int64 i = 3;
     float f = 4;
+    double d = 5;
+
+    Vector embedding = 6;
   }
 
   message TableFieldValue {

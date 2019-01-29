@@ -52,6 +52,19 @@ class DapQuery:
         constant_type, constant_value = self._SET_VALUES_toTypeVal(set_pb.vals)
         return lambda row: constraint_factory.process(attr_type, row.get(attr_name, None), comparator, constant_type, constant_value)
 
+    def _CONSTRAINT_EMBEDDING_toRowProcess(self, embedding_pb, attr_name, constraint_factory, field_types):
+        comparator = {
+            0: "CLOSETO",
+        }[embedding_pb.op]
+        attr_type = field_types.get(attr_name, {}).get('type', None)
+
+        resultdata = list(embedding_pb.val.v)
+
+        print("R:", resultdata)
+
+        constant_type, constant_value = ("embedding", resultdata)
+        return lambda row: constraint_factory.process(attr_type, row.get(attr_name, None), comparator, constant_type, constant_value)
+
     def _CONSTRAINT_RELATION_toRowProcess(self, relation_pb, attr_name, constraint_factory, field_types):
         comparator = {
             0: "==",
@@ -87,6 +100,9 @@ class DapQuery:
 
         if constraint_pb.HasField("distance"):
             return self._CONSTRAINT_DISTANCE_toRowProcess(constraint_pb.distance, attr_name, constraint_factory, field_types)
+
+        if constraint_pb.HasField("embedding"):
+            return self._CONSTRAINT_EMBEDDING_toRowProcess(constraint_pb.embedding, attr_name, constraint_factory, field_types)
 
         raise Exception("_CONSTRAINT_toRowProcess ==> None")
 

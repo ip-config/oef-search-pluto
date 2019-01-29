@@ -25,6 +25,7 @@ py_test(
     ],
     deps = [
         "//dap_api/src/python:dap_api",
+        "//api/src/python:search_engine",
         "//dap_api/experimental/python:experimental_lib",
         "//dap_api/src/protos:py_dap_api_pb",
         ":mocks",

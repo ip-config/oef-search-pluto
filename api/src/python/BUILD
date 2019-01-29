@@ -11,6 +11,7 @@ py_library(
 py_library(
     name = "search_engine",
     srcs = ["SearchEngine.py"],
+    visibility = ["//visibility:public"],
     deps = [
         "//fetch_teams/oef_core_protocol:py_oef_protocol",
         "//utils/src/python:py_utils"
