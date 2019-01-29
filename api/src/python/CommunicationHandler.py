@@ -6,7 +6,8 @@ from fetch_teams.bottle import SSLWSGIRefServer
 from fetch_teams.bottle import bottle
 import sys
 from api.src.python.EndpointSearch import SearchQuery
-from api.src.python.EndpointUpdate import UpdateEndpoint, SearchEngine
+from api.src.python.EndpointUpdate import UpdateEndpoint
+from api.src.python.SearchEngine import SearchEngine
 from utils.src.python.Logging import get_logger, configure as configure_logging
 
 
@@ -59,8 +60,8 @@ if __name__ == "__main__":
         socket_port_number = sys.argv[3]
 
     #modules
-    search_module = SearchQuery()
     search_engine = SearchEngine()
+    search_module = SearchQuery(search_engine)
     update_module = UpdateEndpoint(search_engine)
 
     #router
