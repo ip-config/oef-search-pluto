@@ -15,7 +15,8 @@ py_library(
         "//api/src/python:serialization",
         "//api/src/python:interfaces",
         "//api/src/proto:py_api_pb",
-        "//utils/src/python:py_utils"
+        "//utils/src/python:py_utils",
+        "//fetch_teams/oef_core_protocol:py_oef_protocol"
     ],
 )
 
@@ -37,7 +38,7 @@ py_binary(
         "//network/src/python/async_socket:async_socket",
         "//api/src/python:backend_router",
         "//api/src/python:endpoints",
-        "//third_party/bottle:bottle",
+        "//fetch_teams/bottle:bottle",
         "//utils/src/python:py_utils"
     ],
     srcs_version = "PY3",

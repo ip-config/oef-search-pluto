@@ -1,4 +1,5 @@
-from third_party.bottle import bottle
+from fetch_teams.bottle import bottle
+
 
 class SSLWSGIRefServer(bottle.ServerAdapter):
     def __init__(self, certificate_file=None, **kwargs):
