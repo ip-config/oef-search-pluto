@@ -21,7 +21,7 @@ class UpdateEndpoint(HasProtoSerializer, HasMessageHandler):
         self.search_engine = search_engine
 
     @serializer
-    def serialize(self, data: bytes) -> query_pb2.Query.Instance:
+    def serialize(self, data: bytes) -> query_pb2.Query.DataModel:
         pass
 
     @deserializer
@@ -29,6 +29,8 @@ class UpdateEndpoint(HasProtoSerializer, HasMessageHandler):
         pass
 
     async def handle_message(self, msg: query_pb2.Query) -> response_pb2.Response:
-        self.log.info("Got message: "+msg.SerializeToString())
+        self.log.info("Got message: ")
+        print(msg)
+        self.log.info(msg.SerializeToString().decode())
         resp = response_pb2.Response()
         return resp
