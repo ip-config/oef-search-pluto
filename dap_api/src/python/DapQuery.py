@@ -60,8 +60,6 @@ class DapQuery:
 
         resultdata = list(embedding_pb.val.v)
 
-        print("R:", resultdata)
-
         constant_type, constant_value = ("embedding", resultdata)
         return lambda row: constraint_factory.process(attr_type, row.get(attr_name, None), comparator, constant_type, constant_value)
 

@@ -23,12 +23,12 @@ class SearchEngine:
         self._encoding_dim = 50
 
     def _string_to_vec(self, description: str):
-        print("Encode desc: ", description)
+        #print("Encode desc: ", description)
         if description.find("_") > -1:
             description = description.replace("_", " ")
         tokens = word_tokenize(description)
         words = [word.lower() for word in tokens if word.isalpha()]
-        print("Words: ", words)
+        #print("Words: ", words)
         no_stops = [word for word in words if word not in self._stop_words]
         final = []
         for w in no_stops:
@@ -37,7 +37,7 @@ class SearchEngine:
                 final.append(w1)
             else:
                 final.append(self._porter.stem(w))
-        print("Final: ", final)
+        #print("Final: ", final)
         feature_vec = np.zeros((self._encoding_dim,))
         counter = 0
         for w in final:
@@ -45,7 +45,7 @@ class SearchEngine:
                 feature_vec = np.add(self._w2v[w], feature_vec)
                 counter += 1
             except KeyError as e:
-                self.log.warn("Failed to embed word: %s" % w)
+                self.log.warning("Failed to embed word: %s" % w)
         if counter > 0:
             feature_vec = np.divide(feature_vec, float(counter))
         return feature_vec
@@ -58,6 +58,7 @@ class SearchEngine:
         avg_feature = np.add(avg_feature, self._string_to_vec(data.name))
         avg_feature = np.add(avg_feature, self._string_to_vec(data.description))
         self._storage[avg_feature.tobytes()] = data
+        return avg_feature
 
     def search(self, query: str) -> str:
         encoded = self._string_to_vec(query)

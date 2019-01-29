@@ -7,6 +7,14 @@ from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 
 
+def get_attr_b(name, desc):
+    attr1 = query_pb2.Query.Attribute()
+    attr1.name = name
+    attr1.type = 2#query_pb2.Query.Attribute.Type.BOOL
+    attr1.required = True
+    attr1.description = desc
+    return attr1
+
 class QueryEmbeddingsTest(unittest.TestCase):
     def setUp(self):
         """Call before every test case."""
@@ -42,11 +50,57 @@ class QueryEmbeddingsTest(unittest.TestCase):
             update.update[0].value.s = wibble_value
             self.dap1.update(update)
 
-        #engine = SearchEngine.SearchEngine()
+        dm1 = query_pb2.Query.DataModel()
+        dm1.name = "weather_data"
+        dm1.description = "All possible weather data."
+        dm1.attributes.extend([
+            get_attr_b("wind_speed", "Provides wind speed measurements."),
+            get_attr_b("temperature", "Provides wind speed measurements."),
+            get_attr_b("air_pressure", "Provides wind speed measurements.")
+        ])
+        dm2 = query_pb2.Query.DataModel()
+        dm2.name = "book_data"
+        dm2.description = "Book store data"
+        dm2.attributes.extend([
+            get_attr_b("title", "The title of the book"),
+            get_attr_b("author", "The author of the book"),
+            get_attr_b("release_year", "Release year of the book in the UK"),
+            get_attr_b("introduction", "Short introduction by the author."),
+            get_attr_b("rating", "Summary rating of the book given by us.")
+        ])
+        print("======================================WEATHER STATION======================================")
+        print(dm1)
+        print("======================================BOOK STORE======================================")
+        print(dm2)
+        engine = SearchEngine.SearchEngine()
 
-        embed1 = [ 1.0, 0.0, 0.0 ]
-        embed2 = [ 0.0, 1.0, 0.0 ]
-        self.embed3 = [ 1.0, 0.0, 0.0 ]
+        embed1 = engine.add(dm1)
+        embed2 = engine.add(dm2)
+
+        dmq = query_pb2.Query.DataModel()
+        dmq.name = "sunshine"
+        dmq.description = "Give me some weather data"
+        dmq.attributes.extend([
+            get_attr_b("wind_stuff", "Is windy outside?"),
+            get_attr_b("celsius", "Freezing or warm?"),
+            get_attr_b("pascal", "Under pressure")
+        ])
+
+        self.embed3 = engine.add(dmq)
+
+        dmq2 = query_pb2.Query.DataModel()
+        dmq2.name = "novels"
+        dmq2.description = "I want to read novels"
+        dmq2.attributes.extend([
+            get_attr_b("name", "Novel has a name"),
+            get_attr_b("writer", "Somebody has written the book"),
+        ])
+        self.embed4 = engine.add(dmq2)
+
+        print("======================================QUERY WEATHER======================================")
+        print(dmq)
+        print("======================================QUERY BOOK======================================")
+        print(dmq2)
 
         for agent_name, wibble_value in [
             ("007/James/Bond", embed1),
@@ -61,7 +115,6 @@ class QueryEmbeddingsTest(unittest.TestCase):
             update.update[0].value.embedding.v.extend(wibble_value)
             self.dap1.update(update)
 
-        self.dap1.print()
 
 
     def testQuery(self):
@@ -77,8 +130,21 @@ class QueryEmbeddingsTest(unittest.TestCase):
         dapQuery = self.dap1.makeQuery(q, "wibbles")
         results = list(self.dap1.query(dapQuery))
 
+        q2 = query_pb2.Query.ConstraintExpr()
+
+        q2.constraint.attribute_name = "service"
+        q2.constraint.relation.op = 0
+        q2.constraint.embedding.val.v.extend(self.embed4)
+
+        dapQuery2 = self.dap1.makeQuery(q2, "wibbles")
+        results2 = list(self.dap1.query(dapQuery2))
+
+        print("Looking for weather")
         print(results)
+        print("Looking for book")
+        print(results2)
         assert len(results) == 2
+        assert len(results2) == 2
     #
     # def testQueryOr(self):
     #     """Test case A. note that all test method names must begin with 'test.'"""

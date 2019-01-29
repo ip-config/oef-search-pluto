@@ -1,3 +1,4 @@
+import scipy.spatial.distance as distance
 
 
 class DapConstraintFactory(object):
@@ -51,9 +52,9 @@ class DapConstraintFactory(object):
                      )
 
     def compareVectors(self, a, b):
-        print("A:", a)
-        print("B:", b)
-        return a == b
+        d = distance.cosine(a,b)
+        print("Distance between the two vector: ", d)
+        return d < 0.2
 
     def add(self, field_type, comparator, constant_type, truth_function):
         k = (field_type, comparator, constant_type)
