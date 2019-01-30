@@ -7,10 +7,10 @@ from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 
 
-def get_attr_b(name, desc):
+def get_attr_b(name, desc, type=2):
     attr1 = query_pb2.Query.Attribute()
     attr1.name = name
-    attr1.type = 2#query_pb2.Query.Attribute.Type.BOOL
+    attr1.type = type#query_pb2.Query.Attribute.Type.BOOL
     attr1.required = True
     attr1.description = desc
     return attr1
@@ -54,20 +54,32 @@ class QueryEmbeddingsTest(unittest.TestCase):
         dm1.name = "weather_data"
         dm1.description = "All possible weather data."
         dm1.attributes.extend([
-            get_attr_b("wind_speed", "Provides wind speed measurements."),
-            get_attr_b("temperature", "Provides wind speed measurements."),
-            get_attr_b("air_pressure", "Provides wind speed measurements.")
+            get_attr_b("wind_speed", "Provides wind speed measurements.",0),
+            get_attr_b("temperature", "Provides wind speed measurements.",1),
+            get_attr_b("air_pressure", "Provides wind speed measurements.",2)
         ])
         dm2 = query_pb2.Query.DataModel()
         dm2.name = "book_data"
         dm2.description = "Book store data"
         dm2.attributes.extend([
-            get_attr_b("title", "The title of the book"),
-            get_attr_b("author", "The author of the book"),
-            get_attr_b("release_year", "Release year of the book in the UK"),
-            get_attr_b("introduction", "Short introduction by the author."),
-            get_attr_b("rating", "Summary rating of the book given by us.")
+            get_attr_b("title", "The title of the book", 1),
+            get_attr_b("author", "The author of the book", 3),
+            get_attr_b("release_year", "Release year of the book in the UK",4),
+            get_attr_b("introduction", "Short introduction by the author.",3),
+            get_attr_b("rating", "Summary rating of the book given by us.",0)
         ])
+        dm3 = query_pb2.Query.DataModel()
+        dm3.name = "book_store_new"
+        dm3.description = "Other bookstore"
+        dm3.attributes.extend([
+            get_attr_b("title", "The title of the book", 1),
+            get_attr_b("author", "The author of the book", 3),
+            get_attr_b("ISBN", "That code thing", 4),
+            get_attr_b("price", "We will need a lot of money", 3),
+            get_attr_b("count", "How many do we have", 0),
+            get_attr_b("condition", "Our books are in the best condition", 0)
+        ])
+
         print("======================================WEATHER STATION======================================")
         print(dm1)
         print("======================================BOOK STORE======================================")
@@ -76,6 +88,8 @@ class QueryEmbeddingsTest(unittest.TestCase):
 
         embed1 = engine.add(dm1)
         embed2 = engine.add(dm2)
+        embed3 = engine.add(dm3)
+
 
         dmq = query_pb2.Query.DataModel()
         dmq.name = "sunshine"
@@ -93,7 +107,7 @@ class QueryEmbeddingsTest(unittest.TestCase):
         dmq2.description = "I want to read novels"
         dmq2.attributes.extend([
             get_attr_b("name", "Novel has a name"),
-            get_attr_b("writer", "Somebody has written the book"),
+            get_attr_b("writer", "Somebody has written the pages"),
         ])
         self.embed4 = engine.add(dmq2)
 
@@ -106,7 +120,7 @@ class QueryEmbeddingsTest(unittest.TestCase):
             ("007/James/Bond", embed1),
             ("White/Spy", embed1),
             ("Black/Spy", embed2),
-            ("86/Maxwell/Smart", embed2),
+            ("86/Maxwell/Smart", embed3),
         ]:
             update = self._createUpdate()
             update.update[0].fieldname = "service"
