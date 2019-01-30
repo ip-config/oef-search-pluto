@@ -9,16 +9,6 @@ py_library(
 )
 
 py_library(
-    name = "search_engine",
-    srcs = ["SearchEngine.py"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//fetch_teams/oef_core_protocol:py_oef_protocol",
-        "//utils/src/python:py_utils"
-    ]
-)
-
-py_library(
     name = "endpoints",
     srcs = glob(["Endpoint*.py"]),
     deps = [
@@ -27,7 +17,7 @@ py_library(
         "//api/src/proto:py_api_pb",
         "//utils/src/python:py_utils",
         "//fetch_teams/oef_core_protocol:py_oef_protocol",
-        "//api/src/python:search_engine"
+        "//ai_search_engine/src/python:search_engine"
     ],
 )
 
@@ -51,7 +41,7 @@ py_binary(
         "//api/src/python:endpoints",
         "//fetch_teams/bottle:bottle",
         "//utils/src/python:py_utils",
-        "//api/src/python:search_engine"
+        "//ai_search_engine/src/python:search_engine"
     ],
     srcs_version = "PY3",
 )

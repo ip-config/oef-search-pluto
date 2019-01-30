@@ -3,7 +3,7 @@ from api.src.python.Serialization import serializer, deserializer
 from utils.src.python.Logging import has_logger
 from fetch_teams.oef_core_protocol import query_pb2
 from api.src.proto import response_pb2
-from api.src.python.SearchEngine import SearchEngine
+from ai_search_engine.src.python.SearchEngine import SearchEngine
 
 
 class UpdateEndpoint(HasProtoSerializer, HasMessageHandler):

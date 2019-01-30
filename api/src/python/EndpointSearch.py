@@ -2,7 +2,7 @@ from api.src.proto import query_pb2, response_pb2
 from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer
 from api.src.python.Serialization import serializer, deserializer
 from utils.src.python.Logging import has_logger
-from api.src.python.SearchEngine import SearchEngine
+from ai_search_engine.src.python.SearchEngine import SearchEngine
 
 
 class SearchQuery(HasProtoSerializer, HasMessageHandler):

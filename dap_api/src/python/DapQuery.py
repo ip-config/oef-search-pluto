@@ -1,9 +1,11 @@
 
 from fetch_teams.oef_core_protocol import query_pb2
 
+
 class DapQuery:
     def __init__(self):
         self.comp = None
+        self.data_model = None
 
     def _VALUE_toTypeVal(self, value_pb):
         if value_pb.HasField("s"):
@@ -131,7 +133,12 @@ class DapQuery:
 
         raise Exception("_CONSTRAINT_toRowProcess ==> None")
 
-    def fromQueryProto(self, ce_pb, constraint_factory, field_types):
+    def fromQueryProto(self, pb, constraint_factory, field_types):
+        if pb.HasField("constraints"):
+            ce_pb = pb.constraints
+            self.data_model = pb.model
+        else:
+            ce_pb = pb
         self.comp = self._CONSTRAINT_EXPR_toRowProcess(ce_pb, constraint_factory, field_types)
 
     def testRow(self, row):

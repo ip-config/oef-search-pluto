@@ -7,7 +7,7 @@ from fetch_teams.bottle import bottle
 import sys
 from api.src.python.EndpointSearch import SearchQuery
 from api.src.python.EndpointUpdate import UpdateEndpoint
-from api.src.python.SearchEngine import SearchEngine
+from ai_search_engine.src.python.SearchEngine import SearchEngine
 from utils.src.python.Logging import get_logger, configure as configure_logging
 
 
