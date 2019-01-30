@@ -134,10 +134,10 @@ class DapQuery:
         raise Exception("_CONSTRAINT_toRowProcess ==> None")
 
     def fromQueryProto(self, pb, constraint_factory, field_types):
-        if pb.HasField("constraints"):
+        try:
             ce_pb = pb.constraints
             self.data_model = pb.model
-        else:
+        except AttributeError:
             ce_pb = pb
         self.comp = self._CONSTRAINT_EXPR_toRowProcess(ce_pb, constraint_factory, field_types)
 
