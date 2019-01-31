@@ -8,3 +8,14 @@ py_binary(
     ],
     srcs_version = "PY3",
 )
+
+py_binary(
+    name = "register_agents",
+    srcs = ["RegisterAgents.py"],
+    main = "RegisterAgents.py",
+    deps = [
+        "//network/src/python/async_socket:async_socket",
+        "//api/src/proto:py_api_pb"
+    ],
+    srcs_version = "PY3",
+)

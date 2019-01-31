@@ -1,9 +1,12 @@
 
 from fetch_teams.oef_core_protocol import query_pb2
 
+
 class DapQuery:
     def __init__(self):
         self.comp = None
+        self.data_model = None
+        self.description = None
 
     def _VALUE_toTypeVal(self, value_pb):
         if value_pb.HasField("s"):
@@ -53,6 +56,17 @@ class DapQuery:
         func = constraint_factory.createAttrMatcherProcessor(attr_name, attr_type, comparator, constant_type, constant_value)
         return lambda row: func(row.get(attr_name, None))
 
+    def _CONSTRAINT_EMBEDDING_toRowProcess(self, embedding_pb, attr_name, constraint_factory, field_types):
+        comparator = {
+            0: "CLOSETO",
+        }[embedding_pb.op]
+        attr_type = field_types.get(attr_name, {}).get('type', None)
+
+        resultdata = list(embedding_pb.val.v)
+
+        constant_type, constant_value = ("embedding", resultdata)
+        return lambda row: constraint_factory.process(attr_type, row.get(attr_name, None), comparator, constant_type, constant_value)
+
     def _CONSTRAINT_RELATION_toRowProcess(self, relation_pb, attr_name, constraint_factory, field_types):
         comparator = {
             0: "==",
@@ -91,6 +105,9 @@ class DapQuery:
         if constraint_pb.HasField("distance"):
             return self._CONSTRAINT_DISTANCE_toRowProcess(constraint_pb.distance, attr_name, constraint_factory, field_types)
 
+        if constraint_pb.HasField("embedding"):
+            return self._CONSTRAINT_EMBEDDING_toRowProcess(constraint_pb.embedding, attr_name, constraint_factory, field_types)
+
         raise Exception("_CONSTRAINT_toRowProcess ==> None")
 
     def _CONSTRAINT_EXPR_toRowProcess(self, ce_pb, constraint_factory, field_types):
@@ -120,7 +137,19 @@ class DapQuery:
 
         raise Exception("_CONSTRAINT_toRowProcess ==> None")
 
-    def fromQueryProto(self, ce_pb, constraint_factory, field_types):
+    def fromQueryProto(self, pb, constraint_factory, field_types):
+        try:
+            ce_pb = pb.constraints
+        except AttributeError:
+            ce_pb = pb
+        try:
+            self.data_model = pb.model
+        except AttributeError:
+            pass
+        try:
+            self.description = self.description
+        except AttributeError:
+            pass
         self.comp = self._CONSTRAINT_EXPR_toRowProcess(ce_pb, constraint_factory, field_types)
 
     def testRow(self, row):

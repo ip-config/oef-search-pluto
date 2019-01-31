@@ -1,9 +1,10 @@
-
+import abc
+from abc import abstractmethod
 # We don't really need this, because it's DUCK TYPED, but this is the
 # interface definition for reference.
 
 
-class DapInterface(object):
+class DapInterface(abc.ABC):
     def __init__():
         pass
 
@@ -14,6 +15,7 @@ class DapInterface(object):
     Returns:
        DapDescription
     """
+    @abstractmethod
     def describe(self):
         pass
 
@@ -28,6 +30,7 @@ class DapInterface(object):
     Returns:
       DapResult
     """
+    @abstractmethod
     def query(self, query, agents=None):
         pass
 
@@ -40,6 +43,7 @@ class DapInterface(object):
     Returns:
       None
     """
+    @abstractmethod
     def update(self, update_data):
         pass
 

@@ -68,17 +68,25 @@ class InMemoryDap(object):
     def _typeOfDapValue(self, dap_value):
         return {
             2: "string",
-            3: "int32",
+            3: "int64",
             4: "float",
+            5: "double",
+            6: "embedding",
         }.get(dap_value.type, None)
 
+    def print(self):
+        print(self.store)
+
+    # given an input value probuf, returnm the type and TRANSLATED TO PYTHON data in a tuple.
     def _typeAndValueOfDapValue(self, dap_value):
         (k, va) = {
             2: ("string", lambda x: x.s),
-            3: ("int32", lambda x: x.i),
+            3: ("int64", lambda x: x.i),
             4: ("float", lambda x: x.f),
+            5: ("double", lambda x: x.d),
+            6: ("embedding", lambda x: x.embedding.v),
         }.get(dap_value.type, (None, lambda x: None))
-        return (k, va(dap_value))
+        return k, va(dap_value)
 
     """This function will be called with any update to this DAP.
 

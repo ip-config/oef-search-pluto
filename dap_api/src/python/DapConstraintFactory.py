@@ -1,3 +1,4 @@
+import scipy.spatial.distance as distance
 
 
 class DapConstraintFactory(object):
@@ -16,6 +17,8 @@ class DapConstraintFactory(object):
 
         self.add("location", "==", "location", lambda a,b: a == b)
         self.add("location", "!=", "location", lambda a,b: a != b)
+
+        self.add("embedding", "CLOSETO", "embedding", lambda a,b: self.compareVectors(a,b)) # hack. fix me later. KLL
 
         self.add("int", "==", "int", lambda a,b: a == b)
         self.add("int", "!=", "int", lambda a,b: a == b)
@@ -48,6 +51,11 @@ class DapConstraintFactory(object):
                      a[1] > b[0][1] and a[1] < b[1][1]
                      )
 
+    def compareVectors(self, a, b):
+        d = distance.cosine(a,b)
+        print("Distance between the two vector: ", d)
+        return d < 0.2
+
     def add(self, field_type, comparator, constant_type, truth_function):
         k = (field_type, comparator, constant_type)
         self.store[k] = truth_function
@@ -62,7 +70,7 @@ class DapConstraintFactory(object):
     def process(self, field_name, field_type, field_value, comparator, constant_type, constant_value):
         f = self.lookup(field_type, comparator, constant_type)
         if not f:
-            raise BadValue("{} {} {} {}".format(field_type, comparator, constant_type, " is not known operation."))
+            raise Exception("{} {} {} {}".format(field_type, comparator, constant_type, " is not known operation."))
         return self.processFunc(field_value, constant_value, f)
 
     def createAttrMatcherProcessor(self, field_name, field_type, comparator, constant_type, constant_value):

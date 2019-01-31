@@ -134,5 +134,4 @@ class QueryTest(unittest.TestCase):
 
         dapQuery = self.dap1.makeQuery(qOr, "wibbles")
         results = list(self.dap1.query(dapQuery))
-
         assert len(results) == 3

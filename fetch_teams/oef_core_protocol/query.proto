@@ -82,6 +82,18 @@ message Query {
         required Operator op = 1;
         required Value val = 2;
     }
+
+    message EmbeddingVector {
+        repeated double v = 1;
+    }
+
+    message Embedding {
+        enum Operator {
+            CLOSETO    = 0;
+        }
+        required Operator op = 1;
+        required EmbeddingVector val = 2;
+    }
     message Set {
         message Values {
             message Ints {
@@ -131,6 +143,7 @@ message Query {
                 Range range_ = 3;
                 Relation relation = 4;
                 Distance distance = 5;
+                Embedding embedding = 6;
             }
         }
         oneof expression {
@@ -143,6 +156,7 @@ message Query {
     message Model {
         repeated ConstraintExpr constraints = 1;
         optional DataModel model = 2;
+        optional string description = 3;
     }
 }
 

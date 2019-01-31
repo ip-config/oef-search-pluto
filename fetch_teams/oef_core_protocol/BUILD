@@ -4,6 +4,7 @@ proto_library(
     name = "oef_protocol",
     srcs = glob(["*.proto"]),
     licenses = [ "unencumbered" ],
+    visibility = ["//visibility:public"],
 )
 
 py_proto_library(
