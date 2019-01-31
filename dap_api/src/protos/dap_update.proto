@@ -18,8 +18,7 @@ message DapUpdate {
     double d = 5;
 
     Vector embedding = 6;
-    fetch.oef.Query q=8;
-    Query.DataModel dm = 7;
+    fetch.oef.pb.Query.DataModel dm = 7;
   }
 
   message TableFieldValue {
