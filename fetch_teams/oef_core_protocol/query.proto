@@ -156,6 +156,7 @@ message Query {
     message Model {
         repeated ConstraintExpr constraints = 1;
         optional DataModel model = 2;
+        optional string description = 3;
     }
 }
 

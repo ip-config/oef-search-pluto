@@ -6,6 +6,7 @@ class DapQuery:
     def __init__(self):
         self.comp = None
         self.data_model = None
+        self.description = None
 
     def _VALUE_toTypeVal(self, value_pb):
         if value_pb.HasField("s"):
@@ -136,9 +137,16 @@ class DapQuery:
     def fromQueryProto(self, pb, constraint_factory, field_types):
         try:
             ce_pb = pb.constraints
-            self.data_model = pb.model
         except AttributeError:
             ce_pb = pb
+        try:
+            self.data_model = pb.model
+        except AttributeError:
+            pass
+        try:
+            self.description = self.description
+        except AttributeError:
+            pass
         self.comp = self._CONSTRAINT_EXPR_toRowProcess(ce_pb, constraint_factory, field_types)
 
     def testRow(self, row):

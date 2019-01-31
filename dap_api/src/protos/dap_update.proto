@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "dap_api/src/protos/dap_agent_uri.proto";
+import "fetch_teams/oef_core_protocol/query.proto";
 
 message DapUpdate {
 
@@ -17,6 +18,8 @@ message DapUpdate {
     double d = 5;
 
     Vector embedding = 6;
+    fetch.oef.Query q=8;
+    Query.DataModel dm = 7;
   }
 
   message TableFieldValue {
