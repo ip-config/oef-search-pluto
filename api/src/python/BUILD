@@ -41,7 +41,8 @@ py_binary(
         "//api/src/python:endpoints",
         "//fetch_teams/bottle:bottle",
         "//utils/src/python:py_utils",
-        "//ai_search_engine/src/python:search_engine"
+        "//ai_search_engine/src/python:search_engine",
+        "//dap_api/src/python:dap_api"
     ],
     srcs_version = "PY3",
 )

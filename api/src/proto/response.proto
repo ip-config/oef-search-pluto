@@ -2,11 +2,10 @@ syntax = "proto3";
 
 message UpdateResponse {
     enum ResponseType {
-        DATA_INSERTED = 0;
-        DATA_UPDATED  = 1;
-        ERROR = 2;
+        SUCCESS = 0;
+        ERROR = 1;
     }
-    ResponseType response = 1;
+    ResponseType status = 1;
 }
 
 message Response {

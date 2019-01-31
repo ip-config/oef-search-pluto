@@ -5,10 +5,11 @@ from api.src.python.BackendRouter import BackendRouter
 from fetch_teams.bottle import SSLWSGIRefServer
 from fetch_teams.bottle import bottle
 import sys
+from utils.src.python.Logging import get_logger, configure as configure_logging
 from api.src.python.EndpointSearch import SearchQuery
 from api.src.python.EndpointUpdate import UpdateEndpoint
-from ai_search_engine.src.python.SearchEngine import SearchEngine
-from utils.src.python.Logging import get_logger, configure as configure_logging
+from dap_api.src.python.DapManager import DapManager
+import api.src.python.ProtoWrappers as ProtoWrappers
 
 
 def socket_handler(router: BackendRouter):
@@ -59,10 +60,35 @@ if __name__ == "__main__":
     if len(sys.argv) == 4:
         socket_port_number = sys.argv[3]
 
+    #DAPManager
+    dap_manager = DapManager()
+
+    dap_manager_config = {
+        "search_engine": {
+            "class": "SearchEngine",
+            "config": {
+                "structure": {
+                    "dm_store": {
+                        "data_model": "dm"
+                    }
+                }
+            }
+        }
+    }
+
+    dap_manager.setup(sys.modules[__name__], dap_manager_config)
+
+    update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, {
+        "table": "dm_store",
+        "field": "data_model"
+    })
+    query_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.QueryData)
+
+    search_engine = dap_manager.getInstance("search_engine")
+
     #modules
-    search_engine = SearchEngine()
-    search_module = SearchQuery(search_engine)
-    update_module = UpdateEndpoint(search_engine)
+    search_module = SearchQuery(search_engine, query_wrapper)
+    update_module = UpdateEndpoint(search_engine, update_wrapper)
 
     #router
     router_ = BackendRouter()
