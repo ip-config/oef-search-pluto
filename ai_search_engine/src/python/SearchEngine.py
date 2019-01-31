@@ -49,18 +49,22 @@ class SearchEngine(DapInterface):
         for w in no_stops:
             w1 = self._wnl.lemmatize(w)
             if w1.endswith('e'):
-                final.append(w1)
+                final.append((w1, w))
             else:
-                final.append(self._porter.stem(w))
+                final.append((self._porter.stem(w), w1))
         #print("Final: ", final)
         feature_vec = np.zeros((self._encoding_dim,))
         counter = 0
         for w in final:
             try:
-                feature_vec = np.add(self._w2v[w], feature_vec)
+                feature_vec = np.add(self._w2v[w[0]], feature_vec)
                 counter += 1
             except KeyError as e:
-                self.log.warning("Failed to embed word: %s" % w)
+                try:
+                    feature_vec = np.add(self._w2v[w[1]], feature_vec)
+                    counter += 1
+                except KeyError as e:
+                    print("Key %s not found, ignoring..." % w[1])
         if counter > 0:
             feature_vec = np.divide(feature_vec, float(counter))
         return feature_vec
@@ -103,7 +107,7 @@ class SearchEngine(DapInterface):
     # (TODO): introduce service ID, right now only one service / agent is supported
     def update(self, update_data: DapUpdate):
         for upd in update_data.update:
-            k, v = "dm", udp.value.dm
+            k, v = "dm", upd.value.dm
             if upd.tablename not in self.structure:
                 raise DapBadUpdateRow("No such table", upd.tablename, upd.key.agent_name, upd.key.core_uri,
                                       upd.fieldname, k)
@@ -138,5 +142,5 @@ class SearchEngine(DapInterface):
             dist = distance.cosine(data["embedding"], enc_query)
             if dist < score_threshold:
                 result.append((key, dist))
-        ordered = sorted(result, key=lambda x: x[1], reverse=True)
+        ordered = sorted(result, key=lambda x: x[1])
         return ordered
