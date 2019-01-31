@@ -18,7 +18,7 @@ def get_attr_b(name, desc, t=2):
 class SearchEngineTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.se = SearchEngine("search_engine")
+        cls.se = SearchEngine("search_engine", {"structure": {"dm_store": {"data_model": "dm"}}})
         cls._setupAgents()
 
     def setUp(self):

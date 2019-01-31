@@ -14,7 +14,7 @@ from dap_api.src.python.DapQuery import DapQuery
 
 class SearchEngine(DapInterface):
     @has_logger
-    def __init__(self, name="SearchEngineStorage", structure={"dm_store": {"data_model": "dm", "embedding": "embedding"}}):
+    def __init__(self, name, config):
         self._storage = {}
         nltk.download('stopwords')
         nltk.download('punkt')
@@ -27,7 +27,7 @@ class SearchEngine(DapInterface):
 
         self.store = {}
         self.name = name
-        self.structure_pb = structure
+        self.structure_pb = config["structure"]
 
         self.tablenames = []
         self.structure = {}
@@ -121,7 +121,7 @@ class SearchEngine(DapInterface):
 
             vec = self._dm_to_vec(v)
             for core_uri in upd.key.core_uri:
-                row = self.store.setdefault(upd.tablename, {}).setdefault(
+                row  = self.store.setdefault(upd.tablename, {}).setdefault(
                     (upd.key.agent_name, core_uri), {}
                 )
                 row[upd.fieldname] = v
@@ -135,7 +135,7 @@ class SearchEngine(DapInterface):
             enc_query = np.add(enc_query, self._string_to_vec(query.description))
         if not np.any(enc_query):
             return
-        table = "dm_store"
+        table = next(iter(self.structure.keys()))
         score_threshold = 0.2
         result = []
         for key, data in self.store[table].items():
