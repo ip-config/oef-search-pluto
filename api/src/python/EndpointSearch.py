@@ -19,10 +19,10 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler):
         pass
 
     @deserializer
-    def deserialize(self, proto_msg: response_pb2.Response) -> bytes:
+    def deserialize(self, proto_msg: response_pb2.SearchResponse) -> bytes:
         pass
 
-    async def handle_message(self, msg: query_pb2.Query) -> response_pb2.Response:
+    async def handle_message(self, msg: query_pb2.Query) -> response_pb2.SearchResponse:
         resp = response_pb2.SearchResponse()
         result = self._search_engine.query(self._proto_wrapper.get_instance(msg))
         for element in result:

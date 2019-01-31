@@ -8,6 +8,7 @@ import sys
 from utils.src.python.Logging import get_logger, configure as configure_logging
 from api.src.python.EndpointSearch import SearchQuery
 from api.src.python.EndpointUpdate import UpdateEndpoint
+from ai_search_engine.src.python import SearchEngine
 from dap_api.src.python.DapManager import DapManager
 import api.src.python.ProtoWrappers as ProtoWrappers
 

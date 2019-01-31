@@ -31,6 +31,16 @@ py_library(
     ],
 )
 
+py_library(
+    name = "utils",
+    srcs = ["ProtoWrappers.py"],
+    deps = [
+        "//dap_api/src/python:dap_api",
+        "//api/src/proto:py_api_pb",
+        "//fetch_teams/oef_core_protocol:py_oef_protocol",
+    ]
+)
+
 py_binary(
     name = "communication_handler",
     srcs = ["CommunicationHandler.py"],
@@ -42,7 +52,8 @@ py_binary(
         "//fetch_teams/bottle:bottle",
         "//utils/src/python:py_utils",
         "//ai_search_engine/src/python:search_engine",
-        "//dap_api/src/python:dap_api"
+        "//dap_api/src/python:dap_api",
+        ":utils"
     ],
     srcs_version = "PY3",
 )

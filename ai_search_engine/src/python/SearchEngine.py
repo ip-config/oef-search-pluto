@@ -9,6 +9,7 @@ import numpy as np
 import scipy.spatial.distance as distance
 from dap_api.src.python.DapInterface import DapInterface, DapBadUpdateRow
 from dap_api.src.protos.dap_update_pb2 import DapUpdate
+from dap_api.src.protos import dap_description_pb2
 from dap_api.src.python.DapQuery import DapQuery
 
 

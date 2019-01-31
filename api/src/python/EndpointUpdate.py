@@ -23,7 +23,7 @@ class UpdateEndpoint(HasProtoSerializer, HasMessageHandler):
     def deserialize(self, proto_msg: response_pb2.UpdateResponse) -> bytes:
         pass
 
-    async def handle_message(self, msg: update_pb.Update) -> response_pb2.Response:
+    async def handle_message(self, msg: update_pb2.Update) -> response_pb2.UpdateResponse:
         resp = response_pb2.UpdateResponse()
         try:
             self.search_engine.update(self.proto_wrapper.get_instance(msg))

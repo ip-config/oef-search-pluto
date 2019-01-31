@@ -1,5 +1,5 @@
 from api.src.proto import update_pb2
-from dap_api.proto import dap_update_pb2
+from dap_api.src.protos import dap_update_pb2
 from dap_api.src.python.DapQuery import DapQuery
 from fetch_teams.oef_core_protocol import query_pb2
 
@@ -20,12 +20,12 @@ class UpdateData:
         self.origin = origin
         self.db_structure = db_structure
 
-    def _set_uri(self, upd: dap_update_pb2.Update):
+    def _set_uri(self, upd: dap_update_pb2.DapUpdate):
         agent, oef_core = self.origin.uri.agent, self.origin.uri.oef_core
         upd.key.agent_name = agent
         upd.key.core_uri.extemd(oef_core)
 
-    def _set_tb_field(self, upd: dap_update_pb2.Update):
+    def _set_tb_field(self, upd: dap_update_pb2.DapUpdate):
         upd.tablename = self.db_structure["table"]
         upd.fieldname = self.db_structure["field"]
 
