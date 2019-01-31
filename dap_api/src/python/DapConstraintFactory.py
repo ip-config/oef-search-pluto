@@ -59,11 +59,17 @@ class DapConstraintFactory(object):
     def processFunc(self, field_value, constant_value, func):
         return func(field_value, constant_value)
 
-    def process(self, field_type, field_value, comparator, constant_type, constant_value):
+    def process(self, field_name, field_type, field_value, comparator, constant_type, constant_value):
         f = self.lookup(field_type, comparator, constant_type)
         if not f:
             raise BadValue("{} {} {} {}".format(field_type, comparator, constant_type, " is not known operation."))
         return self.processFunc(field_value, constant_value, f)
+
+    def createAttrMatcherProcessor(self, field_name, field_type, comparator, constant_type, constant_value):
+        f = self.lookup(field_type, comparator, constant_type)
+        if not f:
+            raise BadValue("{} {} {} {}".format(field_type, comparator, constant_type, " is not known operation."))
+        return lambda field_value: f(field_value, constant_value)
 
 g_dapConstraintFactory = DapConstraintFactory()
 

@@ -7,13 +7,14 @@ from dap_api.src.python.DapConstraintFactory import g_dapConstraintFactory
 
 class InMemoryDap(object):
 
+    # configuration is a JSON deserialised config object.
     # structure is a map of tablename -> { fieldname -> type}
 
-    def __init__(self, name, structure, constraint_factory=None):
+    def __init__(self, name, configuration):
         self.store = {}
         self.name = name
-        self.structure_pb = structure
-        self.constraint_factory = constraint_factory or g_dapConstraintFactory
+        self.structure_pb = configuration['structure']
+        self.constraint_factory = g_dapConstraintFactory
 
         self.tablenames = []
         self.structure = {}

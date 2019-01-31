@@ -1,14 +1,44 @@
 import unittest
+import sys
 
 from dap_api.src.python import DapInterface
+from dap_api.src.python import DapManager
 from dap_api.experimental.python import InMemoryDap
 from dap_api.src.protos import dap_update_pb2
 
 class UpdateTest(unittest.TestCase):
     def setUp(self):
         """Call before every test case."""
-        self.dap1 = InMemoryDap.InMemoryDap("dap1", { "wibbles": { "wibble": "string" } } );
-        self.dap2 = InMemoryDap.InMemoryDap("dap2", { "wobbles": { "wobble": "string" } } );
+        self.dapManager = DapManager.DapManager()
+
+        dapManagerConfig = {
+            "dap1": {
+                "class": "InMemoryDap",
+                "config": {
+                    "structure": {
+                        "wibbles": {
+                            "wibble": "string"
+                        },
+                    },
+                },
+            },
+            "dap2": {
+                "class": "InMemoryDap",
+                "config": {
+                    "structure": {
+                        "wobbles": {
+                            "wobble": "string"
+                        },
+                    },
+                },
+            },
+        }
+        self.dapManager.setup(
+            sys.modules[__name__],
+            dapManagerConfig)
+
+        self.dap1 = self.dapManager.getInstance("dap1")
+        self.dap2 = self.dapManager.getInstance("dap2")
 
     def tearDown(self):
         """Call after every test case."""

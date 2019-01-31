@@ -1,15 +1,60 @@
 import unittest
+import sys
 
 from dap_api.src.python import DapInterface
+from dap_api.src.python import DapManager
 from dap_api.experimental.python import InMemoryDap
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 
+current_module = sys.modules[__name__]
+
+import sys, inspect
+def getClasses(module):
+    r = {}
+    for name, obj in inspect.getmembers(module):
+        if inspect.ismodule(obj):
+            for name, obj in inspect.getmembers(obj):
+                if inspect.isclass(obj):
+                    r[name] = obj
+        if inspect.isclass(obj):
+            r[name] = obj
+    return r
+
 class QueryTest(unittest.TestCase):
     def setUp(self):
         """Call before every test case."""
-        self.dap1 = InMemoryDap.InMemoryDap("dap1", { "wibbles": { "wibble": "string" } } );
-        self.dap2 = InMemoryDap.InMemoryDap("dap2", { "wobbles": { "wobble": "string" } } );
+
+        self.dapManager = DapManager.DapManager()
+
+        dapManagerConfig = {
+            "dap1": {
+                "class": "InMemoryDap",
+                "config": {
+                    "structure": {
+                        "wibbles": {
+                            "wibble": "string"
+                        },
+                    },
+                },
+            },
+            "dap2": {
+                "class": "InMemoryDap",
+                "config": {
+                    "structure": {
+                        "wobbles": {
+                            "wobble": "string"
+                        },
+                    },
+                },
+            },
+        }
+        self.dapManager.setup(
+            sys.modules[__name__],
+            dapManagerConfig)
+
+        self.dap1 = self.dapManager.getInstance("dap1")
+        self.dap2 = self.dapManager.getInstance("dap2")
 
     def tearDown(self):
         """Call after every test case."""
@@ -31,15 +76,28 @@ class QueryTest(unittest.TestCase):
 
     def _setupAgents(self):
         for agent_name, wibble_value in [
-            ("007/James/Bond", "apple"),
-            ("White/Spy", "banana"),
-            ("Black/Spy", "carrot"),
+            ("007/James/Bond",   "apple"),
+            ("White/Spy",        "banana"),
+            ("Black/Spy",        "carrot"),
             ("86/Maxwell/Smart", "carrot"),
         ]:
             update = self._createUpdate()
             update.update[0].key.agent_name = agent_name
             update.update[0].value.s = wibble_value
             self.dap1.update(update)
+
+        for agent_name, wobble_value in [
+            ("007/James/Bond",   "apple"),
+            ("White/Spy",        "banana"),
+            ("Black/Spy",        "carrot"),
+            ("86/Maxwell/Smart", "carrot"),
+        ]:
+            update = self._createUpdate()
+            update.update[0].tablename = "wobbles"
+            update.update[0].fieldname = "wobble"
+            update.update[0].key.agent_name = agent_name
+            update.update[0].value.s = wobble_value
+            self.dap2.update(update)
 
 
     def testQuery(self):
@@ -77,5 +135,4 @@ class QueryTest(unittest.TestCase):
         dapQuery = self.dap1.makeQuery(qOr, "wibbles")
         results = list(self.dap1.query(dapQuery))
 
-        print(results)
         assert len(results) == 3
