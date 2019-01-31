@@ -8,6 +8,12 @@ message UpdateResponse {
     ResponseType status = 1;
 }
 
-message Response {
-    string name = 1;
+message SearchResponse {
+    message Item {
+        string agent = 1;
+        repeated string oef_core = 2;
+        double score = 3;
+    }
+
+    repeated Item result = 1;
 }

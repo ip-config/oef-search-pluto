@@ -78,19 +78,6 @@ class SearchEngine(DapInterface):
         avg_feature = np.add(avg_feature, self._string_to_vec(data.description))
         return avg_feature
 
-    def add(self, data: query_pb2.Query.DataModel):
-        avg_feature = self._dm_to_vec(data)
-        self._storage[avg_feature.tobytes()] = data
-
-    def search(self, query: str) -> str:
-        encoded = self._string_to_vec(query)
-        response = ""
-        for key in self._storage:
-            data = self._storage[key]
-            score = distance.cosine(np.frombuffer(key), encoded)
-            response += str(score) + " -> " + data.name
-        return response
-
     def describe(self):
         result = dap_description_pb2.DapDescription()
         result.name = self.name
