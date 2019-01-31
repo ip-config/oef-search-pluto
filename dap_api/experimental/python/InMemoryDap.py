@@ -2,8 +2,6 @@ from dap_api.src.protos import dap_description_pb2
 
 from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_api.src.python import DapQuery
-from dap_api.src.python.DapConstraintFactory import DapConstraintFactory
-from dap_api.src.python.DapConstraintFactory import g_dapConstraintFactory
 
 class InMemoryDap(object):
 
@@ -14,7 +12,6 @@ class InMemoryDap(object):
         self.store = {}
         self.name = name
         self.structure_pb = configuration['structure']
-        self.constraint_factory = g_dapConstraintFactory
 
         self.tablenames = []
         self.structure = {}
@@ -60,10 +57,14 @@ class InMemoryDap(object):
                 if dapQuery.testRow(row):
                     yield key
 
-    def makeQuery(self, query_pb, tablename):
-        dapQuery = DapQuery.DapQuery()
-        dapQuery.fromQueryProto(query_pb, self.constraint_factory, self.structure.get(tablename, {}))
-        return dapQuery
+    def createConstraint(self, constraint_pb, constraint_factory):
+        return
+
+  #  def makeQuery(self, query_pb, constraint_factory, tablename):
+  #      # This PB will be all the same table and all answerable by this object.
+  #      dapQuery = DapQuery.DapQuery()
+  #      dapQuery.fromQueryProto(query_pb, constraint_factory, self.structure.get(tablename, {}))
+  #      return dapQuery
 
     def _typeOfDapValue(self, dap_value):
         return {

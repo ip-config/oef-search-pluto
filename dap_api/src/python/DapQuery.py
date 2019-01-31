@@ -3,8 +3,8 @@ from fetch_teams.oef_core_protocol import query_pb2
 
 
 class DapQuery:
-    def __init__(self):
-        self.comp = None
+    def __init__(self, comp = None):
+        self.comp = comp
         self.data_model = None
         self.description = None
 
@@ -53,7 +53,7 @@ class DapQuery:
         }[set_pb.op]
         attr_type = field_types.get(attr_name, {}).get('type', None)
         constant_type, constant_value = self._SET_VALUES_toTypeVal(set_pb.vals)
-        func = constraint_factory.createAttrMatcherProcessor(attr_name, attr_type, comparator, constant_type, constant_value)
+        func = constraint_factory.createAttrMatcherProcessor(attr_type, comparator, constant_type, constant_value)
         return lambda row: func(row.get(attr_name, None))
 
     def _CONSTRAINT_EMBEDDING_toRowProcess(self, embedding_pb, attr_name, constraint_factory, field_types):
@@ -65,7 +65,8 @@ class DapQuery:
         resultdata = list(embedding_pb.val.v)
 
         constant_type, constant_value = ("embedding", resultdata)
-        return lambda row: constraint_factory.process(attr_type, row.get(attr_name, None), comparator, constant_type, constant_value)
+        func = constraint_factory.createAttrMatcherProcessor(attr_type, comparator, constant_type, constant_value)
+        return lambda row: func(row.get(attr_name, None))
 
     def _CONSTRAINT_RELATION_toRowProcess(self, relation_pb, attr_name, constraint_factory, field_types):
         comparator = {
@@ -76,16 +77,17 @@ class DapQuery:
             4: ">=",
             5: "!=",
         }[relation_pb.op]
-        attr_type = field_types.get(attr_name, {}).get('type', None)
+        attr_type_info = field_types.get(attr_name, {})
+        attr_type = attr_type_info.get('type', None)
         constant_type, constant_value = self._VALUE_toTypeVal(relation_pb.val)
-        func = constraint_factory.createAttrMatcherProcessor(attr_name, attr_type, comparator, constant_type, constant_value)
+        func = constraint_factory.createAttrMatcherProcessor(attr_type, comparator, constant_type, constant_value)
         return lambda row: func(row.get(attr_name, None))
 
     def _CONSTRAINT_RANGE_toRowProcess(self, range_pb, attr_name):
         comparator = "IN"
         attr_type = field_types.get(attr_name, {}).get('type', None)
         constant_type, constant_value = self._RANGE_VALUES_toTypeVal(range_pb.vals)
-        func = constraint_factory.createAttrMatcherProcessor(attr_name, attr_type, comparator, constant_type, constant_value)
+        func = constraint_factory.createAttrMatcherProcessor(attr_type, comparator, constant_type, constant_value)
         return lambda row: func(row.get(attr_name, None))
 
     def _CONSTRAINT_DISTANCE_toRowProcess(self, distance_pb, attr_name):
@@ -156,3 +158,4 @@ class DapQuery:
         if self.comp:
             return self.comp(row)
         return True
+

@@ -110,7 +110,7 @@ class QueryTest(unittest.TestCase):
         q.constraint.relation.op = 0
         q.constraint.relation.val.s = "carrot"
 
-        dapQuery = self.dap1.makeQuery(q, "wibbles")
+        dapQuery = self.dapManager.makeQuery(q, "dap1", "wibbles")
         results = list(self.dap1.query(dapQuery))
 
         assert len(results) == 2
@@ -132,6 +132,6 @@ class QueryTest(unittest.TestCase):
         q2.constraint.relation.val.s = "apple"
 
 
-        dapQuery = self.dap1.makeQuery(qOr, "wibbles")
+        dapQuery = self.dapManager.makeQuery(qOr, "dap1", "wibbles")
         results = list(self.dap1.query(dapQuery))
         assert len(results) == 3

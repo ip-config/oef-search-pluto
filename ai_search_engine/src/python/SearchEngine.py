@@ -1,5 +1,6 @@
 from fetch_teams.oef_core_protocol import query_pb2
 from utils.src.python.Logging import has_logger
+import gensim
 import gensim.downloader
 from nltk.tokenize import word_tokenize
 import nltk

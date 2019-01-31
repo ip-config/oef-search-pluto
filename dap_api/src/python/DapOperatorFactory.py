@@ -1,7 +1,7 @@
 import scipy.spatial.distance as distance
 
 
-class DapConstraintFactory(object):
+class DapOperatorFactory(object):
     def __init__(self):
         self.store = {}
 
@@ -53,7 +53,6 @@ class DapConstraintFactory(object):
 
     def compareVectors(self, a, b):
         d = distance.cosine(a,b)
-        print("Distance between the two vector: ", d)
         return d < 0.2
 
     def add(self, field_type, comparator, constant_type, truth_function):
@@ -64,20 +63,8 @@ class DapConstraintFactory(object):
         k = (field_type, comparator, constant_type)
         return self.store.get(k, None)
 
-    def processFunc(self, field_value, constant_value, func):
-        return func(field_value, constant_value)
-
-    def process(self, field_name, field_type, field_value, comparator, constant_type, constant_value):
+    def createAttrMatcherProcessor(self, field_type, comparator, constant_type, constant_value):
         f = self.lookup(field_type, comparator, constant_type)
         if not f:
-            raise Exception("{} {} {} {}".format(field_type, comparator, constant_type, " is not known operation."))
-        return self.processFunc(field_value, constant_value, f)
-
-    def createAttrMatcherProcessor(self, field_name, field_type, comparator, constant_type, constant_value):
-        f = self.lookup(field_type, comparator, constant_type)
-        if not f:
-            raise BadValue("{} {} {} {}".format(field_type, comparator, constant_type, " is not known operation."))
+            raise BadValue("{} {} {}".format(field_type, comparator, constant_type, " is not known operation."))
         return lambda field_value: f(field_value, constant_value)
-
-g_dapConstraintFactory = DapConstraintFactory()
-
