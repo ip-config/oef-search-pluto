@@ -14,6 +14,7 @@ def get_attr_b(name, desc, type=2):
     attr1.description = desc
     return attr1
 
+
 class QueryEmbeddingsTest(unittest.TestCase):
     def setUp(self):
         """Call before every test case."""
@@ -85,9 +86,9 @@ class QueryEmbeddingsTest(unittest.TestCase):
         print(dm2)
         engine = SearchEngine.SearchEngine()
 
-        embed1 = engine.add(dm1)
-        embed2 = engine.add(dm2)
-        embed3 = engine.add(dm3)
+        embed1 = engine._dm_to_vec(dm1)
+        embed2 = engine._dm_to_vec(dm2)
+        embed3 = engine._dm_to_vec(dm3)
 
 
         dmq = query_pb2.Query.DataModel()
@@ -99,7 +100,7 @@ class QueryEmbeddingsTest(unittest.TestCase):
             get_attr_b("pascal", "Under pressure")
         ])
 
-        self.embed3 = engine.add(dmq)
+        self.embed3 = engine._dm_to_vec(dmq)
 
         dmq2 = query_pb2.Query.DataModel()
         dmq2.name = "novels"
@@ -108,7 +109,7 @@ class QueryEmbeddingsTest(unittest.TestCase):
             get_attr_b("name", "Novel has a name"),
             get_attr_b("writer", "Somebody has written the pages"),
         ])
-        self.embed4 = engine.add(dmq2)
+        self.embed4 = engine._dm_to_vec(dmq2)
 
         print("======================================QUERY WEATHER======================================")
         print(dmq)
@@ -127,8 +128,6 @@ class QueryEmbeddingsTest(unittest.TestCase):
             update.update[0].key.agent_name = agent_name
             update.update[0].value.embedding.v.extend(wibble_value)
             self.dap1.update(update)
-
-
 
     def testQuery(self):
         """Test case A. note that all test method names must begin with 'test.'"""
@@ -158,26 +157,3 @@ class QueryEmbeddingsTest(unittest.TestCase):
         print(results2)
         assert len(results) == 2
         assert len(results2) == 2
-    #
-    # def testQueryOr(self):
-    #     """Test case A. note that all test method names must begin with 'test.'"""
-    #     self._setupAgents()
-    #
-    #     qOr = query_pb2.Query.ConstraintExpr()
-    #     q1 = qOr.or_.expr.add()
-    #     q2 = qOr.or_.expr.add()
-    #
-    #     q1.constraint.attribute_name = "wibble"
-    #     q1.constraint.relation.op = 0
-    #     q1.constraint.relation.val.s = "carrot"
-    #
-    #     q2.constraint.attribute_name = "wibble"
-    #     q2.constraint.relation.op = 0
-    #     q2.constraint.relation.val.s = "apple"
-    #
-    #
-    #     dapQuery = self.dap1.makeQuery(qOr, "wibbles")
-    #     results = list(self.dap1.query(dapQuery))
-    #
-    #     print(results)
-    #     assert len(results) == 3

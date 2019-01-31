@@ -85,9 +85,9 @@ class QueryEmbeddingsTest(unittest.TestCase):
         print(dm2)
         engine = SearchEngine.SearchEngine()
 
-        embed1 = engine.add(dm1)
-        embed2 = engine.add(dm2)
-        embed3 = engine.add(dm3)
+        embed1 = engine._dm_to_vec(dm1)
+        embed2 = engine._dm_to_vec(dm2)
+        embed3 = engine._dm_to_vec(dm3)
 
 
         dmq = query_pb2.Query.DataModel()
@@ -99,7 +99,7 @@ class QueryEmbeddingsTest(unittest.TestCase):
             get_attr_b("pascal", "Under pressure")
         ])
 
-        self.embed3 = engine.add(dmq)
+        self.embed3 = engine._dm_to_vec(dmq)
 
         dmq2 = query_pb2.Query.DataModel()
         dmq2.name = "novels"
@@ -108,7 +108,7 @@ class QueryEmbeddingsTest(unittest.TestCase):
             get_attr_b("name", "Novel has a name"),
             get_attr_b("writer", "Somebody has written the pages"),
         ])
-        self.embed4 = engine.add(dmq2)
+        self.embed4 = engine._dm_to_vec(dmq2)
 
         print("======================================QUERY WEATHER======================================")
         print(dmq)

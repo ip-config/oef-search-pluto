@@ -70,7 +70,7 @@ class DapConstraintFactory(object):
     def process(self, field_type, field_value, comparator, constant_type, constant_value):
         f = self.lookup(field_type, comparator, constant_type)
         if not f:
-            raise BadValue("{} {} {} {}".format(field_type, comparator, constant_type, " is not known operation."))
+            raise Exception("{} {} {} {}".format(field_type, comparator, constant_type, " is not known operation."))
         return self.processFunc(field_value, constant_value, f)
 
 g_dapConstraintFactory = DapConstraintFactory()
