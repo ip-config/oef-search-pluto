@@ -2,6 +2,7 @@ from api.src.proto import update_pb2
 from dap_api.src.protos import dap_update_pb2
 from dap_api.src.python.DapQuery import DapQuery
 from fetch_teams.oef_core_protocol import query_pb2
+from utils.src.python.Logging import has_logger
 
 
 class ProtoWrapper:
@@ -20,32 +21,43 @@ class UpdateData:
         self.origin = origin
         self.db_structure = db_structure
 
-    def _set_uri(self, upd: dap_update_pb2.DapUpdate):
-        agent, oef_core = self.origin.uri.agent, self.origin.uri.oef_core
+    def _set_uri(self, upd: dap_update_pb2.DapUpdate.TableFieldValue, origin: update_pb2.Update):
+        agent, oef_core = origin.uri.agent, origin.uri.oef_core
         upd.key.agent_name = agent
-        upd.key.core_uri.extemd(oef_core)
+        upd.key.core_uri.extend(oef_core)
 
-    def _set_tb_field(self, upd: dap_update_pb2.DapUpdate):
+    def _set_tb_field(self, upd: dap_update_pb2.DapUpdate.TableFieldValue):
         upd.tablename = self.db_structure["table"]
         upd.fieldname = self.db_structure["field"]
 
-    def _set_value(self, upd: dap_update_pb2.DapUpdate.DapValue):
+    def _set_value(self, upd: dap_update_pb2.DapUpdate.DapValue, origin: update_pb2.Update):
         upd.type = 6
-        upd.dm.name = self.origin.data_model.name
-        upd.dm.description = self.origin.data_model.description
-        upd.dm.attributes.extend(self.origin.data_model.attributes)
+        upd.dm.name = origin.data_model.name
+        upd.dm.description = origin.data_model.description
+        upd.dm.attributes.extend(origin.data_model.attributes)
 
     def toDapUpdate(self) -> update_pb2.Update:
+        updates = []
+        try:
+            updates = self.origin.list
+        except:
+            updates = [self.origin]
+        upd_list = []
+        for origin in updates:
+            upd = dap_update_pb2.DapUpdate.TableFieldValue()
+            self._set_tb_field(upd)
+            self._set_uri(upd, origin)
+            self._set_value(upd.value, origin)
+            upd_list.append(upd)
         upd = dap_update_pb2.DapUpdate()
-        self.set_tb_field(upd)
-        self.set_uri(upd)
-        self.et_value(upd.value)
+        upd.update.extend(upd_list)
         return upd
 
 
 class QueryData:
 
-    def __init__(self, origin: query_pb2.Query):
+    @has_logger
+    def __init__(self, origin: query_pb2.Query.Model):
         self.origin = origin
         if not self.origin:
             self.origin = query_pb2.Query()
@@ -56,7 +68,15 @@ class QueryData:
     def add_data_model(self, dm):
         self.origin.data_model = dm
 
+    # TODO support for constraints
     def toDapQuery(self):
         q = DapQuery()
-        q.fromQueryProto(self.origin)
+        try:
+            q.data_model = self.origin.model
+        except AttributeError:
+            self.log.info("Query doesn't have a data model!")
+        try:
+            q.description = self.origin.description
+        except AttributeError:
+            self.log.info("Query doesn't have description!")
         return q

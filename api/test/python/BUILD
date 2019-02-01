@@ -15,7 +15,8 @@ py_binary(
     main = "RegisterAgents.py",
     deps = [
         "//network/src/python/async_socket:async_socket",
-        "//api/src/proto:py_api_pb"
+        "//api/src/proto:py_api_pb",
+        "//fetch_teams/oef_core_protocol:py_oef_protocol",
     ],
     srcs_version = "PY3",
 )

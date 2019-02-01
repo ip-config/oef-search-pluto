@@ -7,7 +7,7 @@ from fetch_teams.bottle import bottle
 import sys
 from utils.src.python.Logging import get_logger, configure as configure_logging
 from api.src.python.EndpointSearch import SearchQuery
-from api.src.python.EndpointUpdate import UpdateEndpoint
+from api.src.python.EndpointUpdate import UpdateEndpoint, BlkUpdateEndpoint
 from ai_search_engine.src.python import SearchEngine
 from dap_api.src.python.DapManager import DapManager
 import api.src.python.ProtoWrappers as ProtoWrappers
@@ -90,6 +90,8 @@ if __name__ == "__main__":
     #modules
     search_module = SearchQuery(search_engine, query_wrapper)
     update_module = UpdateEndpoint(search_engine, update_wrapper)
+    blk_update_module = BlkUpdateEndpoint(search_engine, update_wrapper)
+
 
     #router
     router_ = BackendRouter()
@@ -97,6 +99,8 @@ if __name__ == "__main__":
     router_.register_handler("search", search_module)
     router_.register_serializer("update", update_module)
     router_.register_handler("update", update_module)
+    router_.register_serializer("blk_update", blk_update_module)
+    router_.register_handler("blk_update", blk_update_module)
 
     executor.submit(run_socket_server, "0.0.0.0", socket_port_number, router_)
     executor.submit(run_http_server, "0.0.0.0", http_port_number, certificate_file, router_)

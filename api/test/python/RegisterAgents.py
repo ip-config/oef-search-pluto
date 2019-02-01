@@ -1,6 +1,7 @@
 import asyncio
 from network.src.python.async_socket.AsyncSocket import client_handler, run_client, ClientTransport
-from api.src.proto import update_pb2
+from api.src.proto import update_pb2, response_pb2
+from fetch_teams.oef_core_protocol import query_pb2
 
 
 def get_attr_b(name, desc, t=2):
@@ -63,12 +64,13 @@ def create_blk_update() -> update_pb2.Update.BulkUpdate:
 
 @client_handler
 async def client(transport: ClientTransport):
+    print("connected to the server")
     msg = create_blk_update()
-    await transport.write(msg.SerializeToString(), "update")
+    await transport.write(msg.SerializeToString(), "blk_update")
     response = await transport.read()
-    resp = response_pb2.Response()
+    resp = response_pb2.UpdateResponse()
     resp.ParseFromString(response)
-    print("Response from server: ", resp.name)
+    print("Response from server: ", resp.status)
     transport.close()
 
 loop = asyncio.get_event_loop()

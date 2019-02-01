@@ -108,8 +108,12 @@ class SearchEngine(DapInterface):
                 raise DapBadUpdateRow("Bad type", upd.tablename, upd.key.agent_name, upd.key.core_uri, upd.fieldname, k)
 
             vec = self._dm_to_vec(v)
+            if not any(vec):
+                self.log.warning("Failed to calculate embedding for dm!")
+                print(v)
+                raise Exception("Embedding failed")
             for core_uri in upd.key.core_uri:
-                row  = self.store.setdefault(upd.tablename, {}).setdefault(
+                row = self.store.setdefault(upd.tablename, {}).setdefault(
                     (upd.key.agent_name, core_uri), {}
                 )
                 row[upd.fieldname] = v
@@ -128,7 +132,10 @@ class SearchEngine(DapInterface):
         result = []
         for key, data in self.store[table].items():
             dist = distance.cosine(data["embedding"], enc_query)
-            if dist < score_threshold:
-                result.append((key, dist))
+            result.append((key, dist))
         ordered = sorted(result, key=lambda x: x[1])
-        return ordered
+        result = [ordered[0]]
+        for i in range(1, len(ordered)):
+            if ordered[i][1] < score_threshold:
+                result.append(ordered[i])
+        return result

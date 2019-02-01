@@ -15,20 +15,26 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler):
         self._proto_wrapper = proto_wrapper
 
     @serializer
-    def serialize(self, data: bytes) -> query_pb2.Query:
+    def serialize(self, data: bytes) -> query_pb2.Query.Model:
         pass
 
     @deserializer
     def deserialize(self, proto_msg: response_pb2.SearchResponse) -> bytes:
         pass
 
-    async def handle_message(self, msg: query_pb2.Query) -> response_pb2.SearchResponse:
+    async def handle_message(self, msg: query_pb2.Query.Model) -> response_pb2.SearchResponse:
         resp = response_pb2.SearchResponse()
-        result = self._search_engine.query(self._proto_wrapper.get_instance(msg))
+        proto = self._proto_wrapper.get_instance(msg)
+        result = self._search_engine.query(proto.toDapQuery())
+        items = []
         for element in result:
             item = response_pb2.SearchResponse.Item()
-            item.agent = element[0][0]
-            item.oef_core.extend(element[0][1])
+            item.agent = element[0][1]
+            if type(element[0][1]) == list:
+                item.oef_core.extend(element[0][0])
+            else:
+                item.oef_core.extend([element[0][0]])
             item.score = element[1]
-            resp.result.add(item)
+            items.append(item)
+        resp.result.extend(items)
         return resp
