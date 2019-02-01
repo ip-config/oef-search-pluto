@@ -1,9 +1,28 @@
 import sys
 import inspect
 
+from dap_api.src.python import DapOperatorFactory
+from dap_api.src.python import DapQuery
+from dap_api.src.python import DapQueryRepn
+
 class DapManager(object):
+    class PopulateFieldInformationVisitor(DapQueryRepn.DapQueryRepn.Visitor):
+        def __init__(self, field_infos):
+            self.field_infos = field_infos
+
+        def visitNode(self, node, depth):
+            pass
+
+        def visitLeaf(self, node, depth):
+            field_info = self.field_infos[node.target_field_name]
+            node.target_field_type = field_info['type']
+            node.target_table_name = field_info['table']
+            node.dap_name = field_info['dap']
+
     def __init__(self):
         self.instances = {}
+        self.operator_factory = DapOperatorFactory.DapOperatorFactory()
+        self.structures = {}
 
     def setup(self, module, config):
         self.classmakers = self._listClasses(module)
@@ -36,6 +55,10 @@ class DapManager(object):
                         'table': table_desc_pb.name,
                         'type': field_description_pb.type,
                     }
+                    self.structures.setdefault(
+                        instance_name, {}).setdefault(
+                            table_desc_pb.name, {}).setdefault(
+                                field_description_pb.name, {})['type']=field_description_pb.type
 
         return r
 
@@ -56,10 +79,20 @@ class DapManager(object):
                 r[name]=obj
         return r
 
-#        g = globals().copy()
-#    for name, obj in g.items():
-#        print(name,obj)
+    def makeQuery(self, query_pb, dapname, tablename):
+        dapQuery = DapQuery.DapQuery()
+        dap = self.instances[dapname]
+        dapQuery.fromQueryProto(query_pb, self.operator_factory, self.structures[dapname][tablename])
+        return dapQuery
 
-    # We implement this so we can be a DapConstraintFactory
-    def process(self, field_name, field_type, field_value, comparator, constant_type, constant_value):
-        pass
+    def makeQueryRepn(self, query_pb):
+        dapQueryRepn = DapQueryRepn.DapQueryRepn()
+        dapQueryRepn.fromQueryProto(query_pb)
+
+        # now fill in all the types.
+
+        v = DapManager.PopulateFieldInformationVisitor(self.fields)
+        dapQueryRepn.visit(v)
+        
+
+        return dapQueryRepn

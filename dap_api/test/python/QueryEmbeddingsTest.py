@@ -17,7 +17,7 @@ def get_attr_b(name, desc, type=2):
 class QueryEmbeddingsTest(unittest.TestCase):
     def setUp(self):
         """Call before every test case."""
-        self.dap1 = InMemoryDap.InMemoryDap("dap1", { "wibbles": { "wibble": "string", "service": "embedding"} } );
+        self.dap1 = InMemoryDap.InMemoryDap("dap1", { "structure": { "wibbles": { "wibble": "string", "service": "embedding"} } } );
 
     def tearDown(self):
         """Call after every test case."""

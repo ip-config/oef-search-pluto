@@ -3,28 +3,24 @@ import sys
 
 from dap_api.src.python import DapInterface
 from dap_api.src.python import DapManager
+from dap_api.src.python import DapQueryRepn
 from dap_api.experimental.python import InMemoryDap
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 
-current_module = sys.modules[__name__]
+class ShowVisitor(DapQueryRepn.DapQueryRepn.Visitor):
+    def __init__(self):
+        pass
 
-import sys, inspect
-def getClasses(module):
-    r = {}
-    for name, obj in inspect.getmembers(module):
-        if inspect.ismodule(obj):
-            for name, obj in inspect.getmembers(obj):
-                if inspect.isclass(obj):
-                    r[name] = obj
-        if inspect.isclass(obj):
-            r[name] = obj
-    return r
+    def visitNode(self, node, depth):
+        print("{} NODE{}: {}".format(depth*"  ", type(node), node.printable()))
 
-class QueryTest(unittest.TestCase):
+    def visitLeaf(self, node, depth):
+        print("{} LEAF{}: {}".format(depth*"  ", type(node), node.printable()))
+
+class DapManagerTest(unittest.TestCase):
     def setUp(self):
         """Call before every test case."""
-
         self.dapManager = DapManager.DapManager()
 
         dapManagerConfig = {
@@ -52,13 +48,8 @@ class QueryTest(unittest.TestCase):
         self.dapManager.setup(
             sys.modules[__name__],
             dapManagerConfig)
-
         self.dap1 = self.dapManager.getInstance("dap1")
         self.dap2 = self.dapManager.getInstance("dap2")
-
-    def tearDown(self):
-        """Call after every test case."""
-        pass
 
     def _createUpdate(self):
         update = dap_update_pb2.DapUpdate()
@@ -70,9 +61,6 @@ class QueryTest(unittest.TestCase):
         newvalue.key.agent_name = "007/James/Bond"
         newvalue.key.core_uri.append("localhost:10000")
         return update
-
-    def _createQueryProto(self):
-        q = py_oef_protocol_pb2.ConstraintExpr()
 
     def _setupAgents(self):
         for agent_name, wibble_value in [
@@ -87,10 +75,10 @@ class QueryTest(unittest.TestCase):
             self.dap1.update(update)
 
         for agent_name, wobble_value in [
-            ("007/James/Bond",   "apple"),
-            ("White/Spy",        "banana"),
-            ("Black/Spy",        "carrot"),
-            ("86/Maxwell/Smart", "carrot"),
+            ("007/James/Bond",   "apple2"),
+            ("White/Spy",        "banana2"),
+            ("Black/Spy",        "carrot22"),
+            ("86/Maxwell/Smart", "carrot2"),
         ]:
             update = self._createUpdate()
             update.update[0].tablename = "wobbles"
@@ -100,38 +88,28 @@ class QueryTest(unittest.TestCase):
             self.dap2.update(update)
 
 
-    def testQuery(self):
-        """Test case A. note that all test method names must begin with 'test.'"""
-        self._setupAgents()
-
-        q = query_pb2.Query.ConstraintExpr()
-
-        q.constraint.attribute_name = "wibble"
-        q.constraint.relation.op = 0
-        q.constraint.relation.val.s = "carrot"
-
-        dapQuery = self.dapManager.makeQuery(q, "dap1", "wibbles")
-        results = list(self.dap1.query(dapQuery))
-
-        assert len(results) == 2
-
-    def testQueryOr(self):
-        """Test case A. note that all test method names must begin with 'test.'"""
-        self._setupAgents()
-
-        qOr = query_pb2.Query.ConstraintExpr()
-        q1 = qOr.or_.expr.add()
-        q2 = qOr.or_.expr.add()
+    def createDapSpanningQuery(self):
+        qAnd = query_pb2.Query.ConstraintExpr()
+        q1 = qAnd.and_.expr.add()
+        q2 = qAnd.and_.expr.add()
 
         q1.constraint.attribute_name = "wibble"
         q1.constraint.relation.op = 0
         q1.constraint.relation.val.s = "carrot"
 
-        q2.constraint.attribute_name = "wibble"
+        q2.constraint.attribute_name = "wobble"
         q2.constraint.relation.op = 0
-        q2.constraint.relation.val.s = "apple"
+        q2.constraint.relation.val.s = "carrot2"
 
+        return qAnd
 
-        dapQuery = self.dapManager.makeQuery(qOr, "dap1", "wibbles")
-        results = list(self.dap1.query(dapQuery))
-        assert len(results) == 3
+    def testQueryWriter(self):
+        self._setupAgents()
+        q = self.createDapSpanningQuery()
+
+        repn = self.dapManager.makeQueryRepn(q)
+#        repn.print()
+
+        sv = ShowVisitor()
+        repn.visit(sv)
+
