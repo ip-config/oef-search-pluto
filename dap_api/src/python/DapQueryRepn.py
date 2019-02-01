@@ -17,6 +17,11 @@ class DapQueryRepn(object):
             self.combiner = combiner
             self.common_target_table_name = None
             self.common_dap_name = None
+            self.name = "?"
+
+        def Clear(self):
+            self.leaves = []
+            self.subnodes = []
 
         def printable(self):
             return "{} -- {} over {}, {}".format(
@@ -29,6 +34,7 @@ class DapQueryRepn(object):
         def print(self, depth=0):
             print(depth*"  ", self.printable())
             for n in self.subnodes:
+                print("SUBNODE:")
                 n.print(depth+1)
             for leaf in self.leaves:
                 print((depth+1)*"  ", leaf.printable())
@@ -42,9 +48,14 @@ class DapQueryRepn(object):
                 ]
             )
             self.common_dap_name = None
-            print("MergeDaps:", dap_names)
             if len(dap_names) == 1:
                 self.common_dap_name = list(dap_names)[0]
+
+        def Add(self, new_child):
+            if isinstance(new_child, DapQueryRepn.Branch):
+                self.subnodes.append(new_child)
+            else:
+                self.leaves.append(new_child)
 
     class Leaf(object):
         def __init__(self,
@@ -67,6 +78,7 @@ class DapQueryRepn(object):
             self.target_table_name = target_table_name
 
             self.dap_name          = dap_name
+            self.name = "?"
 
         def printable(self):
             return "{} -- {}.{}.{} ({}) {} {} ({}) ==> {}".format(
@@ -124,7 +136,6 @@ class DapQueryRepn(object):
                 visitor.visitLeaf(leaf, depth+1)
 
     def fromQueryProto(self, pb):
-        print("Hmm")
         try:
             ce_pb = pb.constraints
         except AttributeError:
@@ -139,4 +150,5 @@ class DapQueryRepn(object):
             pass
 
         queryFromProto = DapQueryRepnFromProtoBuf.DapQueryRepnFromProtoBuf()
-        self.root.subnodes = [ queryFromProto._CONSTRAINT_EXPR_toRepn(ce_pb) ]
+        self.root.Clear()
+        self.root.Add(queryFromProto._CONSTRAINT_EXPR_toRepn(ce_pb))

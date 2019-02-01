@@ -3,6 +3,7 @@ from abc import abstractmethod
 from typing import Callable
 
 from dap_api.src.python import DapQueryRepn
+from dap_api.src.python import SubQueryInterface
 
 class DapInterface(abc.ABC):
     def __init__():
@@ -18,22 +19,6 @@ class DapInterface(abc.ABC):
     @abstractmethod
     def describe(self):
         pass
-
-
-    """This function queries one or more tables in this DAP, applying filtering and returns
-    a list of all matching Agents which are in the pre-filtered list.
-
-    Args:
-      query (DapQuery): A query subtree which can be handled by this DAP.
-      agents (DapResult): A sub-result which can be used to optimise or post-filter the results or NONE.
-
-    Returns:
-      DapResult
-    """
-    @abstractmethod
-    def query(self, query, agents=None):
-        pass
-
 
     """This function will be called with any update to this DAP.
 
@@ -55,14 +40,14 @@ class DapInterface(abc.ABC):
       update (DapUpdate): The update for this DAP.
 
     Returns:
-      Either a suitable QueryExecutionInterface object, or None to let the DapManager handle things.
+      Either a suitable SubQueryInterface object, or None to let the DapManager handle things.
     """
     @abstractmethod
-    def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch):
+    def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
         return None
 
     """This function will be called with leaf nodes of the query's
-    AST.  The result should be a QueryConstraintMatcherInterface
+    AST.  The result should be a SubQueryInterface for the constraint object
     object OR None if the constraint cannot be matched.
 
     Args:
@@ -72,7 +57,7 @@ class DapInterface(abc.ABC):
       Either a suitable QueryExecutionInterface object, or None to let the DapManager handle things.
     """
     @abstractmethod
-    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> Callable[[dict], bool]:
+    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:
         pass
 
 class DapBadUpdateRow(Exception):

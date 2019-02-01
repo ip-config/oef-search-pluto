@@ -141,10 +141,7 @@ class DapQueryRepnFromProtoBuf(object):
         r = DapQueryRepn.DapQueryRepn.Branch(combiner=combiner)
         for x in subs:
             newnode = self._CONSTRAINT_EXPR_toRepn(x)
-            if isinstance(newnode, DapQueryRepn.DapQueryRepn.Branch):
-                r.subnodes.append(newnode)
-            else:
-                r.leaves.append(newnode)
+            r.Add(newnode)
         return r
 
     def fromQueryProto(self, pb):

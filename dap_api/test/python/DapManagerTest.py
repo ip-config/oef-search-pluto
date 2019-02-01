@@ -93,12 +93,11 @@ class DapManagerTest(unittest.TestCase):
 
         return qAnd
 
-    def testQueryWriter(self):
+    def XtestQueryWriter(self):
         self._setupAgents()
         q = self.createDapSpanningQuery()
-
-        repn = self.dapManager.makeQueryRepn(q)
-        repn.print()
-
+        repn = self.dapManager.makeQuery(q)
         r = self.dapManager.execute(repn)
-        print(r)
+
+        assert len(r) == 1
+        assert r[0][0] == '86/Maxwell/Smart'

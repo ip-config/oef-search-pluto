@@ -3,6 +3,7 @@ from typing import Callable
 from dap_api.src.protos import dap_description_pb2
 
 from dap_api.src.python import DapInterface
+from dap_api.src.python import SubQueryInterface
 from dap_api.src.python import DapOperatorFactory
 from dap_api.src.python import DapQueryRepn
 from dap_api.src.python.DapInterface import DapBadUpdateRow
@@ -57,16 +58,16 @@ class InMemoryDap(DapInterface.DapInterface):
     Returns:
       DapResult
     """
-    def query(self, dapQuery, agents=None):
-        for table_name, table in self.store.items():
-            if agents:
-                for key in agents:
-                    row=table[key]
-                    if dapQuery.testRow(row):
-                        yield key
-            for key, row in table.items():
-                if dapQuery.testRow(row):
-                    yield key
+    #def query(self, dapQuery, agents=None):
+    #    for table_name, table in self.store.items():
+    #        if agents:
+    #            for key in agents:
+    #                row=table[key]
+    #                if dapQuery.testRow(row):
+    #                    yield key
+    #        for key, row in table.items():
+    #            if dapQuery.testRow(row):
+    #                yield key
 
     def processRows(self, rowProcessor, agents=None):
         for table_name, table in self.store.items():
@@ -81,17 +82,24 @@ class InMemoryDap(DapInterface.DapInterface):
                         yield key
 
     # returns an object with an execute(agents=None) -> [agent]
-    def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch):
+    def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
         return None
 
-    # returns a function of type (row) -> bool
-    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf):
-        func = self.operatorFactory.createAttrMatcherProcessor(
-            dapQueryRepnLeaf.target_field_type,
-            dapQueryRepnLeaf.operator,
-            dapQueryRepnLeaf.query_field_type,
-            dapQueryRepnLeaf.query_field_value)
-        return lambda row: func(row.get(dapQueryRepnLeaf.target_field_name, None))
+    class ConstraintProcessor(SubQueryInterface.SubQueryInterface):
+        def __init__(self, inMemoryDap, rowProcessor, target_field_name):
+            self.inMemoryDap = inMemoryDap
+            self.func = lambda row: rowProcessor(row.get(target_field_name, None))
+
+        def execute(self, agents=None):
+            yield from self.inMemoryDap.processRows(self.func, agents)
+
+    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:
+        rowProcessor = self.operatorFactory.createAttrMatcherProcessor(
+                dapQueryRepnLeaf.target_field_type,
+                dapQueryRepnLeaf.operator,
+                dapQueryRepnLeaf.query_field_type,
+                dapQueryRepnLeaf.query_field_value)
+        return InMemoryDap.ConstraintProcessor(self, rowProcessor, dapQueryRepnLeaf.target_field_name)
 
   #  def makeQuery(self, query_pb, constraint_factory, tablename):
   #      # This PB will be all the same table and all answerable by this object.

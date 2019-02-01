@@ -48,7 +48,7 @@ class DapManager(object):
             return True
 
         def visitLeaf(self, node, depth):
-            node.row_processor = self.dapmanager.getInstance(node.dap_name).constructQueryConstraintObject(node)
+            node.query = self.dapmanager.getInstance(node.dap_name).constructQueryConstraintObject(node)
 
     def __init__(self):
         self.instances = {}
@@ -110,18 +110,11 @@ class DapManager(object):
                 r[name]=obj
         return r
 
-    def makeQuery(self, query_pb, dapname, tablename):
-        dapQuery = DapQuery.DapQuery()
-        dap = self.instances[dapname]
-        dapQuery.fromQueryProto(query_pb, self.operator_factory, self.structures[dapname][tablename])
-        return dapQuery
-
-    def makeQueryRepn(self, query_pb):
+    def makeQuery(self, query_pb):
         dapQueryRepn = DapQueryRepn.DapQueryRepn()
         dapQueryRepn.fromQueryProto(query_pb)
 
         # now fill in all the types.
-
         v = DapManager.PopulateFieldInformationVisitor(self.fields)
         dapQueryRepn.visit(v)
 
@@ -133,7 +126,6 @@ class DapManager(object):
     def execute(self, dapQueryRepn):
         v1 = DapManager.PopulateActionsVisitorDescentPass(self)
         dapQueryRepn.visitDescending(v1)
-        dapQueryRepn.root.print()
         return list(self._execute(dapQueryRepn.root))
 
     def _execute(self, node, agents=None):
@@ -150,13 +142,13 @@ class DapManager(object):
         for n in node.subnodes:
             yield from self._execute(n, agents)
         for n in node.leaves:
-            yield from self.instances[n.dap_name].processRows(n.row_processor)
+            yield from n.query.execute()
 
     # This is naive -- there's a functional way of making this more efficient.
     def _executeAnd(self, node, agents=None):
         if agents == None:
             if len(node.leaves) > 0:
-                agents = self.instances[node.leaves[0].dap_name].processRows(node.leaves[0].row_processor)
+                agents = list(node.leaves[0].query.execute())
 
         if agents == None:
             if len(node.subnodes) > 0:
@@ -168,7 +160,7 @@ class DapManager(object):
 
         agents = list(agents)
         for n in node.leaves:
-            agents = list(self.instances[n.dap_name].processRows(n.row_processor, agents))
+            agents = list(n.query.execute(agents))
             if len(agents) == 0:
                 return []
 
