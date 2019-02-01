@@ -10,12 +10,13 @@ import numpy as np
 import scipy.spatial.distance as distance
 from dap_api.src.python.DapInterface import DapInterface, DapBadUpdateRow
 from dap_api.src.protos.dap_update_pb2 import DapUpdate
+from dap_api.src.protos import dap_description_pb2
 from dap_api.src.python.DapQuery import DapQuery
 
 
 class SearchEngine(DapInterface):
     @has_logger
-    def __init__(self, name="SearchEngineStorage", structure={"dm_store": {"data_model": "dm", "embedding": "embedding"}}):
+    def __init__(self, name, config):
         self._storage = {}
         nltk.download('stopwords')
         nltk.download('punkt')
@@ -28,7 +29,7 @@ class SearchEngine(DapInterface):
 
         self.store = {}
         self.name = name
-        self.structure_pb = structure
+        self.structure_pb = config["structure"]
 
         self.tablenames = []
         self.structure = {}
@@ -79,19 +80,6 @@ class SearchEngine(DapInterface):
         avg_feature = np.add(avg_feature, self._string_to_vec(data.description))
         return avg_feature
 
-    def add(self, data: query_pb2.Query.DataModel):
-        avg_feature = self._dm_to_vec(data)
-        self._storage[avg_feature.tobytes()] = data
-
-    def search(self, query: str) -> str:
-        encoded = self._string_to_vec(query)
-        response = ""
-        for key in self._storage:
-            data = self._storage[key]
-            score = distance.cosine(np.frombuffer(key), encoded)
-            response += str(score) + " -> " + data.name
-        return response
-
     def describe(self):
         result = dap_description_pb2.DapDescription()
         result.name = self.name
@@ -121,6 +109,10 @@ class SearchEngine(DapInterface):
                 raise DapBadUpdateRow("Bad type", upd.tablename, upd.key.agent_name, upd.key.core_uri, upd.fieldname, k)
 
             vec = self._dm_to_vec(v)
+            if not any(vec):
+                self.log.warning("Failed to calculate embedding for dm!")
+                print(v)
+                raise Exception("Embedding failed")
             for core_uri in upd.key.core_uri:
                 row = self.store.setdefault(upd.tablename, {}).setdefault(
                     (upd.key.agent_name, core_uri), {}
@@ -129,19 +121,24 @@ class SearchEngine(DapInterface):
                 row["embedding"] = vec
 
     def query(self, query: DapQuery, agents=None):
+        if len(self._storage) == 0:
+            return []
         enc_query = np.zeros((self._encoding_dim,))
         if query.data_model:
             enc_query = np.add(enc_query, self._dm_to_vec(query.data_model))
         if query.description:
             enc_query = np.add(enc_query, self._string_to_vec(query.description))
         if not np.any(enc_query):
-            return
-        table = "dm_store"
+            return []
+        table = next(iter(self.structure.keys()))
         score_threshold = 0.2
         result = []
         for key, data in self.store[table].items():
             dist = distance.cosine(data["embedding"], enc_query)
-            if dist < score_threshold:
-                result.append((key, dist))
+            result.append((key, dist))
         ordered = sorted(result, key=lambda x: x[1])
-        return ordered
+        result = [ordered[0]]
+        for i in range(1, len(ordered)):
+            if ordered[i][1] < score_threshold:
+                result.append(ordered[i])
+        return result

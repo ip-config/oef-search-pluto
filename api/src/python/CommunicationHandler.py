@@ -5,10 +5,12 @@ from api.src.python.BackendRouter import BackendRouter
 from fetch_teams.bottle import SSLWSGIRefServer
 from fetch_teams.bottle import bottle
 import sys
-from api.src.python.EndpointSearch import SearchQuery
-from api.src.python.EndpointUpdate import UpdateEndpoint
-from ai_search_engine.src.python.SearchEngine import SearchEngine
 from utils.src.python.Logging import get_logger, configure as configure_logging
+from api.src.python.EndpointSearch import SearchQuery
+from api.src.python.EndpointUpdate import UpdateEndpoint, BlkUpdateEndpoint
+from ai_search_engine.src.python import SearchEngine
+#from dap_api.src.python.DapManager import DapManager
+import api.src.python.ProtoWrappers as ProtoWrappers
 
 
 def socket_handler(router: BackendRouter):
@@ -59,10 +61,44 @@ if __name__ == "__main__":
     if len(sys.argv) == 4:
         socket_port_number = sys.argv[3]
 
+    #DAPManager
+   #dap_manager = DapManager()
+
+    # dap_manager_config = {
+    #     "search_engine": {
+    #         "class": "SearchEngine",
+    #         "config": {
+    #             "structure": {
+    #                 "dm_store": {
+    #                     "data_model": "dm"
+    #                 }
+    #             }
+    #         }
+    #     }
+    # }
+
+    #dap_manager.setup(sys.modules[__name__], dap_manager_config)
+
+    update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, {
+        "table": "dm_store",
+        "field": "data_model"
+    })
+    query_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.QueryData)
+
+    #search_engine = dap_manager.getInstance("search_engine")
+    search_engine = SearchEngine.SearchEngine("search_engine", {
+                "structure": {
+                    "dm_store": {
+                        "data_model": "dm"
+                    }
+                }
+            })
+
     #modules
-    search_engine = SearchEngine()
-    search_module = SearchQuery(search_engine)
-    update_module = UpdateEndpoint(search_engine)
+    search_module = SearchQuery(search_engine, query_wrapper)
+    update_module = UpdateEndpoint(search_engine, update_wrapper)
+    blk_update_module = BlkUpdateEndpoint(search_engine, update_wrapper)
+
 
     #router
     router_ = BackendRouter()
@@ -70,6 +106,8 @@ if __name__ == "__main__":
     router_.register_handler("search", search_module)
     router_.register_serializer("update", update_module)
     router_.register_handler("update", update_module)
+    router_.register_serializer("blk_update", blk_update_module)
+    router_.register_handler("blk_update", blk_update_module)
 
     executor.submit(run_socket_server, "0.0.0.0", socket_port_number, router_)
     executor.submit(run_http_server, "0.0.0.0", http_port_number, certificate_file, router_)
