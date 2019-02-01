@@ -1,8 +1,8 @@
 import abc
 from abc import abstractmethod
-# We don't really need this, because it's DUCK TYPED, but this is the
-# interface definition for reference.
+from typing import Callable
 
+from dap_api.src.python import DapQueryRepn
 
 class DapInterface(abc.ABC):
     def __init__():
@@ -47,6 +47,33 @@ class DapInterface(abc.ABC):
     def update(self, update_data):
         pass
 
+    """This function will be called with parts of the query's AST. If
+    the interface can construct a unified query for the whole subtree
+    it may do so.
+
+    Args:
+      update (DapUpdate): The update for this DAP.
+
+    Returns:
+      Either a suitable QueryExecutionInterface object, or None to let the DapManager handle things.
+    """
+    @abstractmethod
+    def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch):
+        return None
+
+    """This function will be called with leaf nodes of the query's
+    AST.  The result should be a QueryConstraintMatcherInterface
+    object OR None if the constraint cannot be matched.
+
+    Args:
+      update (DapUpdate): The update for this DAP.
+
+    Returns:
+      Either a suitable QueryExecutionInterface object, or None to let the DapManager handle things.
+    """
+    @abstractmethod
+    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> Callable[[dict], bool]:
+        pass
 
 class DapBadUpdateRow(Exception):
     def __init__(

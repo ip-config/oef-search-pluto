@@ -1,9 +1,13 @@
+from typing import Callable
+
 from dap_api.src.protos import dap_description_pb2
 
+from dap_api.src.python import DapInterface
+from dap_api.src.python import DapOperatorFactory
+from dap_api.src.python import DapQueryRepn
 from dap_api.src.python.DapInterface import DapBadUpdateRow
-from dap_api.src.python import DapQuery
 
-class InMemoryDap(object):
+class InMemoryDap(DapInterface.DapInterface):
 
     # configuration is a JSON deserialised config object.
     # structure is a map of tablename -> { fieldname -> type}
@@ -12,6 +16,8 @@ class InMemoryDap(object):
         self.store = {}
         self.name = name
         self.structure_pb = configuration['structure']
+
+        self.operatorFactory = DapOperatorFactory.DapOperatorFactory()
 
         self.tablenames = []
         self.structure = {}
@@ -53,12 +59,39 @@ class InMemoryDap(object):
     """
     def query(self, dapQuery, agents=None):
         for table_name, table in self.store.items():
+            if agents:
+                for key in agents:
+                    row=table[key]
+                    if dapQuery.testRow(row):
+                        yield key
             for key, row in table.items():
                 if dapQuery.testRow(row):
                     yield key
 
-    def createConstraint(self, constraint_pb, constraint_factory):
-        return
+    def processRows(self, rowProcessor, agents=None):
+        for table_name, table in self.store.items():
+            if agents == None:
+                for key, row in table.items():
+                    if rowProcessor(row):
+                        yield key
+            else:
+                for key in agents:
+                    row=table[key]
+                    if rowProcessor(row):
+                        yield key
+
+    # returns an object with an execute(agents=None) -> [agent]
+    def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch):
+        return None
+
+    # returns a function of type (row) -> bool
+    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf):
+        func = self.operatorFactory.createAttrMatcherProcessor(
+            dapQueryRepnLeaf.target_field_type,
+            dapQueryRepnLeaf.operator,
+            dapQueryRepnLeaf.query_field_type,
+            dapQueryRepnLeaf.query_field_value)
+        return lambda row: func(row.get(dapQueryRepnLeaf.target_field_name, None))
 
   #  def makeQuery(self, query_pb, constraint_factory, tablename):
   #      # This PB will be all the same table and all answerable by this object.

@@ -8,16 +8,6 @@ from dap_api.experimental.python import InMemoryDap
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 
-class ShowVisitor(DapQueryRepn.DapQueryRepn.Visitor):
-    def __init__(self):
-        pass
-
-    def visitNode(self, node, depth):
-        print("{} NODE{}: {}".format(depth*"  ", type(node), node.printable()))
-
-    def visitLeaf(self, node, depth):
-        print("{} LEAF{}: {}".format(depth*"  ", type(node), node.printable()))
-
 class DapManagerTest(unittest.TestCase):
     def setUp(self):
         """Call before every test case."""
@@ -108,8 +98,7 @@ class DapManagerTest(unittest.TestCase):
         q = self.createDapSpanningQuery()
 
         repn = self.dapManager.makeQueryRepn(q)
-#        repn.print()
+        repn.print()
 
-        sv = ShowVisitor()
-        repn.visit(sv)
-
+        r = self.dapManager.execute(repn)
+        print(r)
