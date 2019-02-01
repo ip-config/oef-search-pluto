@@ -9,7 +9,7 @@ from utils.src.python.Logging import get_logger, configure as configure_logging
 from api.src.python.EndpointSearch import SearchQuery
 from api.src.python.EndpointUpdate import UpdateEndpoint, BlkUpdateEndpoint
 from ai_search_engine.src.python import SearchEngine
-from dap_api.src.python.DapManager import DapManager
+#from dap_api.src.python.DapManager import DapManager
 import api.src.python.ProtoWrappers as ProtoWrappers
 
 
@@ -62,22 +62,22 @@ if __name__ == "__main__":
         socket_port_number = sys.argv[3]
 
     #DAPManager
-    dap_manager = DapManager()
+   #dap_manager = DapManager()
 
-    dap_manager_config = {
-        "search_engine": {
-            "class": "SearchEngine",
-            "config": {
-                "structure": {
-                    "dm_store": {
-                        "data_model": "dm"
-                    }
-                }
-            }
-        }
-    }
+    # dap_manager_config = {
+    #     "search_engine": {
+    #         "class": "SearchEngine",
+    #         "config": {
+    #             "structure": {
+    #                 "dm_store": {
+    #                     "data_model": "dm"
+    #                 }
+    #             }
+    #         }
+    #     }
+    # }
 
-    dap_manager.setup(sys.modules[__name__], dap_manager_config)
+    #dap_manager.setup(sys.modules[__name__], dap_manager_config)
 
     update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, {
         "table": "dm_store",
@@ -85,7 +85,14 @@ if __name__ == "__main__":
     })
     query_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.QueryData)
 
-    search_engine = dap_manager.getInstance("search_engine")
+    #search_engine = dap_manager.getInstance("search_engine")
+    search_engine = SearchEngine.SearchEngine("search_engine", {
+                "structure": {
+                    "dm_store": {
+                        "data_model": "dm"
+                    }
+                }
+            })
 
     #modules
     search_module = SearchQuery(search_engine, query_wrapper)

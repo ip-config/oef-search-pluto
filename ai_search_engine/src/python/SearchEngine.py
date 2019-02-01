@@ -121,13 +121,15 @@ class SearchEngine(DapInterface):
                 row["embedding"] = vec
 
     def query(self, query: DapQuery, agents=None):
+        if len(self._storage) == 0:
+            return []
         enc_query = np.zeros((self._encoding_dim,))
         if query.data_model:
             enc_query = np.add(enc_query, self._dm_to_vec(query.data_model))
         if query.description:
             enc_query = np.add(enc_query, self._string_to_vec(query.description))
         if not np.any(enc_query):
-            return
+            return []
         table = next(iter(self.structure.keys()))
         score_threshold = 0.2
         result = []
