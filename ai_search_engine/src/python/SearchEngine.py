@@ -8,7 +8,9 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 import numpy as np
 import scipy.spatial.distance as distance
-from dap_api.src.python.DapInterface import DapInterface, DapBadUpdateRow
+from dap_api.src.python.DapQueryRepn import DapQueryRepn
+from dap_api.src.python.DapInterface import DapInterface
+from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_api.src.protos.dap_update_pb2 import DapUpdate
 from dap_api.src.protos import dap_description_pb2
 from dap_api.src.python.DapQuery import DapQuery
@@ -22,7 +24,6 @@ class SearchEngine(DapInterface):
         nltk.download('punkt')
         nltk.download('wordnet')
         self._stop_words = set(stopwords.words('english'))
-        self._w2v = gensim.downloader.load("glove-wiki-gigaword-50") #"word2vec-google-news-300")
         self._porter = PorterStemmer()
         self._wnl = WordNetLemmatizer()
         self._encoding_dim = 50
@@ -34,12 +35,18 @@ class SearchEngine(DapInterface):
         self.tablenames = []
         self.structure = {}
 
+        # Load lazily if used.
+        self._w2v = None
+
         for table_name, fields in self.structure_pb.items():
             self.tablenames.append(table_name)
             for field_name, field_type in fields.items():
                 self.structure.setdefault(table_name, {}).setdefault(field_name, {})['type'] = field_type
 
     def _string_to_vec(self, description: str):
+        if not self._w2v:
+            self._w2v = gensim.downloader.load("glove-wiki-gigaword-50") #"word2vec-google-news-300")
+
         #print("Encode desc: ", description)
         if description.find("_") > -1:
             description = description.replace("_", " ")
@@ -142,3 +149,18 @@ class SearchEngine(DapInterface):
             if ordered[i][1] < score_threshold:
                 result.append(ordered[i])
         return result
+
+    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:
+        dapQueryRepnLeaf.print()
+        exit(45)
+        return None
+
+
+    #temporary public interface as part of SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY hack.
+    def dataModelToEmbeddingVector(self, data: query_pb2.Query.DataModel):
+        return self._dm_to_vec(data)
+
+    def stringToEmbeddingVector(self, data: str):
+        return self._string_to_vec(data)
+
+    

@@ -8,16 +8,6 @@ from dap_api.experimental.python import InMemoryDap
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 
-class ShowVisitor(DapQueryRepn.DapQueryRepn.Visitor):
-    def __init__(self):
-        pass
-
-    def visitNode(self, node, depth):
-        print("{} NODE{}: {}".format(depth*"  ", type(node), node.printable()))
-
-    def visitLeaf(self, node, depth):
-        print("{} LEAF{}: {}".format(depth*"  ", type(node), node.printable()))
-
 class DapManagerTest(unittest.TestCase):
     def setUp(self):
         """Call before every test case."""
@@ -103,13 +93,11 @@ class DapManagerTest(unittest.TestCase):
 
         return qAnd
 
-    def testQueryWriter(self):
+    def XtestQueryWriter(self):
         self._setupAgents()
         q = self.createDapSpanningQuery()
+        repn = self.dapManager.makeQuery(q)
+        r = self.dapManager.execute(repn)
 
-        repn = self.dapManager.makeQueryRepn(q)
-#        repn.print()
-
-        sv = ShowVisitor()
-        repn.visit(sv)
-
+        assert len(r) == 1
+        assert r[0][0] == '86/Maxwell/Smart'

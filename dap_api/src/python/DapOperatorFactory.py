@@ -18,8 +18,6 @@ class DapOperatorFactory(object):
         self.add("location", "==", "location", lambda a,b: a == b)
         self.add("location", "!=", "location", lambda a,b: a != b)
 
-        self.add("embedding", "CLOSETO", "embedding", lambda a,b: self.compareVectors(a,b)) # hack. fix me later. KLL
-
         self.add("int", "==", "int", lambda a,b: a == b)
         self.add("int", "!=", "int", lambda a,b: a == b)
         self.add("int", "<",  "int", lambda a,b: a == b)
