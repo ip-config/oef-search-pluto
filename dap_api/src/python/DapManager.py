@@ -195,6 +195,7 @@ class DapManager(object):
         return agents
 
     # passing in the embedding system is part of the hack SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
-    def setDataModelEmbedder(embedderName, embeddingFieldName):
+    def setDataModelEmbedder(self, embedderName, embeddingTableName, embeddingFieldName):
         self.embedderName = embedderName
+        self.embeddingTableName = embeddingTableName
         self.embeddingFieldName = embeddingFieldName

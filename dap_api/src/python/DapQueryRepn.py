@@ -151,20 +151,17 @@ class DapQueryRepn(object):
         except AttributeError:
             ce_pb = pb
 
-        data_model = None
-        try:
-            if pb.HasField('model'):
-                data_model = pb.model
-        except AttributeError:
-            pass
-
         queryFromProto = DapQueryRepnFromProtoBuf.DapQueryRepnFromProtoBuf()
         self.fromConstraintProtoList(queryFromProto, ce_pb)
 
         # this is the SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY hack to
         # put the global data_model into a constraint object.
 
-        if data_model:
-            x = queryFromProto.createEmbeddingMatch(embeddingInfo=None)
+        if pb.HasField('model'):
+            x = queryFromProto.createEmbeddingMatchDataModel(embeddingInfo, pb.model)
+            if x:
+                self.root.Add(x)
+        elif pb.HasField('description'):
+            x = queryFromProto.createEmbeddingMatchString(embeddingInfo, pb.description)
             if x:
                 self.root.Add(x)

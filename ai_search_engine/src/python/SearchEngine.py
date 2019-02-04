@@ -10,11 +10,13 @@ import numpy as np
 import scipy.spatial.distance as distance
 from dap_api.src.python.DapQueryRepn import DapQueryRepn
 from dap_api.src.python.DapInterface import DapInterface
+from dap_api.src.python.SubQueryInterface import SubQueryInterface
 from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_api.src.protos.dap_update_pb2 import DapUpdate
 from dap_api.src.protos import dap_description_pb2
 from dap_api.src.python.DapQuery import DapQuery
 
+from typing import Sequence
 
 class SearchEngine(DapInterface):
     @has_logger
@@ -150,17 +152,49 @@ class SearchEngine(DapInterface):
                 result.append(ordered[i])
         return result
 
-    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:
+    class SubQuery(SubQueryInterface):
+        def __init__(self, searchSystem, leaf: DapQueryRepn.Leaf):
+            if leaf.operator != "CLOSE_TO":
+                raise ValueError("{} is not an embed search operator.".format(leaf.operator))
+            if target_field_type != "embedding":
+                raise ValueError("{}.{}({}) is not something an embed search runs on.". format(
+                    leaf.target_table_name,
+                    leaf.target_field_name,
+                    leaf.target_field_type
+                    )
+                );
+
+            self.enc_query = np.zeros((self._encoding_dim,))
+            if leaf.query_field_type == "string":
+                self.enc_query = np.add(self.enc_query, self._string_to_vec(leaf.query_field_value))
+            elif leaf.query_field_type == "data_model":
+                self.enc_query = np.add(self.enc_query, self._string_to_vec(leaf.query_field_value))
+
+            self.query_field_type  = leaf.query_field_type
+            self.query_field_value = leaf.query_field_value
+            self.target_field_type = leaf.target_field_type
+            self.target_field_name = leaf.target_field_name
+            self.target_table_name = leaf.target_table_name
+
+        def execute(self, agents: Sequence[str]=None):
+            if agents == []:
+                return []
+
+            if agents == None:
+                for key, data in self.store[self.target_table_name].items():
+                    dist = distance.cosine(data[self.target_field_name], self.enc_query)
+                    if dist > 0.2:
+                        yield key
+            else:
+                for key in agents:
+                    data = self.store[self.target_table_name][key]
+                    dist = distance.cosine(data[self.target_field_name], self.enc_query)
+                    if dist > 0.2:
+                        yield key
+
+    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.Leaf) -> SubQueryInterface:
         dapQueryRepnLeaf.print()
-        exit(45)
+        return SubQuery(self, dapQueryRepnLeaf)
+
+    def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.Branch) -> SubQueryInterface:
         return None
-
-
-    #temporary public interface as part of SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY hack.
-    def dataModelToEmbeddingVector(self, data: query_pb2.Query.DataModel):
-        return self._dm_to_vec(data)
-
-    def stringToEmbeddingVector(self, data: str):
-        return self._string_to_vec(data)
-
-    
