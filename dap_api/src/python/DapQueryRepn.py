@@ -145,7 +145,7 @@ class DapQueryRepn(object):
             self.root.Add(queryFromProto._CONSTRAINT_EXPR_toRepn(ce_pb))
 
     # passing in the embedding system is part of the hack SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
-    def fromQueryProto(self, pb, embeddingDap=None, embeddingDapName="data_model"):
+    def fromQueryProto(self, pb, embeddingInfo: object=None):
         try:
             ce_pb = pb.constraints
         except AttributeError:
@@ -165,6 +165,6 @@ class DapQueryRepn(object):
         # put the global data_model into a constraint object.
 
         if data_model:
-            x = queryFromProto.createEmbeddingMatch(embeddingDapName, embeddingDap, data_model)
+            x = queryFromProto.createEmbeddingMatch(embeddingInfo=None)
             if x:
                 self.root.Add(x)

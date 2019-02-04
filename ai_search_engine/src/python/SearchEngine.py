@@ -148,6 +148,6 @@ class SearchEngine(DapInterface):
                 result.append(ordered[i])
         return result
 
-    #temporary public interface to allow 
+    #temporary public interface as part of SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY hack.
     def dataModelToEmbeddingVector(self, data: query_pb2.Query.DataModel):
-        return self._dm_to_vec(data: query_pb2.Query.DataModel)
+        return self._dm_to_vec(data)

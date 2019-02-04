@@ -54,6 +54,8 @@ class DapManager(object):
         self.instances = {}
         self.operator_factory = DapOperatorFactory.DapOperatorFactory()
         self.structures = {}
+        self.embedderName = None  # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
+        self.embeddingFieldName = None # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
 
     def setup(self, module, config):
         self.classmakers = self._listClasses(module)
@@ -110,10 +112,13 @@ class DapManager(object):
                 r[name]=obj
         return r
 
-    # passing in the embedding system is part of the hack SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
-    def makeQuery(self, query_pb, embeddingDap=None, embeddingDapName="data_model"):
+    def makeQuery(self, query_pb, embeddingInfo: object=None):
         dapQueryRepn = DapQueryRepn.DapQueryRepn()
-        dapQueryRepn.fromQueryProto(query_pb)
+
+        # passing in the embedding system is part of the hack SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
+
+        embeddingDap = self.instances.get(self.embedderDapName, None)
+        dapQueryRepn.fromQueryProto(query_pb, embeddingInfo)
 
         # now fill in all the types.
         v = DapManager.PopulateFieldInformationVisitor(self.fields)
@@ -126,7 +131,7 @@ class DapManager(object):
 
     def makeQueryFromConstraintProto(self, query_pb):
         dapQueryRepn = DapQueryRepn.DapQueryRepn()
-        dapQueryRepn.fromConstraintProto(query_pb)
+        dapQueryRepn.fromQueryProto(query_pb)
 
         # now fill in all the types.
         v = DapManager.PopulateFieldInformationVisitor(self.fields)
@@ -185,3 +190,7 @@ class DapManager(object):
 
         return agents
 
+    # passing in the embedding system is part of the hack SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
+    def setDataModelEmbedder(embedderName, embeddingFieldName):
+        self.embedderName = embedderName
+        self.embeddingFieldName = embeddingFieldName
