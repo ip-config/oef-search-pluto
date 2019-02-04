@@ -28,6 +28,6 @@ WORKDIR /app
 COPY --from=builder /build/bazel-bin/api/src/python/ /app/
 COPY --from=builder /build/server.pem /app/
 
-#EXPOSE 7500-7501
+EXPOSE 7500-7501
 
-#ENTRYPOINT ["communication_handler", "7500", "server.pem"]
+ENTRYPOINT ["./communication_handler", "7500", "server.pem"]
