@@ -18,6 +18,7 @@ from dap_api.src.python.DapQuery import DapQuery
 
 from typing import Sequence
 
+
 class SearchEngine(DapInterface):
     @has_logger
     def __init__(self, name, config):
@@ -130,7 +131,7 @@ class SearchEngine(DapInterface):
                 row["embedding"] = vec
 
     def query(self, query: DapQuery, agents=None):
-        if len(self._storage) == 0:
+        if len(self.store) == 0:
             return []
         enc_query = np.zeros((self._encoding_dim,))
         if query.data_model:
@@ -146,6 +147,7 @@ class SearchEngine(DapInterface):
             dist = distance.cosine(data["embedding"], enc_query)
             result.append((key, dist))
         ordered = sorted(result, key=lambda x: x[1])
+        print("results: ", ordered)
         result = [ordered[0]]
         for i in range(1, len(ordered)):
             if ordered[i][1] < score_threshold:
@@ -168,7 +170,7 @@ class SearchEngine(DapInterface):
             if leaf.query_field_type == "string":
                 self.enc_query = np.add(self.enc_query, self._string_to_vec(leaf.query_field_value))
             elif leaf.query_field_type == "data_model":
-                self.enc_query = np.add(self.enc_query, self._string_to_vec(leaf.query_field_value))
+                self.enc_query = np.add(self.enc_query, self._dm_to_vec(leaf.query_field_value))
 
             self.query_field_type  = leaf.query_field_type
             self.query_field_value = leaf.query_field_value
