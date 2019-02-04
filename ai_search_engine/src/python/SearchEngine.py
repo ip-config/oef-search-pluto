@@ -8,7 +8,9 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 import numpy as np
 import scipy.spatial.distance as distance
-from dap_api.src.python.DapInterface import DapInterface, DapBadUpdateRow
+from dap_api.src.python.DapQueryRepn import DapQueryRepn
+from dap_api.src.python.DapInterface import DapInterface
+from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_api.src.protos.dap_update_pb2 import DapUpdate
 from dap_api.src.protos import dap_description_pb2
 from dap_api.src.python.DapQuery import DapQuery
@@ -148,6 +150,17 @@ class SearchEngine(DapInterface):
                 result.append(ordered[i])
         return result
 
+    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:
+        dapQueryRepnLeaf.print()
+        exit(45)
+        return None
+
+
     #temporary public interface as part of SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY hack.
     def dataModelToEmbeddingVector(self, data: query_pb2.Query.DataModel):
         return self._dm_to_vec(data)
+
+    def stringToEmbeddingVector(self, data: str):
+        return self._string_to_vec(data)
+
+    

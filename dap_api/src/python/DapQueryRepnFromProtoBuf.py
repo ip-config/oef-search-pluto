@@ -162,12 +162,13 @@ class DapQueryRepnFromProtoBuf(object):
 
     # this is used by the SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY hack
     def createEmbeddingMatch(self, embeddingInfo):
-        vector = embeddingInfo.createEmbedding(data_model)
-        resultdata = list(vector)
+        #vector = embeddingInfo.createEmbedding(data_model)
+        #resultdata = list(vector)
+
         return DapQueryRepn.DapQueryRepn.Leaf(
             operator="CLOSE_TO",
-            query_field_value=resultdata,
-            query_field_type="embedding",
+            query_field_value=embeddingInfo.embeddingData,
+            query_field_type=embeddingInfo.embeddingDataType,
             target_field_name=embeddingInfo.FieldName,
             target_table_name=embeddingInfo.TableName,
         )
