@@ -135,20 +135,36 @@ class DapQueryRepn(object):
             for leaf in node.leaves:
                 visitor.visitLeaf(leaf, depth+1)
 
-    def fromQueryProto(self, pb):
+    def fromConstraintProto(self, queryFromProto, ce_pb):
+        self.root.Clear()
+        self.root.Add(queryFromProto._CONSTRAINT_EXPR_toRepn(ce_pb))
+
+    def fromConstraintProtoList(self, queryFromProto, ce_list_pb):
+        self.root.Clear()
+        for ce_pb in ce_list_pb:
+            self.root.Add(queryFromProto._CONSTRAINT_EXPR_toRepn(ce_pb))
+
+    # passing in the embedding system is part of the hack SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
+    def fromQueryProto(self, pb, embeddingDap=None, embeddingDapName="data_model"):
         try:
             ce_pb = pb.constraints
         except AttributeError:
             ce_pb = pb
+
+        data_model = None
         try:
-            self.data_model = pb.model
-        except AttributeError:
-            pass
-        try:
-            self.description = self.description
+            if pb.HasField('model'):
+                data_model = pb.model
         except AttributeError:
             pass
 
         queryFromProto = DapQueryRepnFromProtoBuf.DapQueryRepnFromProtoBuf()
-        self.root.Clear()
-        self.root.Add(queryFromProto._CONSTRAINT_EXPR_toRepn(ce_pb))
+        self.fromConstraintProtoList(queryFromProto, ce_pb)
+
+        # this is the SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY hack to
+        # put the global data_model into a constraint object.
+
+        if data_model:
+            x = queryFromProto.createEmbeddingMatch(embeddingDapName, embeddingDap, data_model)
+            if x:
+                self.root.Add(x)

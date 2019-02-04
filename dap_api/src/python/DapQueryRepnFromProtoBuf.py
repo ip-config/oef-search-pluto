@@ -159,3 +159,8 @@ class DapQueryRepnFromProtoBuf(object):
             pass
 
         return self._CONSTRAINT_EXPR_toRepn(ce_pb)
+
+    # this is used by the SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY hack
+    def createEmbeddingMatch(self, embeddingDapName, embeddingDap, data_model):
+        vector = embeddingDap.createEmbedding(data_model)
+        return self._CONSTRAINT_EMBEDDING_toRepn(vector, 'data_model')

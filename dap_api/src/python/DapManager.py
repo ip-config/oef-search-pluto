@@ -110,9 +110,23 @@ class DapManager(object):
                 r[name]=obj
         return r
 
-    def makeQuery(self, query_pb):
+    # passing in the embedding system is part of the hack SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
+    def makeQuery(self, query_pb, embeddingDap=None, embeddingDapName="data_model"):
         dapQueryRepn = DapQueryRepn.DapQueryRepn()
         dapQueryRepn.fromQueryProto(query_pb)
+
+        # now fill in all the types.
+        v = DapManager.PopulateFieldInformationVisitor(self.fields)
+        dapQueryRepn.visit(v)
+
+        v = DapManager.CollectDapsVisitor(self.fields)
+        dapQueryRepn.visit(v)
+
+        return dapQueryRepn
+
+    def makeQueryFromConstraintProto(self, query_pb):
+        dapQueryRepn = DapQueryRepn.DapQueryRepn()
+        dapQueryRepn.fromConstraintProto(query_pb)
 
         # now fill in all the types.
         v = DapManager.PopulateFieldInformationVisitor(self.fields)

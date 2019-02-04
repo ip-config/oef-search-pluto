@@ -22,7 +22,6 @@ class SearchEngine(DapInterface):
         nltk.download('punkt')
         nltk.download('wordnet')
         self._stop_words = set(stopwords.words('english'))
-        self._w2v = gensim.downloader.load("glove-wiki-gigaword-50") #"word2vec-google-news-300")
         self._porter = PorterStemmer()
         self._wnl = WordNetLemmatizer()
         self._encoding_dim = 50
@@ -34,12 +33,18 @@ class SearchEngine(DapInterface):
         self.tablenames = []
         self.structure = {}
 
+        # Load lazily if used.
+        self._w2v = None
+
         for table_name, fields in self.structure_pb.items():
             self.tablenames.append(table_name)
             for field_name, field_type in fields.items():
                 self.structure.setdefault(table_name, {}).setdefault(field_name, {})['type'] = field_type
 
     def _string_to_vec(self, description: str):
+        if not self._w2v:
+            self._w2v = gensim.downloader.load("glove-wiki-gigaword-50") #"word2vec-google-news-300")
+
         #print("Encode desc: ", description)
         if description.find("_") > -1:
             description = description.replace("_", " ")
@@ -142,3 +147,7 @@ class SearchEngine(DapInterface):
             if ordered[i][1] < score_threshold:
                 result.append(ordered[i])
         return result
+
+    #temporary public interface to allow 
+    def dataModelToEmbeddingVector(self, data: query_pb2.Query.DataModel):
+        return self._dm_to_vec(data: query_pb2.Query.DataModel)

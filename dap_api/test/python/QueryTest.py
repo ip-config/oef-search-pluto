@@ -71,9 +71,6 @@ class QueryTest(unittest.TestCase):
         newvalue.key.core_uri.append("localhost:10000")
         return update
 
-    def _createQueryProto(self):
-        q = py_oef_protocol_pb2.ConstraintExpr()
-
     def _setupAgents(self):
         for agent_name, wibble_value in [
             ("007/James/Bond",   "apple"),
@@ -104,13 +101,14 @@ class QueryTest(unittest.TestCase):
         """Test case A. note that all test method names must begin with 'test.'"""
         self._setupAgents()
 
-        q = query_pb2.Query.ConstraintExpr()
+        qm = query_pb2.Query.Model()
+        q = qm.constraints.add()
 
         q.constraint.attribute_name = "wibble"
         q.constraint.relation.op = 0
         q.constraint.relation.val.s = "carrot"
 
-        dapQuery = self.dapManager.makeQuery(q)
+        dapQuery = self.dapManager.makeQuery(qm)
         results = list(self.dapManager.execute(dapQuery))
 
         assert len(results) == 2
@@ -119,7 +117,9 @@ class QueryTest(unittest.TestCase):
         """Test case A. note that all test method names must begin with 'test.'"""
         self._setupAgents()
 
-        qOr = query_pb2.Query.ConstraintExpr()
+        qm = query_pb2.Query.Model()
+        qOr = qm.constraints.add()
+
         q1 = qOr.or_.expr.add()
         q2 = qOr.or_.expr.add()
 
@@ -132,6 +132,6 @@ class QueryTest(unittest.TestCase):
         q2.constraint.relation.val.s = "apple"
 
 
-        dapQuery = self.dapManager.makeQuery(qOr)
+        dapQuery = self.dapManager.makeQuery(qm)
         results = list(self.dapManager.execute(dapQuery))
         assert len(results) == 3
