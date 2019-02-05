@@ -137,6 +137,8 @@ class DapManager(object):
         if not embeddingInfo.embeddingDap:
             embeddingInfo = None
 
+        print("embeddingInfo=", embeddingInfo)
+
         dapQueryRepn.fromQueryProto(query_pb, embeddingInfo)
 
         # now fill in all the types.

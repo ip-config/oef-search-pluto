@@ -106,7 +106,7 @@ class SearchEngine(DapInterface):
     # (TODO): introduce service ID, right now only one service / agent is supported
     def update(self, update_data: DapUpdate):
         for upd in update_data.update:
-            k, v = "data_model", upd.value.dm
+            k, v = "dm", upd.value.dm
             if upd.tablename not in self.structure:
                 raise DapBadUpdateRow("No such table", upd.tablename, upd.key.agent_name, upd.key.core_uri,
                                       upd.fieldname, k)
@@ -116,7 +116,7 @@ class SearchEngine(DapInterface):
                                       upd.fieldname, k)
 
             field_type = self.structure[upd.tablename][upd.fieldname]['type']
-            if field_type != 'data_model':
+            if field_type != 'embedding':
                 raise DapBadUpdateRow("Bad type",
                                           table_name=upd.tablename,
                                           agent_name=upd.key.agent_name,

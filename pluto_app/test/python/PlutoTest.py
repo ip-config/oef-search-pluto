@@ -109,10 +109,10 @@ class PlutoTest(unittest.TestCase):
 
     def setupAgents(self):
         for agent_name, fieldname, typename, data in [
-#            ("007/James/Bond/Weather",      "data_model_field", "dm", self.dm1),
-#            ("White/Spy/Book",              "data_model_field", "dm", self.dm2),
-#            ("Black/Spy/BookMoreDataNovel", "data_model_field", "dm", self.dm3),
-#            ("86/Maxwell/Smart/Weather",    "data_model_field", "dm", self.dm1),
+            ("007/James/Bond/Weather",      "data_model_field", "dm", self.dm1),
+            ("White/Spy/Book",              "data_model_field", "dm", self.dm2),
+            ("Black/Spy/BookMoreDataNovel", "data_model_field", "dm", self.dm3),
+            ("86/Maxwell/Smart/Weather",    "data_model_field", "dm", self.dm1),
 
             ("007/James/Bond/Weather",      "country", "string", "UK"),
             ("White/Spy/Book",              "country", "string", "US"),
@@ -129,7 +129,6 @@ class PlutoTest(unittest.TestCase):
         qm = query_pb2.Query.Model()
         dmq = qm.model
 
-        dmq = query_pb2.Query.DataModel()
         dmq.name = "sunshine"
         dmq.description = "Give me some weather data"
         dmq.attributes.extend([

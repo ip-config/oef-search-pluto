@@ -135,10 +135,6 @@ class DapQueryRepn(object):
             for leaf in node.leaves:
                 visitor.visitLeaf(leaf, depth+1)
 
-    def fromConstraintProto(self, queryFromProto, ce_pb):
-        self.root.Clear()
-        self.root.Add(queryFromProto._CONSTRAINT_EXPR_toRepn(ce_pb))
-
     def fromConstraintProtoList(self, queryFromProto, ce_list_pb):
         self.root.Clear()
         for ce_pb in ce_list_pb:
@@ -146,6 +142,7 @@ class DapQueryRepn(object):
 
     # passing in the embedding system is part of the hack SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
     def fromQueryProto(self, pb, embeddingInfo: object=None):
+        print("fromQueryProto", pb, embeddingInfo)
         try:
             ce_pb = pb.constraints
         except AttributeError:
@@ -158,10 +155,12 @@ class DapQueryRepn(object):
         # put the global data_model into a constraint object.
 
         if pb.HasField('model'):
+            print("1^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
             x = queryFromProto.createEmbeddingMatchDataModel(embeddingInfo, pb.model)
             if x:
                 self.root.Add(x)
         elif pb.HasField('description'):
+            print("2^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
             x = queryFromProto.createEmbeddingMatchString(embeddingInfo, pb.description)
             if x:
                 self.root.Add(x)
