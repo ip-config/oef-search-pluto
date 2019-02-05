@@ -55,13 +55,6 @@ class UpdateData:
         return upd
 
 
-class EmbeddingInfo(object):
-    def __init__(self):
-        self.dapName = ""
-        self.embeddingDap = ""
-        self.FieldName = ""
-        self.TableName = ""
-
 class QueryData:
 
     @has_logger
@@ -73,4 +66,4 @@ class QueryData:
 
     # TODO support for constraints
     def toDapQuery(self):
-        return self.dap_manager.makeQuery(self.origin, EmbeddingInfo())
+        return self.dap_manager.makeQuery(self.origin)

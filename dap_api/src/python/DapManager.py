@@ -55,6 +55,8 @@ class DapManager(object):
         def __init__(self):
             self.dapName = None
             self.embeddingDap = None
+            self.FieldName = None
+            self.TableName = None
 
     def __init__(self):
         self.instances = {}
@@ -129,6 +131,8 @@ class DapManager(object):
         # passing in the embedding system is part of the hack SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
         embeddingInfo.dapName = self.embedderName
         embeddingInfo.embeddingDap = self.instances.get(embeddingInfo.dapName, None)
+        embeddingInfo.FieldName = self.embeddingFieldName
+        embeddingInfo.TableName = self.embeddingTableName
 
         if not embeddingInfo.embeddingDap:
             embeddingInfo = None

@@ -69,7 +69,7 @@ if __name__ == "__main__":
              "config": {
                  "structure": {
                      "dm_store": {
-                         "data_model": "dm"
+                         "data_model": "data_model"
                      }
                  }
              }
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     search_engine = dap_manager.getInstance("search_engine")
 
-    dap_manager.setDataModelEmbedder('search_engine', 'data_model_table', 'data_model_field')
+    dap_manager.setDataModelEmbedder('search_engine', 'dm_store', 'data_model')
 
     #modules
     search_module = SearchQuery(dap_manager, query_wrapper)

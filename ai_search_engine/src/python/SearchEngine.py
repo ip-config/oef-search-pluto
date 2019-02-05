@@ -106,7 +106,7 @@ class SearchEngine(DapInterface):
     # (TODO): introduce service ID, right now only one service / agent is supported
     def update(self, update_data: DapUpdate):
         for upd in update_data.update:
-            k, v = "dm", upd.value.dm
+            k, v = "data_model", upd.value.dm
             if upd.tablename not in self.structure:
                 raise DapBadUpdateRow("No such table", upd.tablename, upd.key.agent_name, upd.key.core_uri,
                                       upd.fieldname, k)
@@ -116,7 +116,7 @@ class SearchEngine(DapInterface):
                                       upd.fieldname, k)
 
             field_type = self.structure[upd.tablename][upd.fieldname]['type']
-            if field_type != 'embedding':
+            if field_type != 'data_model':
                 raise DapBadUpdateRow("Bad type",
                                           table_name=upd.tablename,
                                           agent_name=upd.key.agent_name,
@@ -151,7 +151,7 @@ class SearchEngine(DapInterface):
         score_threshold = 0.2
         result = []
         for key, data in self.store[table].items():
-            dist = distance.cosine(data["embedding"], enc_query)
+            dist = distance.cosine(data["data_model"], enc_query)
             result.append((key, dist))
         ordered = sorted(result, key=lambda x: x[1])
         print("results: ", ordered)
@@ -165,19 +165,19 @@ class SearchEngine(DapInterface):
         def __init__(self, searchSystem, leaf: DapQueryRepn.Leaf):
             if leaf.operator != "CLOSE_TO":
                 raise ValueError("{} is not an embed search operator.".format(leaf.operator))
-            if target_field_type != "embedding":
-                raise ValueError("{}.{}({}) is not something an embed search runs on.". format(
-                    leaf.target_table_name,
-                    leaf.target_field_name,
-                    leaf.target_field_type
-                    )
-                );
+            #if target_field_type != "embedding":
+            #    raise ValueError("{}.{}({}) is not something an embed search runs on.". format(
+            #        leaf.target_table_name,
+            #        leaf.target_field_name,
+            #        leaf.target_field_type
+            #        )
+            #    );
 
-            self.enc_query = np.zeros((self._encoding_dim,))
+            self.enc_query = np.zeros((searchSystem._encoding_dim,))
             if leaf.query_field_type == "string":
-                self.enc_query = np.add(self.enc_query, self._string_to_vec(leaf.query_field_value))
+                self.enc_query = np.add(self.enc_query, searchSystem._string_to_vec(leaf.query_field_value))
             elif leaf.query_field_type == "data_model":
-                self.enc_query = np.add(self.enc_query, self._dm_to_vec(leaf.query_field_value))
+                self.enc_query = np.add(self.enc_query, searchSystem._dm_to_vec(leaf.query_field_value))
 
             self.query_field_type  = leaf.query_field_type
             self.query_field_value = leaf.query_field_value
@@ -185,25 +185,26 @@ class SearchEngine(DapInterface):
             self.target_field_name = leaf.target_field_name
             self.target_table_name = leaf.target_table_name
 
+            self._ss = searchSystem
+
         def execute(self, agents: Sequence[str]=None):
             if agents == []:
                 return []
 
             if agents == None:
-                for key, data in self.store[self.target_table_name].items():
+                for key, data in self._ss.store[self.target_table_name].items():
                     dist = distance.cosine(data[self.target_field_name], self.enc_query)
-                    if dist > 0.2:
+                    if dist < 0.2:
                         yield key
             else:
                 for key in agents:
-                    data = self.store[self.target_table_name][key]
+                    data = self._ss.store[self.target_table_name][key]
                     dist = distance.cosine(data[self.target_field_name], self.enc_query)
-                    if dist > 0.2:
+                    if dist < 0.2:
                         yield key
 
     def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.Leaf) -> SubQueryInterface:
-        dapQueryRepnLeaf.print()
-        return SubQuery(self, dapQueryRepnLeaf)
+        return SearchEngine.SubQuery(self, dapQueryRepnLeaf)
 
     def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.Branch) -> SubQueryInterface:
         return None
