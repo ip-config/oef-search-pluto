@@ -9,40 +9,42 @@ class PlutoApp:
     def __init__(self):
         pass
 
-    def setup(self):
+    def setup(self, dapManagerConfig=None):
         self.dapManager = DapManager.DapManager()
-        dapManagerConfig = {
-            "dap1": {
-                "class": "InMemoryDap",
-                "config": {
-                    "structure": {
-                        "wibbles": {
-                            "wibble": "string"
+        if not dapManagerConfig:
+            dapManagerConfig = {
+                "dap1": {
+                    "class": "InMemoryDap",
+                    "config": {
+                        "structure": {
+                            "wibbles": {
+                                "wibble": "string"
+                            },
                         },
                     },
                 },
-            },
-            "dap2": {
-                "class": "InMemoryDap",
-                "config": {
-                    "structure": {
-                        "wobbles": {
-                            "wobble": "string"
+                "dap2": {
+                    "class": "InMemoryDap",
+                    "config": {
+                        "structure": {
+                            "wobbles": {
+                                "wobble": "string"
+                            },
                         },
                     },
                 },
-            },
-            "data_model_searcher": {
-                "class": "SearchEngine",
-                "config": {
-                    "structure": {
-                        "data_model_table": {
-                            "data_model_field": "embedding"
+                "data_model_searcher": {
+                    "class": "SearchEngine",
+                    "config": {
+                        "structure": {
+                            "data_model_table": {
+                                "data_model_field": "embedding"
+                            },
                         },
                     },
                 },
-            },
-        }
+            }
+
         self.dapManager.setup(
             sys.modules[__name__],
             dapManagerConfig
@@ -53,3 +55,10 @@ class PlutoApp:
     def run(self):
         self.setup()
         print("Setup done.")
+
+    def getField(self, fieldname):
+        return self.dapManager.getField(fieldname)
+
+    def update(self, update):
+        f = self.getField(update.update[0].fieldname)
+        self.dapManager.getInstance(f['dap']).update(update)

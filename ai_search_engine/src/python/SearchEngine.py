@@ -114,8 +114,16 @@ class SearchEngine(DapInterface):
                 raise DapBadUpdateRow("No such field", upd.tablename, upd.key.agent_name, upd.key.core_uri,
                                       upd.fieldname, k)
 
-            if self.structure[upd.tablename][upd.fieldname]['type'] != k:
-                raise DapBadUpdateRow("Bad type", upd.tablename, upd.key.agent_name, upd.key.core_uri, upd.fieldname, k)
+            field_type = self.structure[upd.tablename][upd.fieldname]['type']
+            if field_type != 'embedding':
+                raise DapBadUpdateRow("Bad type",
+                                          table_name=upd.tablename,
+                                          agent_name=upd.key.agent_name,
+                                          core_uri=upd.key.core_uri,
+                                          field_name=upd.fieldname,
+                                          value_type=k,
+                                          field_type=field_type
+                                          )
 
             vec = self._dm_to_vec(v)
             if not any(vec):
@@ -126,8 +134,7 @@ class SearchEngine(DapInterface):
                 row = self.store.setdefault(upd.tablename, {}).setdefault(
                     (upd.key.agent_name, core_uri), {}
                 )
-                row[upd.fieldname] = v
-                row["embedding"] = vec
+                row[upd.fieldname] = vec
 
     def query(self, query: DapQuery, agents=None):
         if len(self._storage) == 0:
