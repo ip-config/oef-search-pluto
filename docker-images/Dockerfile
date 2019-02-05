@@ -17,7 +17,7 @@ ADD project.tar.gz /app
 WORKDIR /app/oef-search-pluto
 
 RUN rm .bazelrc && \
-    bazel build api/src/python:communication_handler --force_python=PY3 && \
+    bazel build pluto_app/src/python:pluto --force_python=PY3 && \
     cp testapp/src/resources/ssl/* /build  && \
     cp -Lr bazel-bin /build
 
@@ -25,9 +25,9 @@ FROM qati/python3alpine_nlp
 
 WORKDIR /app
 
-COPY --from=builder /build/bazel-bin/api/src/python/ /app/
+COPY --from=builder /build//bazel-bin/pluto_app/src/python/ /app/
 COPY --from=builder /build/server.pem /app/
 
 EXPOSE 7500-7501
 
-ENTRYPOINT ["./communication_handler", "7500", "server.pem"]
+ENTRYPOINT ["./pluto", "7500", "server.pem"]
