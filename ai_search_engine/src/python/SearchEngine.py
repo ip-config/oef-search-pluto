@@ -107,18 +107,15 @@ class SearchEngine(DapInterface):
     def update(self, update_data: DapUpdate):
         for upd in update_data.update:
             k, v = "dm", upd.value.dm
-            if upd.tablename not in self.structure:
-                raise DapBadUpdateRow("No such table", upd.tablename, upd.key.agent_name, upd.key.core_uri,
+            tbname = self.tablenames[0]
+            if upd.fieldname not in self.structure[tbname]:
+                raise DapBadUpdateRow("No such field", tbname, upd.key.agent_name, upd.key.core_uri,
                                       upd.fieldname, k)
 
-            if upd.fieldname not in self.structure[upd.tablename]:
-                raise DapBadUpdateRow("No such field", upd.tablename, upd.key.agent_name, upd.key.core_uri,
-                                      upd.fieldname, k)
-
-            field_type = self.structure[upd.tablename][upd.fieldname]['type']
+            field_type = self.structure[tbname][upd.fieldname]['type']
             if field_type != 'embedding':
                 raise DapBadUpdateRow("Bad type",
-                                          table_name=upd.tablename,
+                                          table_name=tbname,
                                           agent_name=upd.key.agent_name,
                                           core_uri=upd.key.core_uri,
                                           field_name=upd.fieldname,
@@ -132,7 +129,7 @@ class SearchEngine(DapInterface):
                 print(v)
                 raise Exception("Embedding failed")
             for core_uri in upd.key.core_uri:
-                row = self.store.setdefault(upd.tablename, {}).setdefault(
+                row = self.store.setdefault(tbname, {}).setdefault(
                     (upd.key.agent_name, core_uri), {}
                 )
                 row[upd.fieldname] = vec

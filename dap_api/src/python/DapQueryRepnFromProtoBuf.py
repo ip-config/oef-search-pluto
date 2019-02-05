@@ -153,8 +153,6 @@ class DapQueryRepnFromProtoBuf(object):
         #vector = embeddingInfo.createEmbedding(data_model)
         #resultdata = list(vector)
 
-        print("!!!!!!!!!!!!!!!!! CREATE EMBED MATCH")
-
         return DapQueryRepn.DapQueryRepn.Leaf(
             operator="CLOSE_TO",
             query_field_value=data_model,

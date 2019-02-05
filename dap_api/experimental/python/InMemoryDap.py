@@ -22,11 +22,14 @@ class InMemoryDap(DapInterface.DapInterface):
 
         self.tablenames = []
         self.structure = {}
+        self.fields = {}
 
         for table_name, fields in self.structure_pb.items():
             self.tablenames.append(table_name)
             for field_name, field_type in fields.items():
                 self.structure.setdefault(table_name, {}).setdefault(field_name, {})['type'] = field_type
+                self.fields.setdefault(field_name, {})['tablename']=table_name
+                self.fields.setdefault(field_name, {})['type']=field_type
 
     """This function returns the DAP description which lists the
     tables it hosts, the fields within those tables and the result of
@@ -144,17 +147,17 @@ class InMemoryDap(DapInterface.DapInterface):
 
                 k,v = self._typeAndValueOfDapValue(upd.value)
 
-                if upd.tablename not in self.structure:
-                    raise DapBadUpdateRow("No such table", upd.tablename, upd.key.agent_name, upd.key.core_uri, upd.fieldname, k)
+                if upd.fieldname not in self.fields:
+                    raise DapBadUpdateRow("No such field", None, upd.key.agent_name, upd.key.core_uri, upd.fieldname, k)
+                else:
+                    tbname = self.fields[upd.fieldname]["tablename"]
+                    ftype = self.fields[upd.fieldname]["type"]
 
-                if upd.fieldname not in self.structure[upd.tablename]:
-                    raise DapBadUpdateRow("No such field", upd.tablename, upd.key.agent_name, upd.key.core_uri, upd.fieldname, k)
-
-                if self.structure[upd.tablename][upd.fieldname]['type'] != k:
-                    raise DapBadUpdateRow("Bad type", upd.tablename, upd.key.agent_name, upd.key.core_uri, upd.fieldname, k)
+                if ftype != k:
+                    raise DapBadUpdateRow("Bad type", tbname, upd.key.agent_name, upd.key.core_uri, upd.fieldname, k)
 
                 if commit:
                     for core_uri in  upd.key.core_uri:
-                        self.store.setdefault(upd.tablename, {}).setdefault(
+                        self.store.setdefault(tbname, {}).setdefault(
                             (upd.key.agent_name, core_uri), {}
                         )[upd.fieldname] = v

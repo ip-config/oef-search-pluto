@@ -5,10 +5,6 @@ import "fetch_teams/oef_core_protocol/query.proto";
 
 message DapUpdate {
 
-  message Vector {
-    repeated double v = 1;
-  }
-
   message DapValue {
     int32 type = 1;
     // type 1 == NONE, all others match fieldname below.
@@ -17,12 +13,10 @@ message DapUpdate {
     float f = 4;
     double d = 5;
 
-    Vector embedding = 7;
     fetch.oef.pb.Query.DataModel dm = 6;
   }
 
   message TableFieldValue {
-    string tablename = 1;
     DapAgentUri key =2;
     string fieldname = 3;
     DapValue value = 4;

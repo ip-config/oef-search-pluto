@@ -8,10 +8,40 @@ message Update {
         repeated string oef_core = 2;
     }
 
+    message Location {
+        double lon = 1;
+        double lat = 2;
+    }
+
+    enum AttributeName {
+        LOCATION = 0;
+        COUNTRY = 1;
+        SERVICE_DESCRIPTION = 2;
+    }
+
+    message AttributeValue {
+        int32 type = 1;
+        // type 1 == NONE, all others match fieldname below.
+        string s = 2;
+        int64 i = 3;
+        float f = 4;
+        double d = 5;
+        //fetch.oef.pb.Query.DataModel dm = 6;
+        int32 i32 = 7;
+        bool b = 8;
+        Location l = 9;
+    }
+
+    message AttributeValue {
+        AttributeName attrname = 3;
+        AttributeValue value = 4;
+    }
+
     message BulkUpdate {
         repeated Update list = 1;
     }
 
     Uri uri = 1;
     fetch.oef.pb.Query.DataModel data_model = 2;
+    repeated AttributeValue attributes = 3;
 }

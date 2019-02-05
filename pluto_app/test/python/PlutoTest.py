@@ -88,18 +88,14 @@ class PlutoTest(unittest.TestCase):
         update = dap_update_pb2.DapUpdate()
         newvalue = update.update.add()
         f = self.pluto.getField(fieldname)
-        newvalue.tablename = f['table']
         newvalue.fieldname = fieldname
 
         newvalue.value.type = {
             'string': 2,
-            'embedding': 7,
             'dm': 6,
         }[typename]
         if typename == "string":
             newvalue.value.s = data
-        if typename == "embedding":
-            newvalue.value.embedding = data
         if typename == "dm":
             newvalue.value.dm.CopyFrom(data)
 
@@ -119,7 +115,6 @@ class PlutoTest(unittest.TestCase):
             ("Black/Spy/BookMoreDataNovel", "country", "string", "UK"),
             ("86/Maxwell/Smart/Weather",    "country", "string", "US"),
         ]:
-            print(">>", agent_name, fieldname)
             update = self._createUpdate(agent_name, fieldname, typename, data)
             self.pluto.update(update)
 
@@ -144,9 +139,7 @@ class PlutoTest(unittest.TestCase):
         qc.constraint.relation.val.s = "UK"
 
         dapQuery = self.pluto.dapManager.makeQuery(qm)
-        dapQuery.print()
         results = list(self.pluto.dapManager.execute(dapQuery))
 
-        print(results)
-        assert len(results) == 100
-
+        assert len(results) == 1
+        assert results[0][0] ==  "007/James/Bond/Weather"
