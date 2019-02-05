@@ -95,6 +95,3 @@ class PlutoApp:
     def getField(self, fieldname):
         return self.dapManager.getField(fieldname)
 
-    def update(self, update):
-        f = self.getField(update.update[0].fieldname)
-        self.dapManager.getInstance(f['dap']).update(update)
