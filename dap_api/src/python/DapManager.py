@@ -116,7 +116,7 @@ class DapManager(object):
         dapQueryRepn = DapQueryRepn.DapQueryRepn()
 
         # passing in the embedding system is part of the hack SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
-        embeddingInfo.dapName = self.embedderDapName
+        embeddingInfo.dapName = self.embedderName
         embeddingInfo.embeddingDap = self.instances.get(embeddingInfo.dapName, None)
 
         if not embeddingInfo.embeddingDap:

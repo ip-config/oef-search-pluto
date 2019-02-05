@@ -3,6 +3,7 @@ from dap_api.src.protos import dap_update_pb2
 from dap_api.src.python.DapQuery import DapQuery
 from fetch_teams.oef_core_protocol import query_pb2
 from utils.src.python.Logging import has_logger
+from dap_api.src.python.DapManager import DapManager
 
 
 class ProtoWrapper:
@@ -54,29 +55,22 @@ class UpdateData:
         return upd
 
 
+class EmbeddingInfo(object):
+    def __init__(self):
+        self.dapName = ""
+        self.embeddingDap = ""
+        self.FieldName = ""
+        self.TableName = ""
+
 class QueryData:
 
     @has_logger
-    def __init__(self, origin: query_pb2.Query.Model):
+    def __init__(self, origin: query_pb2.Query.Model, dap_manager: DapManager):
         self.origin = origin
+        self.dap_manager = dap_manager
         if not self.origin:
             self.origin = query_pb2.Query()
 
-    def add_description(self, text):
-        self.origin.description = text
-
-    def add_data_model(self, dm):
-        self.origin.data_model = dm
-
     # TODO support for constraints
     def toDapQuery(self):
-        q = DapQuery()
-        try:
-            q.data_model = self.origin.model
-        except AttributeError:
-            self.log.info("Query doesn't have a data model!")
-        try:
-            q.description = self.origin.description
-        except AttributeError:
-            self.log.info("Query doesn't have description!")
-        return q
+        return self.dap_manager.makeQuery(self.origin, EmbeddingInfo())
