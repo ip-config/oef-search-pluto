@@ -7,6 +7,7 @@ from dap_api.src.python import SubQueryInterface
 from dap_api.src.python import DapOperatorFactory
 from dap_api.src.python import DapQueryRepn
 from dap_api.src.python.DapInterface import DapBadUpdateRow
+from dap_api.src.protos import dap_update_pb2
 
 class InMemoryDap(DapInterface.DapInterface):
 
@@ -141,9 +142,10 @@ class InMemoryDap(DapInterface.DapInterface):
     Returns:
       None
     """
-    def update(self, update_data):
+    def update(self, update_data: dap_update_pb2.DapUpdate.TableFieldValue):
         for commit in [ False, True ]:
-            for upd in update_data.update:
+            upd = update_data
+            if upd:
 
                 k,v = self._typeAndValueOfDapValue(upd.value)
 

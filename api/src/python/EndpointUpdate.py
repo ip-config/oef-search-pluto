@@ -3,14 +3,14 @@ from api.src.python.Serialization import serializer, deserializer
 from utils.src.python.Logging import has_logger
 from api.src.proto import update_pb2
 from api.src.proto import response_pb2
-from ai_search_engine.src.python.SearchEngine import SearchEngine
+from dap_api.src.python.DapManager import DapManager
 from api.src.python.ProtoWrappers import ProtoWrapper
 
 
 class UpdateEndpoint(HasProtoSerializer, HasMessageHandler):
     @has_logger
-    def __init__(self, search_engine: SearchEngine, proto_wrapper: ProtoWrapper):
-        self.search_engine = search_engine
+    def __init__(self, dap_manager: DapManager, proto_wrapper: ProtoWrapper):
+        self.dap_manager = dap_manager
         self.proto_wrapper = proto_wrapper
 
     @serializer
@@ -25,7 +25,7 @@ class UpdateEndpoint(HasProtoSerializer, HasMessageHandler):
         resp = response_pb2.UpdateResponse()
         try:
             upd = self.proto_wrapper.get_instance(msg)
-            self.search_engine.update(upd.toDapUpdate())
+            self.dap_manager.update(upd.toDapUpdate())
             resp.status = 0
         except Exception as e:
             self.log.info("Failed to update data, because: ", e)
@@ -35,8 +35,8 @@ class UpdateEndpoint(HasProtoSerializer, HasMessageHandler):
 
 class BlkUpdateEndpoint(HasProtoSerializer, HasMessageHandler):
     @has_logger
-    def __init__(self, search_engine: SearchEngine, proto_wrapper: ProtoWrapper):
-        self.search_engine = search_engine
+    def __init__(self, dap_manager: DapManager, proto_wrapper: ProtoWrapper):
+        self.dap_manager = dap_manager
         self.proto_wrapper = proto_wrapper
 
     @serializer
@@ -51,7 +51,7 @@ class BlkUpdateEndpoint(HasProtoSerializer, HasMessageHandler):
         resp = response_pb2.UpdateResponse()
         try:
             upd = self.proto_wrapper.get_instance(msg)
-            self.search_engine.update(upd.toDapUpdate())
+            self.dap_manager.update(upd.toDapUpdate())
             resp.status = 0
         except Exception as e:
             self.log.info("Failed to update data, because: ", e)

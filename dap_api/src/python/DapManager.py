@@ -4,6 +4,7 @@ import inspect
 from dap_api.src.python import DapOperatorFactory
 from dap_api.src.python import DapQuery
 from dap_api.src.python import DapQueryRepn
+from dap_api.src.protos import dap_update_pb2
 
 class DapManager(object):
     class PopulateFieldInformationVisitor(DapQueryRepn.DapQueryRepn.Visitor):
@@ -111,6 +112,11 @@ class DapManager(object):
 
     def getInstance(self, name):
         return self.instances[name]
+
+    def update(self, update: dap_update_pb2.DapUpdate):
+        for upd in update.update:
+            cls = self.getFields(upd.fieldname)["dap"]
+            self.getInstance(cls).update(upd)
 
     def _listClasses(self, module):
         r = {}

@@ -17,12 +17,13 @@ message DapUpdate {
   }
 
   message TableFieldValue {
+    string tablename = 1;
     DapAgentUri key =2;
     string fieldname = 3;
     DapValue value = 4;
   }
 
-  repeated TableFieldValue update = 2;
+  repeated TableFieldValue update = 1;
 };
 
 // Conceptually, A DAP table is a set of rows, one per agent and a set of columns.

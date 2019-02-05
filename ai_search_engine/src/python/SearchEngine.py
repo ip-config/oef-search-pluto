@@ -104,8 +104,9 @@ class SearchEngine(DapInterface):
         return result
 
     # (TODO): introduce service ID, right now only one service / agent is supported
-    def update(self, update_data: DapUpdate):
-        for upd in update_data.update:
+    def update(self, update_data: DapUpdate.TableFieldValue):
+        upd = update_data
+        if upd:
             k, v = "dm", upd.value.dm
             tbname = self.tablenames[0]
             if upd.fieldname not in self.structure[tbname]:

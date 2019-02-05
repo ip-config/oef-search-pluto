@@ -32,7 +32,7 @@ message Update {
         Location l = 9;
     }
 
-    message AttributeValue {
+    message Attribute {
         AttributeName attrname = 3;
         AttributeValue value = 4;
     }
@@ -43,5 +43,5 @@ message Update {
 
     Uri uri = 1;
     fetch.oef.pb.Query.DataModel data_model = 2;
-    repeated AttributeValue attributes = 3;
+    repeated Attribute attributes = 3;
 }
