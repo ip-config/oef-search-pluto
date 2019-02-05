@@ -26,7 +26,7 @@ message Update {
         int64 i = 3;
         float f = 4;
         double d = 5;
-        //fetch.oef.pb.Query.DataModel dm = 6;
+        //fetch.oef.pb.Query.DataModel dm = 6; // will arrive in future
         int32 i32 = 7;
         bool b = 8;
         Location l = 9;

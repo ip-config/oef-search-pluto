@@ -6,6 +6,7 @@ from dap_api.src.python import DapInterface
 from dap_api.src.python import SubQueryInterface
 from dap_api.src.python import DapOperatorFactory
 from dap_api.src.python import DapQueryRepn
+from dap_api.src.python import ProtoHelpers
 from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_api.src.protos import dap_update_pb2
 
@@ -105,34 +106,8 @@ class InMemoryDap(DapInterface.DapInterface):
                 dapQueryRepnLeaf.query_field_value)
         return InMemoryDap.ConstraintProcessor(self, rowProcessor, dapQueryRepnLeaf.target_field_name)
 
-  #  def makeQuery(self, query_pb, constraint_factory, tablename):
-  #      # This PB will be all the same table and all answerable by this object.
-  #      dapQuery = DapQuery.DapQuery()
-  #      dapQuery.fromQueryProto(query_pb, constraint_factory, self.structure.get(tablename, {}))
-  #      return dapQuery
-
-    def _typeOfDapValue(self, dap_value):
-        return {
-            2: "string",
-            3: "int64",
-            4: "float",
-            5: "double",
-            6: "embedding",
-        }.get(dap_value.type, None)
-
     def print(self):
         print(self.store)
-
-    # given an input value probuf, returnm the type and TRANSLATED TO PYTHON data in a tuple.
-    def _typeAndValueOfDapValue(self, dap_value):
-        (k, va) = {
-            2: ("string", lambda x: x.s),
-            3: ("int64", lambda x: x.i),
-            4: ("float", lambda x: x.f),
-            5: ("double", lambda x: x.d),
-            6: ("embedding", lambda x: x.embedding.v),
-        }.get(dap_value.type, (None, lambda x: None))
-        return k, va(dap_value)
 
     """This function will be called with any update to this DAP.
 
@@ -147,7 +122,7 @@ class InMemoryDap(DapInterface.DapInterface):
             upd = update_data
             if upd:
 
-                k,v = self._typeAndValueOfDapValue(upd.value)
+                k,v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
 
                 if upd.fieldname not in self.fields:
                     raise DapBadUpdateRow("No such field", None, upd.key.agent_name, upd.key.core_uri, upd.fieldname, k)
