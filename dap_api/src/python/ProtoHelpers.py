@@ -26,16 +26,26 @@ def listOf(x)
 def rangeOf(x)
     return("{}_range".format(x))
 
-def decodeTableFieldValue(tfv):
-    type =
+def decodeAttributeValueToInfo(av):
+    return
     {
-        0: None,
-        1: None,
-        2: TYPE_STRING,
-        3: TYPE_INT64,
-        4: TYPE_FLOAT,
-        5: TYPE_DOUBLE,
-        6: TYPE_DATA_MODEL,
-        7: TYPE_EMBEDDING,
-    }[tfv.value.type]
-    return (tfv.tablename, tfv.fieldname, tfv.type)
+        0: ( None, lambda x: None)
+        1: ( None, lambda x: None)
+        2: ( TYPE_STRING,lambda x: x.s),
+        3: ( TYPE_INT64,lambda x: x.s),
+        4: ( TYPE_FLOAT,lambda x: x.i),
+        5: ( TYPE_DOUBLE,lambda x: x.d),
+        6: ( None, lambda x: None), # ( TYPE_DATA_MODEL,lambda x: x.dm), # not impl yet
+        7: ( TYPE_INT32,lambda x: x.i32),
+        8: ( TYPE_BOOL,lambda x: x.b),
+        9: ( TYPE_LOCATION,lambda x: x.l),
+    }.get(av.value.type, ( None, lambda x: None))
+
+def decodeAttributeValueToTypeValue(av):
+    t,func = decodeAttributeValueToInfo(av)
+    v = func(av)
+    return t,v
+
+def decodeAttributeValueToType(av):
+    return decodeAttributeValueToInfo(av)[0]
+
