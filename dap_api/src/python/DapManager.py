@@ -50,6 +50,12 @@ class DapManager(object):
         def visitLeaf(self, node, depth):
             node.query = self.dapmanager.getInstance(node.dap_name).constructQueryConstraintObject(node)
 
+    # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
+    class EmbeddingInfo(object):
+        def __init__(self):
+            self.dapName = None
+            self.embeddingDap = None
+
     def __init__(self):
         self.instances = {}
         self.operator_factory = DapOperatorFactory.DapOperatorFactory()
@@ -98,6 +104,9 @@ class DapManager(object):
     def getFields(self):
         return self.fields
 
+    def getField(self, fieldname):
+        return self.fields.get(fieldname, None)
+
     def getInstance(self, name):
         return self.instances[name]
 
@@ -112,8 +121,10 @@ class DapManager(object):
                 r[name]=obj
         return r
 
-    def makeQuery(self, query_pb, embeddingInfo: object=None):
+    def makeQuery(self, query_pb):
         dapQueryRepn = DapQueryRepn.DapQueryRepn()
+
+        embeddingInfo = DapManager.EmbeddingInfo()
 
         # passing in the embedding system is part of the hack SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
         embeddingInfo.dapName = self.embedderName
