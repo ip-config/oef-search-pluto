@@ -14,7 +14,7 @@ def get_attr_b(name, desc, t=2):
 
 
 def set_uri(upd: update_pb2.Update, uri: str):
-    agent, oef_core = uri.split(",")
+    oef_core, agent = uri.split(",")
     upd.uri.agent = agent
     upd.uri.oef_core.extend([oef_core])
 

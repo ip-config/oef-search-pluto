@@ -30,11 +30,11 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler):
         items = []
         for element in result:
             item = response_pb2.SearchResponse.Item()
-            item.agent = element[1]
-            if type(element[0]) == list:
-                item.oef_core.extend(element[0])
+            item.agent = element[0]
+            if type(element[1]) == list:
+                item.oef_core.extend(element[1])
             else:
-                item.oef_core.extend([element[0]])
+                item.oef_core.extend([element[1]])
             item.score = -1#element[1]
             items.append(item)
         resp.result.extend(items)
