@@ -14,9 +14,9 @@ RUN apk add /tmp/bazel-0.22.0-r0.apk
 
 ADD project.tar.gz /app
 
-WORKDIR /app/oef-search-pluto
+WORKDIR /app/project
 
-RUN rm .bazelrc && \
+RUN rm -f .bazelrc && \
     bazel build pluto_app/src/python:pluto --force_python=PY3 && \
     cp testapp/src/resources/ssl/* /build  && \
     cp -Lr bazel-bin /build
@@ -25,7 +25,7 @@ FROM qati/python3alpine_nlp
 
 WORKDIR /app
 
-COPY --from=builder /build//bazel-bin/pluto_app/src/python/ /app/
+COPY --from=builder /build/bazel-bin/pluto_app/src/python/ /app/
 COPY --from=builder /build/server.pem /app/
 
 EXPOSE 7500-7501

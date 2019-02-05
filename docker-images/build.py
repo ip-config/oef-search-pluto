@@ -7,8 +7,8 @@ import argparse
 
 GCR_PROJECT = 'organic-storm-201412'
 
-PROJECT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-SEARCH_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+PROJECT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+SEARCH_PATH = os.path.abspath(os.path.dirname(__file__))
 
 
 def parse_commandline():
@@ -32,7 +32,7 @@ def check_project_path():
 
 
 def get_project_version():
-    return subprocess.check_output(['git', 'describe', '--dirty=-wip'], cwd=PROJECT_PATH).decode().strip()
+    return subprocess.check_output(['git', 'describe', '--dirty=-wip', '--always'], cwd=PROJECT_PATH).decode().strip()
 
 
 def main():
@@ -48,8 +48,8 @@ def main():
         sys.exit(1)
 
     # based on the version generate the required tags
-    latest_docker_tag = 'search:latest'
-    local_docker_tag = 'search:{}'.format(version)
+    latest_docker_tag = 'oef-search:latest'
+    local_docker_tag = 'oef-search:{}'.format(version)
     remote_docker_tag = 'gcr.io/{}/{}'.format(GCR_PROJECT, local_docker_tag)
 
     print('Generating source archive...')
