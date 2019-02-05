@@ -53,27 +53,6 @@ class InMemoryDap(DapInterface.DapInterface):
                 result_field.type = field_type
         return result
 
-    """This function queries one or more tables in this DAP, applying filtering and returns
-    a list of all matching Agents which are in the pre-filtered list.
-
-    Args:
-      query (DapQuery): A query subtree which can be handled by this DAP.
-      agents (DapResult): A sub-result which can be used to optimise or post-filter the results or NONE.
-
-    Returns:
-      DapResult
-    """
-    #def query(self, dapQuery, agents=None):
-    #    for table_name, table in self.store.items():
-    #        if agents:
-    #            for key in agents:
-    #                row=table[key]
-    #                if dapQuery.testRow(row):
-    #                    yield key
-    #        for key, row in table.items():
-    #            if dapQuery.testRow(row):
-    #                yield key
-
     def processRows(self, rowProcessor, agents=None):
         for table_name, table in self.store.items():
             if agents == None:
