@@ -19,6 +19,7 @@ py_library(
         "//fetch_teams/oef_core_protocol:py_oef_protocol",
         "//ai_search_engine/src/python:search_engine"
     ],
+    visibility = ["//visibility:public"],
 )
 
 py_library(
@@ -29,6 +30,7 @@ py_library(
         "//api/src/python:serialization",
         "//utils/src/python:py_utils"
     ],
+    visibility = ["//visibility:public"],
 )
 
 py_library(
@@ -39,22 +41,22 @@ py_library(
         "//api/src/proto:py_api_pb",
         "//fetch_teams/oef_core_protocol:py_oef_protocol",
         "//utils/src/python:py_utils",
-    ]
+    ],
+    visibility = ["//visibility:public"],
 )
 
-py_binary(
+py_library(
     name = "communication_handler",
     srcs = ["CommunicationHandler.py"],
-    main = "CommunicationHandler.py",
     deps = [
         "//network/src/python/async_socket:async_socket",
         "//api/src/python:backend_router",
         "//api/src/python:endpoints",
         "//fetch_teams/bottle:bottle",
         "//utils/src/python:py_utils",
-        "//ai_search_engine/src/python:search_engine",
         "//dap_api/src/python:dap_api",
         ":utils"
     ],
     srcs_version = "PY3",
+    visibility = ["//visibility:public"],
 )

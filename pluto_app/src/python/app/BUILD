@@ -6,5 +6,10 @@ py_library(
         "//dap_api/src/python:dap_api",
         "//dap_api/experimental/python:experimental_lib",
         "//dap_api/src/protos:py_dap_api_pb",
+        "//api/src/python:backend_router",
+        "//api/src/python:endpoints",
+        "//utils/src/python:py_utils",
+        "//api/src/python:utils",
+        "//api/src/python:communication_handler"
     ],
 )

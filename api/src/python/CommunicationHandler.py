@@ -1,16 +1,9 @@
-from concurrent.futures import ThreadPoolExecutor
-import asyncio
-from network.src.python.async_socket.AsyncSocket import run_server, handler, Transport
 from api.src.python.BackendRouter import BackendRouter
+import asyncio
 from fetch_teams.bottle import SSLWSGIRefServer
 from fetch_teams.bottle import bottle
-import sys
-from utils.src.python.Logging import get_logger, configure as configure_logging
-from api.src.python.EndpointSearch import SearchQuery
-from api.src.python.EndpointUpdate import UpdateEndpoint, BlkUpdateEndpoint
-from ai_search_engine.src.python import SearchEngine
-from dap_api.src.python.DapManager import DapManager
-import api.src.python.ProtoWrappers as ProtoWrappers
+from network.src.python.async_socket.AsyncSocket import run_server, handler, Transport
+from utils.src.python.Logging import get_logger
 
 
 def socket_handler(router: BackendRouter):
@@ -24,10 +17,6 @@ def socket_handler(router: BackendRouter):
         await transport.write(response)
         transport.close()
     return on_connection
-
-
-def run_socket_server(host: str, port: str, router: BackendRouter):
-    asyncio.run(run_server(socket_handler(router), host, port))
 
 
 def http_json_handler(router):
@@ -44,65 +33,12 @@ def http_json_handler(router):
     return on_request
 
 
+def run_socket_server(host: str, port: str, router: BackendRouter):
+    asyncio.run(run_server(socket_handler(router), host, port))
+
+
 def run_http_server(host: str, port: int, crt_file: str, router: BackendRouter):
     app = bottle.Bottle()
     srv = SSLWSGIRefServer.SSLWSGIRefServer(host=host, port=port, certificate_file=crt_file)
     app.route(path="/json/<path:path>", method="POST", callback=http_json_handler(router))
     bottle.run(server=srv, app=app)
-
-
-if __name__ == "__main__":
-    configure_logging()
-
-    executor = ThreadPoolExecutor(max_workers=2)
-    http_port_number = int(sys.argv[1])
-    certificate_file = sys.argv[2]
-    socket_port_number = http_port_number+1
-    if len(sys.argv) == 4:
-        socket_port_number = sys.argv[3]
-
-    #DAPManager
-    dap_manager = DapManager()
-    dap_manager_config = {
-         "search_engine": {
-             "class": "SearchEngine",
-             "config": {
-                 "structure": {
-                     "dm_store": {
-                         "data_model": "data_model"
-                     }
-                 }
-             }
-         }
-     }
-
-    dap_manager.setup(sys.modules[__name__], dap_manager_config)
-
-    update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, {
-        "table": "dm_store",
-        "field": "data_model"
-    })
-    query_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.QueryData, dap_manager)
-
-    search_engine = dap_manager.getInstance("search_engine")
-
-    dap_manager.setDataModelEmbedder('search_engine', 'dm_store', 'data_model')
-
-    #modules
-    search_module = SearchQuery(dap_manager, query_wrapper)
-    update_module = UpdateEndpoint(search_engine, update_wrapper)
-    blk_update_module = BlkUpdateEndpoint(search_engine, update_wrapper)
-
-
-    #router
-    router_ = BackendRouter()
-    router_.register_serializer("search", search_module)
-    router_.register_handler("search", search_module)
-    router_.register_serializer("update", update_module)
-    router_.register_handler("update", update_module)
-    router_.register_serializer("blk_update", blk_update_module)
-    router_.register_handler("blk_update", blk_update_module)
-
-    executor.submit(run_socket_server, "0.0.0.0", socket_port_number, router_)
-    executor.submit(run_http_server, "0.0.0.0", http_port_number, certificate_file, router_)
-    executor.shutdown(wait=True)

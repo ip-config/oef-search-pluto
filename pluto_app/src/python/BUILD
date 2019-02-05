@@ -9,5 +9,6 @@ py_binary(
         "//ai_search_engine/src/python:search_engine",
         "//dap_api/src/protos:py_dap_api_pb",
         "//fetch_teams/oef_core_protocol:py_oef_protocol",
+        "//utils/src/python:py_utils",
     ],
 )
