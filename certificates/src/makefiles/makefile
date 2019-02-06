@@ -76,6 +76,11 @@ $(LOCK)clean:
 	-inkey $*.priv \
 	-name $$foo
 
+%.pem:	%.priv %.cert
+	@cat $*.priv $*.cert > $*.pem
+	@openssl x509 -text -in $*.pem
+	@openssl rsa -text -in $*.pem
+
 %.show:
 	@echo "$* = $($*)"
 
