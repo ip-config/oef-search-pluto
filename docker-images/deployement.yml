@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oef-search
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oef-search
+  template:
+    metadata:
+      labels:
+        app: oef-search
+    spec:
+      containers:
+      - name: oef-search
+        image: gcr.io/organic-storm-201412/oef-search:4426a30-wip
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7500
+        - containerPort: 7501
+
