@@ -116,7 +116,7 @@ class PlutoTest(unittest.TestCase):
             ("86/Maxwell/Smart/Weather",    "country", "string", "US"),
         ]:
             update = self._createUpdate(agent_name, fieldname, typename, data)
-            self.pluto.update(update)
+            self.pluto.dapManager.update(update)
 
     def testDataModelAndAttributeQuery(self):
         """Test case A. note that all test method names must begin with 'test.'"""

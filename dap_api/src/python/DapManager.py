@@ -115,7 +115,7 @@ class DapManager(object):
 
     def update(self, update: dap_update_pb2.DapUpdate):
         for upd in update.update:
-            cls = self.getFields(upd.fieldname)["dap"]
+            cls = self.getField(upd.fieldname)["dap"]
             self.getInstance(cls).update(upd)
 
     def _listClasses(self, module):

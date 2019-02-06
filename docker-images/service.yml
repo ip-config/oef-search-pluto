@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: oef-search
+  labels:
+    app: oef-search
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 7500
+    targetPort: 7500
+    name: http
+  - port: 7501
+    targetPort: 7501
+    name: socket
+  selector:
+    app: oef-search
+  loadBalancerSourceRanges:
+  - 10.0.0.0/8
+  - 77.99.50.66/32
+  - 46.17.166.103/32
+  - 81.153.59.130/32
+  - 176.251.247.169/32

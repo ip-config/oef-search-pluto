@@ -101,7 +101,7 @@ class InMemoryDap(DapInterface.DapInterface):
             upd = update_data
             if upd:
 
-                k,v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
+                k, v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
 
                 if upd.fieldname not in self.fields:
                     raise DapBadUpdateRow("No such field", None, upd.key.agent_name, upd.key.core_uri, upd.fieldname, k)

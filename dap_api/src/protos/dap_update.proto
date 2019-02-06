@@ -14,6 +14,10 @@ message DapUpdate {
     double d = 5;
 
     fetch.oef.pb.Query.DataModel dm = 6;
+
+    int32 i32 = 7;
+    bool b = 8;
+    fetch.oef.pb.Query.Location l = 9;
   }
 
   message TableFieldValue {

@@ -73,8 +73,8 @@ class PlutoApp:
 
         # endpoints
         self._search_endpoint = SearchQuery(self.dapManager, query_wrapper)
-        self._update_endpoint = UpdateEndpoint(search_engine, update_wrapper)
-        self._blk_update_endpoint = BlkUpdateEndpoint(search_engine, update_wrapper)
+        self._update_endpoint = UpdateEndpoint(self.dapManager, update_wrapper)
+        self._blk_update_endpoint = BlkUpdateEndpoint(self.dapManager, update_wrapper)
 
     def _setup_router(self):
         # router
@@ -95,6 +95,3 @@ class PlutoApp:
     def getField(self, fieldname):
         return self.dapManager.getField(fieldname)
 
-    def update(self, update):
-        f = self.getField(update.update[0].fieldname)
-        self.dapManager.getInstance(f['dap']).update(update)
