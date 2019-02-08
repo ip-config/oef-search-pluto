@@ -1,4 +1,6 @@
+import argparse
 import sys
+
 from dap_api.src.python import DapManager
 from ai_search_engine.src.python import SearchEngine
 from dap_api.experimental.python import InMemoryDap
@@ -12,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 class PlutoApp:
     def __init__(self):
-        pass
+        self.args = None
 
     def setup(self, dapManagerConfig=None):
         self.dapManager = DapManager.DapManager()
@@ -86,10 +88,16 @@ class PlutoApp:
         self.router.register_serializer("blk_update",  self._blk_update_endpoint)
         self.router.register_handler("blk_update",  self._blk_update_endpoint)
 
-    def run(self, http_port, socket_port, ssl_certificate, ):
+    def run(self):
+        parser = argparse.ArgumentParser(description='Test application for PLUTO.')
+        parser.add_argument("--ssl_certificate",  required=True, type=str, help="specify an SSL certificate PEM file.")
+        parser.add_argument("--http_port",        required=True, type=int, help="which port to run the HTTP interface on.")
+        parser.add_argument("--socket_port",      required=True, type=int, help="which port to run the socket interface on.")
+        self.args = parser.parse_args()
+
         self.setup()
-        self.executor.submit(run_socket_server, "0.0.0.0", socket_port, self.router)
-        self.executor.submit(run_http_server, "0.0.0.0", http_port, ssl_certificate, self.router)
+        self.executor.submit(run_socket_server, "0.0.0.0", self.args.socket_port, self.router)
+        self.executor.submit(run_http_server, "0.0.0.0", self.args.http_port, self.args.ssl_certificate, self.router)
         self.executor.shutdown(wait=True)
 
     def getField(self, fieldname):
