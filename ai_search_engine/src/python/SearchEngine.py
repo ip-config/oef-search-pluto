@@ -189,17 +189,26 @@ class SearchEngine(DapInterface):
             if agents == []:
                 return []
 
+            key_list = []
             if agents == None:
-                for key, data in self._ss.store[self.target_table_name].items():
-                    dist = distance.cosine(data[self.target_field_name], self.enc_query)
-                    if dist < 0.2:
-                        yield key
+                key_list = self._ss.store[self.target_table_name].keys()
             else:
-                for key in agents:
-                    data = self._ss.store[self.target_table_name][key]
-                    dist = distance.cosine(data[self.target_field_name], self.enc_query)
-                    if dist < 0.2:
-                        yield key
+                key_list = agents
+
+            found = False
+            min_dist = 1e9
+            min_key = None
+            for key in key_list:
+                data = self._ss.store[self.target_table_name][key]
+                dist = distance.cosine(data[self.target_field_name], self.enc_query)
+                if dist < min_dist:
+                    min_dist = dist
+                    min_key = key
+                if dist < 0.2:
+                    found = True
+                    yield key
+            if not found:
+                yield min_key
 
     def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.Leaf) -> SubQueryInterface:
         return SearchEngine.SubQuery(self, dapQueryRepnLeaf)
