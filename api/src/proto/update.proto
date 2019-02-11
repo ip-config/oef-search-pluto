@@ -3,6 +3,14 @@ syntax = "proto3";
 import "fetch_teams/oef_core_protocol/query.proto";
 
 message Update {
+
+    message Address {
+        string ip = 1;
+        uint32 port = 2;
+        string key = 3;
+        bytes signature = 4;
+    }
+
     message Uri {
         string agent = 1;
         repeated string oef_core = 2;
@@ -13,35 +21,42 @@ message Update {
         double lat = 2;
     }
 
-    enum AttributeName {
-        LOCATION = 0;
-        COUNTRY = 1;
-        SERVICE_DESCRIPTION = 2;
-    }
-
-    message AttributeValue {
-        int32 type = 1;
-        // type 1 == NONE, all others match fieldname below.
-        string s = 2;
-        int64 i = 3;
-        float f = 4;
-        double d = 5;
-        //fetch.oef.pb.Query.DataModel dm = 6; // will arrive in future
-        int32 i32 = 7;
-        bool b = 8;
-        Location l = 9;
-    }
-
     message Attribute {
-        AttributeName attrname = 3;
-        AttributeValue value = 4;
+        enum Name {
+            LOCATION = 0;
+            COUNTRY = 1;
+            CITY = 2;
+            SERVICE_DESCRIPTION = 3;
+            NETWORK_ADDRESS = 4;
+            CUSTOM = 5;
+        }
+
+        message ValueType {
+            int32 type = 1;
+            // type 1 == NONE, all others match fieldname below.
+            string s = 2;
+            int64 i = 3;
+            float f = 4;
+            double d = 5;
+            //fetch.oef.pb.Query.DataModel dm = 6; // will arrive in future
+            int32 i32 = 7;
+            bool b = 8;
+            Location l = 9;
+            Address a = 10;
+        }
+
+        Name name = 1;
+        ValueType value = 2;
+        string description = 3; //if name is CUSTOM then this must be specified, basically it's custom name
     }
 
     message BulkUpdate {
         repeated Update list = 1;
     }
 
-    Uri uri = 1;
-    fetch.oef.pb.Query.DataModel data_model = 2;
-    repeated Attribute attributes = 3;
+    string key = 1;
+    repeated Attribute attributes = 2;
+    repeated fetch.oef.pb.Query.DataModel data_models = 3;
+    Uri uri = 4; // todo: remove
+    fetch.oef.pb.Query.DataModel data_model = 5; //todo remove
 }

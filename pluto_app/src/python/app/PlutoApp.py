@@ -65,10 +65,15 @@ class PlutoApp:
         self.executor = ThreadPoolExecutor(max_workers=2)
 
     def _setup_endpoints(self):
-        update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, {
-            "table": "data_model_table",
-            "field": "data_model"
-        })
+        AttrName = ProtoWrappers.AttributeName
+        update_config = ProtoWrappers.ConfigBuilder(ProtoWrappers.UpdateData)\
+            .data_model("data_model_table", "data_model")\
+            .attribute(AttrName.LOCATION, "location_table", "coords")\
+            .attribute(AttrName.COUNTRY, "location_table", "country")\
+            .attribute(AttrName.CITY, "location_table", "city")\
+            .default("default_table", "default_field")\
+            .build()
+        update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, update_config)
         query_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.QueryData, self.dapManager)
 
         search_engine = self.dapManager.getInstance("data_model_searcher")

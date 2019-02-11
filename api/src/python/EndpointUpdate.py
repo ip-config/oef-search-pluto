@@ -4,7 +4,7 @@ from utils.src.python.Logging import has_logger
 from api.src.proto import update_pb2
 from api.src.proto import response_pb2
 from dap_api.src.python.DapManager import DapManager
-from api.src.python.ProtoWrappers import ProtoWrapper
+from api.src.python.ProtoWrappers import ProtoWrapper, InvalidAttribute
 
 
 class UpdateEndpoint(HasProtoSerializer, HasMessageHandler):
@@ -27,6 +27,9 @@ class UpdateEndpoint(HasProtoSerializer, HasMessageHandler):
             upd = self.proto_wrapper.get_instance(msg)
             self.dap_manager.update(upd.toDapUpdate())
             resp.status = 0
+        except InvalidAttribute as e:
+            self.log.warn("Got invalid attribute: " + str(e))
+            resp.status = 1
         except Exception as e:
             self.log.info("Failed to update data, because: ", e)
             resp.status = 1
@@ -53,7 +56,10 @@ class BlkUpdateEndpoint(HasProtoSerializer, HasMessageHandler):
             upd = self.proto_wrapper.get_instance(msg)
             self.dap_manager.update(upd.toDapUpdate())
             resp.status = 0
+        except InvalidAttribute as e:
+            self.log.warn("Got invalid attribute: "+str(e))
+            resp.status = 1
         except Exception as e:
-            self.log.info("Failed to update data, because: ", e)
+            self.log.info("Failed to update data, because: "+str(e))
             resp.status = 1
         return resp

@@ -2,3 +2,4 @@
 bazel-*/**
 bazel-*
 tmp/**
+docker-images/project.tar.gz
