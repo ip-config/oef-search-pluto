@@ -4,6 +4,7 @@ from fetch_teams.oef_core_protocol import query_pb2
 from utils.src.python.Logging import has_logger
 from dap_api.src.python.DapManager import DapManager
 from typing import List
+import functools
 
 class ProtoWrapper:
     def __init__(self, cls, *args, **kwargs):
@@ -13,6 +14,7 @@ class ProtoWrapper:
 
     def get_instance(self, data):
         return self.cls(data, *self.args, **self.kwargs)
+
 
 class ConfigBuilder:
     def __init__(self, cls):
@@ -28,7 +30,7 @@ class ConfigBuilder:
                     new[k] = l[k]
         for k in common:
             if type(a[k]) == dict:
-                new[k] = merge_dict(a[k], b[k])
+                new[k] = self._merge_dict(a[k], b[k])
             elif type(a[k]) == list:
                 new[k] = [*a[k], *b[k]]
             else:
@@ -37,6 +39,8 @@ class ConfigBuilder:
 
     def __getattr__(self, item):
         func = self.cls.data_store[item]
+
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             self.config = self._merge_dict(self.config, func(*args, **kwargs))
             return self
@@ -58,14 +62,14 @@ class InvalidAttribute(Exception):
         self.msg = msg
 
 
-AttributeName = update_pb2.Attribute.Name
+AttributeName = update_pb2.Update.Attribute.Name
 _attr_name_to_type = {
-            AttributeName.LOCATION: 9,
-            AttributeName.COUNTRY: 2,
-            AttributeName.CITY: 2,
-            AttributeName.SERVICE_DESCRIPTION: 2,
-            AttributeName.NETWORK_LOCATION: 10,
-            AttributeName.CUSTOM: 0
+            AttributeName.Value("LOCATION"): 9,
+            AttributeName.Value("COUNTRY"): 2,
+            AttributeName.Value("CITY"): 2,
+            AttributeName.Value("SERVICE_DESCRIPTION"): 2,
+            AttributeName.Value("NETWORK_ADDRESS"): 10,
+            AttributeName.Value("CUSTOM"): 0
         }
 
 
@@ -102,9 +106,10 @@ class UpdateData:
     def __init__(self, origin: update_pb2.Update, db_structure):
         self.origin = origin
         self.db_structure = db_structure
-        self._validate_attributes(origin)
+        if type(origin) == update_pb2.Update:
+            self._validate_attributes(origin.attributes)
 
-    def _validate_attributes(self, attributes: List[update_pb2.Attribute]) -> bool:
+    def _validate_attributes(self, attributes: List[update_pb2.Update.Attribute]) -> bool:
         for attr in attributes:
             exp_type = _attr_name_to_type[attr.name]
             if exp_type > 0 and exp_type != attr.value.type:
@@ -135,7 +140,7 @@ class UpdateData:
         if attribute.name in sdb:
             db_name = attribute.name
         elif attribute.name == update_pb2.Update.Attribute.Name.CUSTOM:
-            if not attribute.hasField("description") or attribute.description < 1:
+            if attribute.description < 1:
                 raise InvalidAttribute(attribute.name, "", attr.value.type,
                                        "CUSTOM attribute must have a name specified in description filed")
             if attribute.description in sdb:
@@ -157,11 +162,10 @@ class UpdateData:
         upd_list = []
         for origin in updates:
             key = origin.key
-            if origin.hasField("data_model"):
+            if origin.HasField("data_model"):
                 upd_list.append(self.updFromDataModel(key, origin.data_model))
-            if origin.hasField("attributes"):
-                for attr in origin.attributes:
-                    upd_list.append(self.updFromAttribute(key, attr))
+            for attr in origin.attributes:
+                upd_list.append(self.updFromAttribute(key, attr))
         upd = dap_update_pb2.DapUpdate()
         upd.update.extend(upd_list)
         return upd

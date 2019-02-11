@@ -68,9 +68,9 @@ class PlutoApp:
         AttrName = ProtoWrappers.AttributeName
         update_config = ProtoWrappers.ConfigBuilder(ProtoWrappers.UpdateData)\
             .data_model("data_model_table", "data_model")\
-            .attribute(AttrName.LOCATION, "location_table", "coords")\
-            .attribute(AttrName.COUNTRY, "location_table", "country")\
-            .attribute(AttrName.CITY, "location_table", "city")\
+            .attribute(AttrName.Value("LOCATION"), "location_table", "coords")\
+            .attribute(AttrName.Value("COUNTRY"), "location_table", "country")\
+            .attribute(AttrName.Value("CITY"), "location_table", "city")\
             .default("default_table", "default_field")\
             .build()
         update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, update_config)
