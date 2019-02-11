@@ -65,9 +65,17 @@ class DapManager(object):
         self.structures = {}
         self.embedderName = None  # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
         self.embeddingFieldName = None # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
+        self.embeddingTableName = None # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
+        self.classmakers = {}
+
+    def addClass(self, name, maker):
+        self.classmakers[name] = maker
 
     def setup(self, module, config):
-        self.classmakers = self._listClasses(module)
+        self.classmakers.update(self._listClasses(module))
+
+        if module==None or config==None:
+            raise Exception("need a module and config")
 
         for k,v in config.items():
             klass_name = v.get('class', v.get('klass', None))
