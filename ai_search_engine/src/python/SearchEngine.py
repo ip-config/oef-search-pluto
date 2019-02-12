@@ -184,14 +184,15 @@ class SearchEngine(DapInterface):
             self._ss = searchSystem
 
         def execute(self, oef_cores: List[DapQueryResult] = None):
-            if len(oef_cores) == 0:
+            if oef_cores == []:
                 return []
 
             key_list = []
             if oef_cores is None:
                 key_list = self._ss.store[self.target_table_name].keys()
             else:
-                key_list = oef_cores
+                for key in oef_cores:
+                    key_list.append(key())
 
             result = []
             for key in key_list:

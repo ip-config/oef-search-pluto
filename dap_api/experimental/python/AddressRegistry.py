@@ -5,9 +5,11 @@ from dap_api.src.python import ProtoHelpers
 from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_api.src.python import DapQueryRepn
 from dap_api.src.protos import dap_update_pb2
+from utils.src.python.Logging import has_logger
 
 
 class AddressRegistry(DapInterface.DapInterface):
+    @has_logger
     def __init__(self, name, configuration):
         self.store = {}
         self.name = name
@@ -79,8 +81,11 @@ class AddressRegistry(DapInterface.DapInterface):
 
     def resolve(self, key):
         address = []
-        for tblname in self.tablenames:
-            if key in self.store[tblname]:
-                for field in self.structure[tblname]:
-                    address.append(self.store[key][field])
+        try:
+            for tblname in self.tablenames:
+                if key in self.store[tblname]:
+                    for field in self.structure[tblname]:
+                        address.append(self.store[key][field])
+        except Exception as e:
+            self.log.warn("No address entry for key: "+key.decode("utf-8")+", details: "+str(e))
         return address

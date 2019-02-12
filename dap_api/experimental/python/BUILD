@@ -22,5 +22,6 @@ py_library(
                 "//dap_api/src/protos:py_dap_api_pb",
                 "//dap_api/src/python:dap_api",
                 "@com_google_protobuf//:protobuf_python",
+                "//utils/src/python:py_utils"
         ],
 )

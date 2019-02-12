@@ -36,7 +36,7 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler):
             if len(address)>0:
                 item.agent = address.ip + ":" + str(address.port)
             else:
-                item.agent = str(element())
+                item.agent = element().decode("utf-8")
             item.score = element.score
             items.append(item)
         resp.result.extend(items)

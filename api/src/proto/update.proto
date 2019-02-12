@@ -54,7 +54,7 @@ message Update {
         repeated Update list = 1;
     }
 
-    string key = 1;
+    bytes key = 1;
     repeated Attribute attributes = 2;
     repeated fetch.oef.pb.Query.DataModel data_models = 3;
     Uri uri = 4; // todo: remove

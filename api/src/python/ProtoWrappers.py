@@ -119,7 +119,6 @@ class UpdateData:
     def __init__(self, origin: update_pb2.Update, db_structure: dict):
         self.origin = origin
         self.db_structure = db_structure
-        self.address_registry = address_registry
         if type(origin) == update_pb2.Update:
             self._validate_attributes(origin.attributes)
 
@@ -139,8 +138,7 @@ class UpdateData:
         upd = dap_update_pb2.DapUpdate.TableFieldValue()
         upd.tablename = self.db_structure["data_model"]["table"]
         upd.fieldname = self.db_structure["data_model"]["field"]
-        upd.key.agent_name = key
-        upd.key.core_uri.extend(key)
+        upd.key = key
         upd.value.type = 6
 
         upd.value.dm.name = data_model.name
@@ -163,8 +161,7 @@ class UpdateData:
                 db_name = "default"
         upd.tablename = sdb[db_name]["table"]
         upd.fieldname = sdb[db_name]["field"]
-        upd.key.agent_name = key
-        upd.key.core_uri.extend(key)
+        upd.key = key
         upd.value.CopyFrom(ValueTransformer.transform(attribute.value))
 
     def toDapUpdate(self) -> update_pb2.Update:
