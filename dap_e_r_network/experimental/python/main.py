@@ -89,4 +89,39 @@ class PlutoTest(unittest.TestCase):
             'maxwell smart'
         ]
 
+    def testDataModelWithLinkLabelsQuery(self):
+        """Test case A. note that all test method names must begin with 'test.'"""
+
+        qm = query_pb2.Query.Model()
+
+        qc = qm.constraints.add()
+
+        q1 = qc.and_.expr.add()
+        q2 = qc.and_.expr.add()
+        q3 = qc.and_.expr.add()
+
+        q1.constraint.attribute_name = "mesh.origin"
+        q1.constraint.relation.op = 0
+        q1.constraint.relation.val.s = "austin danger powers"
+
+        q2.constraint.attribute_name = "mesh.weight"
+        q2.constraint.relation.op = 0
+        q2.constraint.relation.val.d = 3.5
+
+        q3.constraint.attribute_name = "mesh.label"
+        q3.constraint.set_.op = OPERATOR_IN
+        q3.constraint.set_.val.s = [ "nation" ]
+
+        dapQuery = self.data.makeQuery(qm)
+        results = list(self.data.execute(dapQuery))
+0
+        assert sorted(results) == [
+            'emma peel',
+            'felix leiter',
+            'harry palmer',
+            'james bond',
+            'john steed',
+            'maxwell smart'
+        ]
+
 unittest.main() # run all tests
