@@ -23,7 +23,7 @@ class PlutoTest(unittest.TestCase):
         """Call before every test case."""
 
         config = {
-            "mesh": {
+            "er-graph": {
                 "class": "DapERNetwork",
                 "config": {
                     "structure": {
@@ -41,7 +41,7 @@ class PlutoTest(unittest.TestCase):
         self.setupAgents()
 
     def setupAgents(self):
-        g = self.data.getInstance("mesh").getGraphByTableName("mesh")
+        g = self.data.getInstance("er-graph").getGraphByTableName("mesh")
         g.addLink("james bond", "austin danger powers", bidirectional=True, label="nation")
         g.addLink("james bond", "harry palmer", bidirectional=True, label="nation")
         g.addLink("maxwell smart", "agent 99", bidirectional=True, label="show")
@@ -59,9 +59,6 @@ class PlutoTest(unittest.TestCase):
         g.addLink("john steed", "james bond", bidirectional=True, label="nation")
         g.addLink("emma peel", "james bond", bidirectional=True, label="nation")
 
-        print(g.exploreCosts("austin danger powers"))
-        print(self.data.getFields())
-
     def testDataModelAndAttributeQuery(self):
         """Test case A. note that all test method names must begin with 'test.'"""
 
@@ -78,15 +75,18 @@ class PlutoTest(unittest.TestCase):
 
         q2.constraint.attribute_name = "mesh.weight"
         q2.constraint.relation.op = 0
-        q2.constraint.relation.val.d = 5.0
+        q2.constraint.relation.val.d = 3.5
 
         dapQuery = self.data.makeQuery(qm)
-#        results = list(self.pluto.dapManager.execute(dapQuery))
+        results = list(self.data.execute(dapQuery))
 
-#        assert len(results) == 1
-#        assert results[0][0] ==  "007/James/Bond/Weather"
-
-        assert 1 == 1
-
+        assert sorted(results) == [
+            'emma peel',
+            'felix leiter',
+            'harry palmer',
+            'james bond',
+            'john steed',
+            'maxwell smart'
+        ]
 
 unittest.main() # run all tests

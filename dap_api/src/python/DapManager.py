@@ -42,13 +42,17 @@ class DapManager(object):
 
         def visitNode(self, node, depth):
             if node.common_dap_name:
+                #print("Hello " + node.common_dap_name + ". Would you like to consume " + node.printable())
                 queryObject = self.dapmanager.getInstance(node.common_dap_name).constructQueryObject(node)
                 if queryObject:
+                    #print("Awesome, ta very.")
                     node.query = queryObject
                     return False
+            #print("Okes, we'll recurse.")
             return True
 
         def visitLeaf(self, node, depth):
+            #print("Hello " + node.dap_name + ". Would you like to make a constraint from " + node.printable())
             node.query = self.dapmanager.getInstance(node.dap_name).constructQueryConstraintObject(node)
 
     # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY

@@ -192,7 +192,7 @@ class GraphTest(unittest.TestCase):
 
     def testLoops(self):
         self.g.addLink("A", "B")
-        self.g.addLink("B", "C", bidirectional=True) 
+        self.g.addLink("B", "C", bidirectional=True)
 
         r = self.g.explore("A")
         assert len(r) == 2

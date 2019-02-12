@@ -24,11 +24,13 @@ class DapQueryRepn(object):
             self.subnodes = []
 
         def printable(self):
-            return "{} -- {} over {}, {}".format(
+            return "Branch {} -- {} over {}, {} ({} children, {} leaves)".format(
                 self.name,
                 self.combiner,
                 self.common_target_table_name,
-                self.common_dap_name
+                self.common_dap_name,
+                len(self.leaves),
+                len(self.subnodes)
                 )
 
         def print(self, depth=0):
@@ -81,7 +83,7 @@ class DapQueryRepn(object):
             self.name = "?"
 
         def printable(self):
-            return "{} -- {}.{}.{} ({}) {} {} ({}) ==> {}".format(
+            return "Leaf {} -- {}.{}.{} ({}) {} {} ({}) ==> {}".format(
                 self.name,
                 self.dap_name,
                 self.target_table_name,
@@ -131,7 +133,7 @@ class DapQueryRepn(object):
 
         if visitor.visitNode(node, depth):
             for subnode in node.subnodes:
-                self.visit(visitor, subnode, depth+1)
+                self.visitDescending(visitor, subnode, depth+1)
             for leaf in node.leaves:
                 visitor.visitLeaf(leaf, depth+1)
 
