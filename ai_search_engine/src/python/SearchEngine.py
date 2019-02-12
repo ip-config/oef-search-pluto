@@ -78,17 +78,20 @@ class SearchEngine(DapInterface):
                     counter += 1
                 except KeyError as e:
                     print("Key %s not found, ignoring..." % w[1])
-        if counter > 0:
+        if counter > 1:
             feature_vec = np.divide(feature_vec, float(counter))
         return feature_vec
 
     def _dm_to_vec(self, data: query_pb2.Query.DataModel):
         avg_feature = np.zeros((self._encoding_dim,))
+        counter = 2
         for attr in data.attributes:
             avg_feature = np.add(avg_feature, self._string_to_vec(attr.description))
             avg_feature = np.add(avg_feature, self._string_to_vec(attr.name))
+            counter += 2
         avg_feature = np.add(avg_feature, self._string_to_vec(data.name))
         avg_feature = np.add(avg_feature, self._string_to_vec(data.description))
+        avg_feature = np.divide(avg_feature, float(counter)) #todo check without, seemed to be good
         return avg_feature
 
     def describe(self):
@@ -104,7 +107,23 @@ class SearchEngine(DapInterface):
                 result_field.type = field_type
         return result
 
-    # (TODO): introduce service ID, right now only one service / agent is supported
+    def _get_avg_oef_vec(self, row, vec_field):
+        avg_feature = np.zeros((self._encoding_dim,))
+        counter = 0
+        for f in row:
+            if f == vec_field:
+                continue
+            vec = self._dm_to_vec(row[f])
+            if not any(vec):
+                self.log.warning("Failed to calculate embedding for dm!")
+                print(v)
+                raise Exception("Embedding failed")
+            avg_feature = np.add(avg_feature,vec)
+            counter += 1
+        if counter > 1:
+            avg_feature = np.divide(avg_feature, float(counter))
+        return avg_feature
+
     def update(self, update_data: DapUpdate.TableFieldValue):
         upd = update_data
         if upd:
@@ -124,14 +143,9 @@ class SearchEngine(DapInterface):
                                           value_type=k,
                                           field_type=field_type
                                           )
-
-            vec = self._dm_to_vec(v)
-            if not any(vec):
-                self.log.warning("Failed to calculate embedding for dm!")
-                print(v)
-                raise Exception("Embedding failed")
             row = self.store.setdefault(tbname, {}).setdefault(upd.key, {})
-            row[upd.fieldname] = vec
+            row[v.name] = v
+            row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)
 
     # def query(self, query: DapQuery, agents=None):
     #     if len(self.store) == 0:
