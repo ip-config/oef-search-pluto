@@ -74,29 +74,29 @@ _attr_name_to_type = {
         }
 
 
-class ValueTransformer:
+class ValueTransformer(object):
     # TODO: address signature check
-    @classmethod
-    def address_transformer(cls, address: update_pb2.Update.Address):
+    @staticmethod
+    def address_transformer(address: update_pb2.Update.Address):
         new_address = dap_update_pb2.DapUpdate.Address()
         new_address.ip = address.ip
         new_address.port = address.port
         return new_address
 
-    @classmethod
-    def identity_transformer(cls, src):
+    @staticmethod
+    def identity_transformer(src):
         return src
 
     mapping = {
-        2: (7, "s", "s", identity_transformer),
-        3: (7, "i", "i", identity_transformer),
-        4: (4, "f", "f", identity_transformer),
-        5: (5, "d", "d", identity_transformer),
-        6: (6, "dm", "dm", identity_transformer),
-        7: (7, "i32", "i32", identity_transformer),
-        8: (8, "b", "b", identity_transformer),
-        9: (9, "l", "l", identity_transformer),
-        10: (10, "a", "a", address_transformer)
+        2: (7, "s", "s", identity_transformer.__get__(object)),
+        3: (7, "i", "i", identity_transformer.__get__(object)),
+        4: (4, "f", "f", identity_transformer.__get__(object)),
+        5: (5, "d", "d", identity_transformer.__get__(object)),
+        6: (6, "dm", "dm", identity_transformer.__get__(object)),
+        7: (7, "i32", "i32", identity_transformer.__get__(object)),
+        8: (8, "b", "b", identity_transformer.__get__(object)),
+        9: (9, "l", "l", identity_transformer.__get__(object)),
+        10: (10, "a", "a", address_transformer.__get__(object))
     }
 
     @classmethod
@@ -163,6 +163,7 @@ class UpdateData:
         upd.fieldname = sdb[db_name]["field"]
         upd.key = key
         upd.value.CopyFrom(ValueTransformer.transform(attribute.value))
+        return upd
 
     def toDapUpdate(self) -> update_pb2.Update:
         updates = []
@@ -177,6 +178,8 @@ class UpdateData:
                 raise InvalidAttribute("Key", "OEFCorePublicKey", "bytes", "Required key field not set!")
             if origin.HasField("data_model"):
                 upd_list.append(self.updFromDataModel(key, origin.data_model))
+            for dm in origin.data_models:
+                upd_list.append(self.updFromDataModel(key, dm))
             for attr in origin.attributes:
                 upd_list.append(self.updFromAttribute(key, attr))
         upd = dap_update_pb2.DapUpdate()

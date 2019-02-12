@@ -32,8 +32,9 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler):
         items = []
         for element in result:
             item = response_pb2.SearchResponse.Item()
-            address = self._address_registry.resolve(element())
-            if len(address)>0:
+            addresses = self._address_registry.resolve(element())
+            if len(addresses) > 0:
+                address = addresses[0]
                 item.agent = address.ip + ":" + str(address.port)
             else:
                 item.agent = element().decode("utf-8")
