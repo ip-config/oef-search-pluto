@@ -11,9 +11,7 @@ py_library(
     name = "classes",
     srcs = glob(["*Test.py"]),
     deps = [
-        "//dap_api/src/python:dap_api",
-        "//dap_api/src/protos:py_dap_api_pb",
-        "//fetch_teams/oef_core_protocol:py_oef_protocol",
+         "//dap_2d_geo/src/python:dap_2d_geo",
     ],
 )
 
@@ -23,12 +21,11 @@ py_test(
     srcs = [
          "tests.py",
     ],
+    data = [
+         "//dap_2d_geo/test/resources:airports",
+    ],
     deps = [
-        "//dap_api/src/python:dap_api",
-        "//ai_search_engine/src/python:search_engine",
-        "//dap_api/experimental/python:experimental_lib",
-        "//dap_api/src/protos:py_dap_api_pb",
-        ":mocks",
+        "//dap_2d_geo/src/python:dap_2d_geo",
         ":classes",
     ]
 )
