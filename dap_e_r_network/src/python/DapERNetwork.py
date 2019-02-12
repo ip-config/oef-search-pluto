@@ -75,7 +75,7 @@ class DapERNetwork(DapInterface.DapInterface):
         def addLabel(self, label):
             if self.labels == None:
                 self.labels = []
-            self.lables.append(label)
+            self.labels.append(label)
 
         def addLabels(self, labels):
             if self.labels == None:
@@ -91,6 +91,13 @@ class DapERNetwork(DapInterface.DapInterface):
             if self.origins == None:
                 self.origins = []
             self.origins.extend(origins)
+
+        def printable(self):
+            return "{} via {} < {}".format(
+                self.origins,
+                self.labels if self.labels != None else "*",
+                self.weight if self.labels != None else "inf",
+            )
 
         def sanity(self):
             if self.origins == None:
@@ -124,7 +131,7 @@ class DapERNetwork(DapInterface.DapInterface):
         processes = {
             (graphQuery.tablename + ".origin", "string"):      lambda q,x: q.addOrigin(x),
             (graphQuery.tablename + ".origin", "string_list"): lambda q,x: q.addOrigins(x),
-            (graphQuery.tablename + ".label",  "string"):      lambda q,x: q.addLabels(x),
+            (graphQuery.tablename + ".label",  "string"):      lambda q,x: q.addLabel(x),
             (graphQuery.tablename + ".label",  "string_list"): lambda q,x: q.addLabels(x),
             (graphQuery.tablename + ".weight", "int"):         lambda q,x: q.addWeight(x),
             (graphQuery.tablename + ".weight", "double"):      lambda q,x: q.addWeight(x),

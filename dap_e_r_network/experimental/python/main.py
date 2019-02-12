@@ -125,7 +125,7 @@ class PlutoTest(unittest.TestCase):
             'john steed',
         ]
 
-    def testDataModelWithLinkLabelsSetQuery(self):
+    def testDataModelWithLinkLabelQuery(self):
         """Test case A. note that all test method names must begin with 'test.'"""
 
         qm = query_pb2.Query.Model()
@@ -142,11 +142,11 @@ class PlutoTest(unittest.TestCase):
 
         q2.constraint.attribute_name = "mesh.weight"
         q2.constraint.relation.op = 0
-        q2.constraint.relation.val.d = 3.5
+        q2.constraint.relation.val.d = 13.5
 
         q3.constraint.attribute_name = "mesh.label"
         q3.constraint.relation.op = 0
-        q3.constraint.relation.s = "nation"
+        q3.constraint.relation.val.s = "nation"
 
         dapQuery = self.data.makeQuery(qm)
         results = list(self.data.execute(dapQuery))
