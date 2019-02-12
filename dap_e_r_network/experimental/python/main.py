@@ -4,6 +4,7 @@ import unittest
 from dap_api.src.python import DapManager
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
+from dap_api.src.python import ProtoHelpers
 
 from dap_api.src.python import DapQuery
 
@@ -87,6 +88,7 @@ class PlutoTest(unittest.TestCase):
             'james bond',
             'john steed',
             'maxwell smart'
+            # agent99 is in the same show as Maxwell, but is 4 steps away from Austin Powers.
         ]
 
     def testDataModelWithLinkLabelsQuery(self):
@@ -109,19 +111,18 @@ class PlutoTest(unittest.TestCase):
         q2.constraint.relation.val.d = 3.5
 
         q3.constraint.attribute_name = "mesh.label"
-        q3.constraint.set_.op = OPERATOR_IN
-        q3.constraint.set_.val.s = [ "nation" ]
+        q3.constraint.set_.op = 0
+        q3.constraint.set_.vals.s.vals.extend([ "nation" ])
 
         dapQuery = self.data.makeQuery(qm)
         results = list(self.data.execute(dapQuery))
-0
+
+        # The results now only include BRITISH spies because we're following only the NATION links.
         assert sorted(results) == [
             'emma peel',
-            'felix leiter',
             'harry palmer',
             'james bond',
             'john steed',
-            'maxwell smart'
         ]
 
 unittest.main() # run all tests

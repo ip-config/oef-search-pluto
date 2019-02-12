@@ -80,7 +80,7 @@ class DapERNetwork(DapInterface.DapInterface):
         def addLabels(self, labels):
             if self.labels == None:
                 self.labels = []
-            self.lables.extend(labels)
+            self.labels.extend(labels)
 
         def addOrigin(self, origin):
             if self.origins == None:

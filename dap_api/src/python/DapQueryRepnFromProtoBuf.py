@@ -23,17 +23,17 @@ class DapQueryRepnFromProtoBuf(object):
         return (None, None)
 
     def _SET_VALUES_toTypeVal(self, values_pb):
-        if value_pb.HasField("s"):
-            return ("string_list", values_pb.s)
-        if value_pb.HasField("d"):
-            return ("double_list", values_pb.d)
-        if value_pb.HasField("b"):
-            return ("bool_list", values_pb.b)
-        if value_pb.HasField("i"):
-            return ("int64_list", values_pb.i)
-        if value_pb.HasField("l"):
+        if values_pb.HasField("s"):
+            return ("string_list", values_pb.s.vals)
+        if values_pb.HasField("d"):
+            return ("double_list", values_pb.d.vals)
+        if values_pb.HasField("b"):
+            return ("bool_list", values_pb.b.vals)
+        if values_pb.HasField("i"):
+            return ("int64_list", values_pb.i.vals)
+        if values_pb.HasField("l"):
             return ("location_list", [
-                (foo.lat, foo.lon) for foo in values_pb.l])
+                (foo.lat, foo.lon) for foo in values_pb.l.vals])
         return (None, None)
 
     def _RANGE_VALUES_toTypeVal(self, values_pb):
