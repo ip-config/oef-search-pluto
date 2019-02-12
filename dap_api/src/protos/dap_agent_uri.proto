@@ -1,6 +1,0 @@
-syntax = "proto3";
-
-message DapAgentUri {
-  string agent_name = 1;
-  repeated string core_uri = 2;
-}

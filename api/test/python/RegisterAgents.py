@@ -21,6 +21,7 @@ def set_uri(upd: update_pb2.Update, uri: str):
 
 def create_update(uri: str, name: str, description: str, attributes: list) -> update_pb2.Update:
     upd = update_pb2.Update()
+    upd.key = uri
     set_uri(upd, uri)
     upd.data_model.name = name
     upd.data_model.description = description

@@ -1,9 +1,13 @@
 syntax = "proto3";
 
-import "dap_api/src/protos/dap_agent_uri.proto";
 import "fetch_teams/oef_core_protocol/query.proto";
 
 message DapUpdate {
+
+   message Address {
+        string ip = 1;
+        uint32 port = 2;
+   }
 
   message DapValue {
     int32 type = 1;
@@ -18,11 +22,12 @@ message DapUpdate {
     int32 i32 = 7;
     bool b = 8;
     fetch.oef.pb.Query.Location l = 9;
+    Address a = 10;
   }
 
   message TableFieldValue {
     string tablename = 1;
-    DapAgentUri key =2;
+    bytes key = 2;
     string fieldname = 3;
     DapValue value = 4;
   }

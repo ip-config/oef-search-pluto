@@ -6,6 +6,7 @@ from dap_api.src.python.DapManager import DapManager
 from typing import List
 import functools
 
+
 class ProtoWrapper:
     def __init__(self, cls, *args, **kwargs):
         self.cls = cls
@@ -74,24 +75,36 @@ _attr_name_to_type = {
 
 
 class ValueTransformer:
+    # TODO: address signature check
+    @classmethod
+    def address_transformer(cls, address: update_pb2.Update.Address):
+        new_address = dap_update_pb2.DapUpdate.Address()
+        new_address.ip = address.ip
+        new_address.port = address.port
+        return new_address
+
+    @classmethod
+    def identity_transformer(cls, src):
+        return src
+
     mapping = {
-        2: (7, "s", "s"),
-        3: (7, "i", "i"),
-        4: (4, "f", "f"),
-        5: (5, "d", "d"),
-        6: (6, "dm", "dm"),
-        7: (7, "i32", "i32"),
-        8: (8, "b", "b"),
-        9: (9, "l", "l"),
-        10: (10, "a", "a")
+        2: (7, "s", "s", identity_transformer),
+        3: (7, "i", "i", identity_transformer),
+        4: (4, "f", "f", identity_transformer),
+        5: (5, "d", "d", identity_transformer),
+        6: (6, "dm", "dm", identity_transformer),
+        7: (7, "i32", "i32", identity_transformer),
+        8: (8, "b", "b", identity_transformer),
+        9: (9, "l", "l", identity_transformer),
+        10: (10, "a", "a", address_transformer)
     }
 
     @classmethod
     def transform(cls, src):
-        new_type, src_name, dst_name = cls.mapping[src.type]
+        new_type, src_name, dst_name, transformer = cls.mapping[src.type]
         res = dap_update_pb2.DapUpdate.DapValue()
         res.type = new_type
-        getattr(res, dst_name).CopyFrom(getattr(src, src_name))
+        getattr(res, dst_name).CopyFrom(transformer(getattr(src, src_name)))
         return res
 
 
@@ -103,9 +116,10 @@ class UpdateData:
         "attribute": lambda attrname, table, field: {"attributes": {attrname: UpdateData._table_entry(table, field)}}
     }
 
-    def __init__(self, origin: update_pb2.Update, db_structure):
+    def __init__(self, origin: update_pb2.Update, db_structure: dict):
         self.origin = origin
         self.db_structure = db_structure
+        self.address_registry = address_registry
         if type(origin) == update_pb2.Update:
             self._validate_attributes(origin.attributes)
 
@@ -162,6 +176,8 @@ class UpdateData:
         upd_list = []
         for origin in updates:
             key = origin.key
+            if len(key) < 1:
+                raise InvalidAttribute("Key", "OEFCorePublicKey", "bytes", "Required key field not set!")
             if origin.HasField("data_model"):
                 upd_list.append(self.updFromDataModel(key, origin.data_model))
             for attr in origin.attributes:
