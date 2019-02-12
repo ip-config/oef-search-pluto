@@ -85,12 +85,13 @@ class PlutoApp:
             .attribute(AttrName.Value("NETWORK_ADDRESS"), "address_registry_table", "address_field")\
             .default("default_table", "default_field")\
             .build()
-        update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, update_config)
+
+        address_registry = self.dapManager.getInstance("address_registry")
+
+        update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, update_config, address_registry)
         query_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.QueryData, self.dapManager)
 
         search_engine = self.dapManager.getInstance("data_model_searcher")
-
-        address_registry = self.dapManager.getInstance("address_registry")
 
         # endpoints
         self._search_endpoint = SearchQuery(self.dapManager, query_wrapper, address_registry)

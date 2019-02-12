@@ -82,10 +82,11 @@ class AddressRegistry(DapInterface.DapInterface):
     def resolve(self, key):
         address = []
         try:
-            for tblname in self.tablenames:
+            for tblname in self.store:
                 if key in self.store[tblname]:
                     for field in self.structure[tblname]:
                         address.append(self.store[tblname][key][field])
         except Exception as e:
-            self.log.warn("No address entry for key: "+key.decode("utf-8")+", details: "+str(e), "; store: "+str(self.store))
+            self.log.warn("No address entry for key: "+key.decode("utf-8")+", details: "+str(e))
+            print(self.store)
         return address

@@ -63,6 +63,13 @@ class InvalidAttribute(Exception):
         self.msg = msg
 
 
+class MissingAddress(Exception):
+    def __init__(self, key):
+        msg = "No address for key: " + key.decode("utf-8")
+        super().__init__(msg)
+        self.key = key
+
+
 AttributeName = update_pb2.Update.Attribute.Name
 _attr_name_to_type = {
             AttributeName.Value("LOCATION"): 9,
@@ -116,17 +123,36 @@ class UpdateData:
         "attribute": lambda attrname, table, field: {"attributes": {attrname: UpdateData._table_entry(table, field)}}
     }
 
-    def __init__(self, origin: update_pb2.Update, db_structure: dict):
+    def __init__(self, origin: update_pb2.Update, db_structure: dict, address_resolver):
         self.origin = origin
         self.db_structure = db_structure
         if type(origin) == update_pb2.Update:
-            self._validate_attributes(origin.attributes)
+            address_needed = len(address_resolver.resolve(origin.key)) == 0
+            address_found = self._validate_attributes(origin.attributes)
+            if address_needed and not address_found:
+                raise MissingAddress(origin.key)
+        else:
+            addresses = {}
+            for upd in origin.list:
+                address_needed = len(address_resolver.resolve(upd.key)) == 0
+                address_found = self._validate_attributes(upd.attributes)
+                if upd.key in addresses:
+                    addresses[upd.key] = addresses[upd.key] and (address_needed and not address_found)
+                else:
+                    addresses[upd.key] = (address_needed and not address_found)
+            for key in addresses:
+                if addresses[key]:
+                    raise MissingAddress(key)
 
     def _validate_attributes(self, attributes: List[update_pb2.Update.Attribute]) -> bool:
+        address_found = False
+        address_name = update_pb2.Update.Attribute.Name.Value("NETWORK_ADDRESS")
         for attr in attributes:
+            address_found = address_found or attr.name == address_name
             exp_type = _attr_name_to_type[attr.name]
             if exp_type > 0 and exp_type != attr.value.type:
                 raise InvalidAttribute(attr.name, attr.description, attr.value.type, "Expected type mismatch: {}".format(exp_type))
+        return address_found
 
     def _set_value(self, upd: dap_update_pb2.DapUpdate.DapValue, origin: update_pb2.Update):
         upd.type = 6
