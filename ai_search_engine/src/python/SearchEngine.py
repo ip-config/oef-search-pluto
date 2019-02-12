@@ -15,8 +15,9 @@ from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_api.src.protos.dap_update_pb2 import DapUpdate
 from dap_api.src.protos import dap_description_pb2
 from dap_api.src.python.DapQuery import DapQuery
+from dap_api.src.python.DapQueryResult import DapQueryResult
 
-from typing import Sequence
+from typing import List
 
 
 class SearchEngine(DapInterface):
@@ -129,35 +130,32 @@ class SearchEngine(DapInterface):
                 self.log.warning("Failed to calculate embedding for dm!")
                 print(v)
                 raise Exception("Embedding failed")
-            for core_uri in upd.key.core_uri:
-                row = self.store.setdefault(tbname, {}).setdefault(
-                    (upd.key.agent_name, core_uri), {}
-                )
-                row[upd.fieldname] = vec
+            row = self.store.setdefault(tbname, {}).setdefault(upd.key, {})
+            row[upd.fieldname] = vec
 
-    def query(self, query: DapQuery, agents=None):
-        if len(self.store) == 0:
-            return []
-        enc_query = np.zeros((self._encoding_dim,))
-        if query.data_model:
-            enc_query = np.add(enc_query, self._dm_to_vec(query.data_model))
-        if query.description:
-            enc_query = np.add(enc_query, self._string_to_vec(query.description))
-        if not np.any(enc_query):
-            return []
-        table = next(iter(self.structure.keys()))
-        score_threshold = 0.2
-        result = []
-        for key, data in self.store[table].items():
-            dist = distance.cosine(data["data_model"], enc_query)
-            result.append((key, dist))
-        ordered = sorted(result, key=lambda x: x[1])
-        print("results: ", ordered)
-        result = [ordered[0]]
-        for i in range(1, len(ordered)):
-            if ordered[i][1] < score_threshold:
-                result.append(ordered[i])
-        return result
+    # def query(self, query: DapQuery, agents=None):
+    #     if len(self.store) == 0:
+    #         return []
+    #     enc_query = np.zeros((self._encoding_dim,))
+    #     if query.data_model:
+    #         enc_query = np.add(enc_query, self._dm_to_vec(query.data_model))
+    #     if query.description:
+    #         enc_query = np.add(enc_query, self._string_to_vec(query.description))
+    #     if not np.any(enc_query):
+    #         return []
+    #     table = next(iter(self.structure.keys()))
+    #     score_threshold = 0.2
+    #     result = []
+    #     for key, data in self.store[table].items():
+    #         dist = distance.cosine(data["data_model"], enc_query)
+    #         result.append((key, dist))
+    #     ordered = sorted(result, key=lambda x: x[1])
+    #     print("results: ", ordered)
+    #     result = [ordered[0]]
+    #     for i in range(1, len(ordered)):
+    #         if ordered[i][1] < score_threshold:
+    #             result.append(ordered[i])
+    #     return result
 
     class SubQuery(SubQueryInterface):
         def __init__(self, searchSystem, leaf: DapQueryRepn.Leaf):
@@ -185,30 +183,30 @@ class SearchEngine(DapInterface):
 
             self._ss = searchSystem
 
-        def execute(self, agents: Sequence[str]=None):
-            if agents == []:
+        def execute(self, oef_cores: List[DapQueryResult] = None):
+            if len(oef_cores) == 0:
                 return []
 
             key_list = []
-            if agents == None:
+            if oef_cores is None:
                 key_list = self._ss.store[self.target_table_name].keys()
             else:
-                key_list = agents
+                key_list = oef_cores
 
-            found = False
-            min_dist = 1e9
-            min_key = None
+            result = []
             for key in key_list:
                 data = self._ss.store[self.target_table_name][key]
                 dist = distance.cosine(data[self.target_field_name], self.enc_query)
-                if dist < min_dist:
-                    min_dist = dist
-                    min_key = key
-                if dist < 0.2:
-                    found = True
-                    yield key
-            if not found:
-                yield min_key
+                result.append((key, dist))
+            ordered = sorted(result, key=lambda x: x[1])
+            res = DapQueryResult(ordered[0][0])
+            res.score = ordered[0][1]
+            yield res
+            for i in range(1, len(ordered)):
+                if ordered[i][1] < 0.2:
+                    res = DapQueryResult(ordered[i][0])
+                    res.score = ordered[i][1]
+                    yield res
 
     def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.Leaf) -> SubQueryInterface:
         return SearchEngine.SubQuery(self, dapQueryRepnLeaf)

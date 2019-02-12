@@ -9,6 +9,9 @@ from dap_api.src.python import DapQueryRepn
 from dap_api.src.python import ProtoHelpers
 from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_api.src.protos import dap_update_pb2
+from dap_api.src.python.DapQueryResult import DapQueryResult
+from typing import List
+
 
 class InMemoryDap(DapInterface.DapInterface):
 
@@ -53,15 +56,15 @@ class InMemoryDap(DapInterface.DapInterface):
                 result_field.type = field_type
         return result
 
-    def processRows(self, rowProcessor, agents=None):
+    def processRows(self, rowProcessor, cores: List[DapQueryResult] = None):
         for table_name, table in self.store.items():
-            if agents == None:
+            if cores is None:
                 for key, row in table.items():
                     if rowProcessor(row):
-                        yield key
+                        yield DapQueryResult(key)
             else:
-                for key in agents:
-                    row=table[key]
+                for key in cores:
+                    row = table[key()]
                     if rowProcessor(row):
                         yield key
 
@@ -113,7 +116,4 @@ class InMemoryDap(DapInterface.DapInterface):
                     raise DapBadUpdateRow("Bad type", tbname, upd.key.agent_name, upd.key.core_uri, upd.fieldname, k)
 
                 if commit:
-                    for core_uri in  upd.key.core_uri:
-                        self.store.setdefault(tbname, {}).setdefault(
-                            (upd.key.agent_name, core_uri), {}
-                        )[upd.fieldname] = v
+                    self.store.setdefault(tbname, {}).setdefault(upd.key, {})[upd.fieldname] = v
