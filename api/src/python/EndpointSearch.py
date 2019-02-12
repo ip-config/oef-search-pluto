@@ -35,9 +35,15 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler):
             addresses = self._address_registry.resolve(element())
             if len(addresses) > 0:
                 address = addresses[0]
-                item.agent = address.ip + ":" + str(address.port)
+                item.ip = address.ip
+                item.port = address.port
+                item.key = element()
+                #item.info = data model names registered with this oef
             else:
-                item.agent = element().decode("utf-8")
+                self.log.warn("Ignoring result because no address found!")
+                print("Query: ", msg)
+                print("Result: ", element)
+                continue
             item.score = element.score
             items.append(item)
         resp.result.extend(items)

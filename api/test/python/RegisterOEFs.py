@@ -49,7 +49,7 @@ def create_blk_update() -> update_pb2.Update.BulkUpdate:
                              get_attr_b("air_pressure", "Provides wind speed measurements.", 2)
                          ])
 
-    upd2 = create_update("oef:BookAgent1",
+    upd2 = create_update("oef:Books",
                          "book_data",
                          "Book store data", [
                             get_attr_b("title", "The title of the book", 1),
@@ -58,7 +58,7 @@ def create_blk_update() -> update_pb2.Update.BulkUpdate:
                             get_attr_b("introduction", "Short introduction by the author.", 3),
                             get_attr_b("rating", "Summary rating of the book given by us.", 0)
                         ])
-    upd3 = create_update("oef:BookAgent2Novel",
+    upd3 = create_update("oef:Novels",
                          "book_store_new",
                          "Other bookstore. Focuses on novels.", [
                             get_attr_b("title", "The title of the book", 1),
@@ -69,8 +69,8 @@ def create_blk_update() -> update_pb2.Update.BulkUpdate:
                             get_attr_b("condition", "Our books are in the best condition", 0)
                         ])
     upd4 = create_address_attribute_update("oef:Weather", "127.0.0.1", 3333)
-    upd5 = create_address_attribute_update("oef:BookAgent1", "127.0.0.1", 3334)
-    upd6 = create_address_attribute_update("oef:BookAgent2Novel", "127.0.0.1", 3335)
+    upd5 = create_address_attribute_update("oef:Books", "127.0.0.1", 3334)
+    upd6 = create_address_attribute_update("oef:Novels", "127.0.0.1", 3335)
     blk_upd = update_pb2.Update.BulkUpdate()
     blk_upd.list.extend([upd1, upd2, upd3, upd4, upd5, upd6])
     return blk_upd
