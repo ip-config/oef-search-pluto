@@ -4,9 +4,12 @@ message UpdateResponse {
     enum ResponseType {
         SUCCESS = 0;
         ERROR = 1;
-        NO_IP_SET = 2;
+        MISSING_ADDRESS = 2;
+        INVALID_ATTRIBUTE = 3;
     }
     ResponseType status = 1;
+    string message = 2;
+    string narrative = 3;
 }
 
 message SearchResponse {
