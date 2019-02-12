@@ -91,7 +91,7 @@ class PlutoTest(unittest.TestCase):
             # agent99 is in the same show as Maxwell, but is 4 steps away from Austin Powers.
         ]
 
-    def testDataModelWithLinkLabelsQuery(self):
+    def testDataModelWithLinkLabelsSetQuery(self):
         """Test case A. note that all test method names must begin with 'test.'"""
 
         qm = query_pb2.Query.Model()
@@ -113,6 +113,40 @@ class PlutoTest(unittest.TestCase):
         q3.constraint.attribute_name = "mesh.label"
         q3.constraint.set_.op = 0
         q3.constraint.set_.vals.s.vals.extend([ "nation" ])
+
+        dapQuery = self.data.makeQuery(qm)
+        results = list(self.data.execute(dapQuery))
+
+        # The results now only include BRITISH spies because we're following only the NATION links.
+        assert sorted(results) == [
+            'emma peel',
+            'harry palmer',
+            'james bond',
+            'john steed',
+        ]
+
+    def testDataModelWithLinkLabelsSetQuery(self):
+        """Test case A. note that all test method names must begin with 'test.'"""
+
+        qm = query_pb2.Query.Model()
+
+        qc = qm.constraints.add()
+
+        q1 = qc.and_.expr.add()
+        q2 = qc.and_.expr.add()
+        q3 = qc.and_.expr.add()
+
+        q1.constraint.attribute_name = "mesh.origin"
+        q1.constraint.relation.op = 0
+        q1.constraint.relation.val.s = "austin danger powers"
+
+        q2.constraint.attribute_name = "mesh.weight"
+        q2.constraint.relation.op = 0
+        q2.constraint.relation.val.d = 3.5
+
+        q3.constraint.attribute_name = "mesh.label"
+        q3.constraint.relation.op = 0
+        q3.constraint.relation.s = "nation"
 
         dapQuery = self.data.makeQuery(qm)
         results = list(self.data.execute(dapQuery))
