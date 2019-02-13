@@ -13,24 +13,35 @@ def get_attr_b(name, desc, t=2):
     return attr1
 
 
-def set_uri(upd: update_pb2.Update, uri: str):
-    oef_core, agent = uri.split(",")
-    upd.uri.agent = agent
-    upd.uri.oef_core.extend([oef_core])
-
-
-def create_update(uri: str, name: str, description: str, attributes: list) -> update_pb2.Update:
+def create_update(key: str, name: str, description: str, attributes: list) -> update_pb2.Update:
     upd = update_pb2.Update()
-    set_uri(upd, uri)
-    upd.data_model.name = name
-    upd.data_model.description = description
-    upd.data_model.attributes.extend(attributes)
+    upd.key = key.encode("utf-8")
+    dm = query_pb2.Query.DataModel()
+    dm.name = name
+    dm.description = description
+    dm.attributes.extend(attributes)
+    upd.data_models.extend([dm])
+    return upd
+
+
+def create_address_attribute_update(key: str, ip: str, port: int):
+    attr = update_pb2.Update.Attribute()
+    key = key.encode("utf-8")
+    attr.name = update_pb2.Update.Attribute.Name.Value("NETWORK_ADDRESS")
+    attr.value.type = 10
+    attr.value.a.ip = ip
+    attr.value.a.port = port
+    attr.value.a.key = key
+    attr.value.a.signature = "Signed".encode("utf-8")
+    upd = update_pb2.Update()
+    upd.key = key
+    upd.attributes.extend([attr])
     return upd
 
 
 def create_blk_update() -> update_pb2.Update.BulkUpdate:
 
-    upd1 = create_update("localhost:8000,WeatherAgent",
+    upd1 = create_update("oef:Weather",
                          "weather_data",
                          "All possible weather data.", [
                              get_attr_b("wind_speed", "Provides wind speed measurements.", 0),
@@ -38,7 +49,7 @@ def create_blk_update() -> update_pb2.Update.BulkUpdate:
                              get_attr_b("air_pressure", "Provides wind speed measurements.", 2)
                          ])
 
-    upd2 = create_update("localhost:8000,BookAgent1",
+    upd2 = create_update("oef:Books",
                          "book_data",
                          "Book store data", [
                             get_attr_b("title", "The title of the book", 1),
@@ -47,7 +58,7 @@ def create_blk_update() -> update_pb2.Update.BulkUpdate:
                             get_attr_b("introduction", "Short introduction by the author.", 3),
                             get_attr_b("rating", "Summary rating of the book given by us.", 0)
                         ])
-    upd3 = create_update("localhost:8000,BookAgent2Novel",
+    upd3 = create_update("oef:Novels",
                          "book_store_new",
                          "Other bookstore. Focuses on novels.", [
                             get_attr_b("title", "The title of the book", 1),
@@ -57,8 +68,11 @@ def create_blk_update() -> update_pb2.Update.BulkUpdate:
                             get_attr_b("count", "How many do we have", 0),
                             get_attr_b("condition", "Our books are in the best condition", 0)
                         ])
+    upd4 = create_address_attribute_update("oef:Weather", "127.0.0.1", 3333)
+    upd5 = create_address_attribute_update("oef:Books", "127.0.0.1", 3334)
+    upd6 = create_address_attribute_update("oef:Novels", "127.0.0.1", 3335)
     blk_upd = update_pb2.Update.BulkUpdate()
-    blk_upd.list.extend([upd1, upd2, upd3])
+    blk_upd.list.extend([upd1, upd2, upd3, upd4, upd5, upd6])
     return blk_upd
 
 

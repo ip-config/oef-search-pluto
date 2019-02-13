@@ -4,15 +4,21 @@ message UpdateResponse {
     enum ResponseType {
         SUCCESS = 0;
         ERROR = 1;
+        MISSING_ADDRESS = 2;
+        INVALID_ATTRIBUTE = 3;
     }
     ResponseType status = 1;
+    string message = 2;
+    string narrative = 3;
 }
 
 message SearchResponse {
     message Item {
-        string agent = 1;
-        repeated string oef_core = 2;
-        double score = 3;
+        bytes key = 1;
+        string ip = 2;
+        uint32 port = 3;
+        double score = 4;
+        string info = 5;
     }
 
     repeated Item result = 1;

@@ -15,8 +15,9 @@ from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_api.src.protos.dap_update_pb2 import DapUpdate
 from dap_api.src.protos import dap_description_pb2
 from dap_api.src.python.DapQuery import DapQuery
+from dap_api.src.python.DapQueryResult import DapQueryResult
 
-from typing import Sequence
+from typing import List
 
 
 class SearchEngine(DapInterface):
@@ -77,17 +78,20 @@ class SearchEngine(DapInterface):
                     counter += 1
                 except KeyError as e:
                     print("Key %s not found, ignoring..." % w[1])
-        if counter > 0:
+        if counter > 1:
             feature_vec = np.divide(feature_vec, float(counter))
         return feature_vec
 
     def _dm_to_vec(self, data: query_pb2.Query.DataModel):
         avg_feature = np.zeros((self._encoding_dim,))
+        counter = 2
         for attr in data.attributes:
             avg_feature = np.add(avg_feature, self._string_to_vec(attr.description))
             avg_feature = np.add(avg_feature, self._string_to_vec(attr.name))
+            counter += 2
         avg_feature = np.add(avg_feature, self._string_to_vec(data.name))
         avg_feature = np.add(avg_feature, self._string_to_vec(data.description))
+        avg_feature = np.divide(avg_feature, float(counter)) #todo check without, seemed to be good
         return avg_feature
 
     def describe(self):
@@ -103,61 +107,65 @@ class SearchEngine(DapInterface):
                 result_field.type = field_type
         return result
 
-    # (TODO): introduce service ID, right now only one service / agent is supported
+    def _get_avg_oef_vec(self, row, vec_field):
+        avg_feature = np.zeros((self._encoding_dim,))
+        counter = 0
+        for f in row:
+            if f == vec_field:
+                continue
+            vec = self._dm_to_vec(row[f])
+            if not any(vec):
+                self.log.warning("Failed to calculate embedding for dm!")
+                print(v)
+                raise Exception("Embedding failed")
+            avg_feature = np.add(avg_feature,vec)
+            counter += 1
+        if counter > 1:
+            avg_feature = np.divide(avg_feature, float(counter))
+        return avg_feature
+
     def update(self, update_data: DapUpdate.TableFieldValue):
         upd = update_data
         if upd:
             k, v = "dm", upd.value.dm
             tbname = self.tablenames[0]
             if upd.fieldname not in self.structure[tbname]:
-                raise DapBadUpdateRow("No such field", tbname, upd.key.agent_name, upd.key.core_uri,
-                                      upd.fieldname, k)
+                raise DapBadUpdateRow("No such field", tbname, upd.key, upd.fieldname, k)
 
             field_type = self.structure[tbname][upd.fieldname]['type']
             if field_type != 'embedding':
-                raise DapBadUpdateRow("Bad type",
-                                          table_name=tbname,
-                                          agent_name=upd.key.agent_name,
-                                          core_uri=upd.key.core_uri,
-                                          field_name=upd.fieldname,
-                                          value_type=k,
-                                          field_type=field_type
-                                          )
+                raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, field_type, k)
+            row = self.store.setdefault(tbname, {}).setdefault(upd.key, {})
+            row[v.name] = v
+            row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)
 
-            vec = self._dm_to_vec(v)
-            if not any(vec):
-                self.log.warning("Failed to calculate embedding for dm!")
-                print(v)
-                raise Exception("Embedding failed")
-            for core_uri in upd.key.core_uri:
-                row = self.store.setdefault(tbname, {}).setdefault(
-                    (upd.key.agent_name, core_uri), {}
-                )
-                row[upd.fieldname] = vec
+    def blk_update(self, update_data: DapUpdate):
+        for upd in update_data.update:
+            self.update(upd)
 
-    def query(self, query: DapQuery, agents=None):
-        if len(self.store) == 0:
-            return []
-        enc_query = np.zeros((self._encoding_dim,))
-        if query.data_model:
-            enc_query = np.add(enc_query, self._dm_to_vec(query.data_model))
-        if query.description:
-            enc_query = np.add(enc_query, self._string_to_vec(query.description))
-        if not np.any(enc_query):
-            return []
-        table = next(iter(self.structure.keys()))
-        score_threshold = 0.2
-        result = []
-        for key, data in self.store[table].items():
-            dist = distance.cosine(data["data_model"], enc_query)
-            result.append((key, dist))
-        ordered = sorted(result, key=lambda x: x[1])
-        print("results: ", ordered)
-        result = [ordered[0]]
-        for i in range(1, len(ordered)):
-            if ordered[i][1] < score_threshold:
-                result.append(ordered[i])
-        return result
+    # def query(self, query: DapQuery, agents=None):
+    #     if len(self.store) == 0:
+    #         return []
+    #     enc_query = np.zeros((self._encoding_dim,))
+    #     if query.data_model:
+    #         enc_query = np.add(enc_query, self._dm_to_vec(query.data_model))
+    #     if query.description:
+    #         enc_query = np.add(enc_query, self._string_to_vec(query.description))
+    #     if not np.any(enc_query):
+    #         return []
+    #     table = next(iter(self.structure.keys()))
+    #     score_threshold = 0.2
+    #     result = []
+    #     for key, data in self.store[table].items():
+    #         dist = distance.cosine(data["data_model"], enc_query)
+    #         result.append((key, dist))
+    #     ordered = sorted(result, key=lambda x: x[1])
+    #     print("results: ", ordered)
+    #     result = [ordered[0]]
+    #     for i in range(1, len(ordered)):
+    #         if ordered[i][1] < score_threshold:
+    #             result.append(ordered[i])
+    #     return result
 
     class SubQuery(SubQueryInterface):
         def __init__(self, searchSystem, leaf: DapQueryRepn.Leaf):
@@ -185,30 +193,31 @@ class SearchEngine(DapInterface):
 
             self._ss = searchSystem
 
-        def execute(self, agents: Sequence[str]=None):
-            if agents == []:
+        def execute(self, oef_cores: List[DapQueryResult] = None):
+            if oef_cores == []:
                 return []
 
             key_list = []
-            if agents == None:
+            if oef_cores is None:
                 key_list = self._ss.store[self.target_table_name].keys()
             else:
-                key_list = agents
+                for key in oef_cores:
+                    key_list.append(key())
 
-            found = False
-            min_dist = 1e9
-            min_key = None
+            result = []
             for key in key_list:
                 data = self._ss.store[self.target_table_name][key]
                 dist = distance.cosine(data[self.target_field_name], self.enc_query)
-                if dist < min_dist:
-                    min_dist = dist
-                    min_key = key
-                if dist < 0.2:
-                    found = True
-                    yield key
-            if not found:
-                yield min_key
+                result.append((key, dist))
+            ordered = sorted(result, key=lambda x: x[1])
+            res = DapQueryResult(ordered[0][0])
+            res.score = ordered[0][1]
+            yield res
+            for i in range(1, len(ordered)):
+                if ordered[i][1] < 0.2:
+                    res = DapQueryResult(ordered[i][0])
+                    res.score = ordered[i][1]
+                    yield res
 
     def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.Leaf) -> SubQueryInterface:
         return SearchEngine.SubQuery(self, dapQueryRepnLeaf)

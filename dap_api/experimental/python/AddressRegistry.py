@@ -1,29 +1,19 @@
-from typing import Callable
-
-from dap_api.src.protos import dap_description_pb2
-
 from dap_api.src.python import DapInterface
+from dap_api.src.protos import dap_description_pb2
 from dap_api.src.python import SubQueryInterface
-from dap_api.src.python import DapOperatorFactory
-from dap_api.src.python import DapQueryRepn
 from dap_api.src.python import ProtoHelpers
 from dap_api.src.python.DapInterface import DapBadUpdateRow
+from dap_api.src.python import DapQueryRepn
 from dap_api.src.protos import dap_update_pb2
-from dap_api.src.python.DapQueryResult import DapQueryResult
-from typing import List
+from utils.src.python.Logging import has_logger
 
 
-class InMemoryDap(DapInterface.DapInterface):
-
-    # configuration is a JSON deserialised config object.
-    # structure is a map of tablename -> { fieldname -> type}
-
+class AddressRegistry(DapInterface.DapInterface):
+    @has_logger
     def __init__(self, name, configuration):
         self.store = {}
         self.name = name
         self.structure_pb = configuration['structure']
-
-        self.operatorFactory = DapOperatorFactory.DapOperatorFactory()
 
         self.tablenames = []
         self.structure = {}
@@ -33,8 +23,8 @@ class InMemoryDap(DapInterface.DapInterface):
             self.tablenames.append(table_name)
             for field_name, field_type in fields.items():
                 self.structure.setdefault(table_name, {}).setdefault(field_name, {})['type'] = field_type
-                self.fields.setdefault(field_name, {})['tablename']=table_name
-                self.fields.setdefault(field_name, {})['type']=field_type
+                self.fields.setdefault(field_name, {})['tablename'] = table_name
+                self.fields.setdefault(field_name, {})['type'] = field_type
 
     """This function returns the DAP description which lists the
     tables it hosts, the fields within those tables and the result of
@@ -56,40 +46,11 @@ class InMemoryDap(DapInterface.DapInterface):
                 result_field.type = field_type
         return result
 
-    def processRows(self, rowProcessor, cores: List[DapQueryResult] = None):
-        for table_name, table in self.store.items():
-            if cores is None:
-                for key, row in table.items():
-                    if rowProcessor(row):
-                        yield DapQueryResult(key)
-            else:
-                for key in cores:
-                    row = table[key()]
-                    if rowProcessor(row):
-                        yield key
-
-    # returns an object with an execute(agents=None) -> [agent]
     def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
         return None
 
-    class ConstraintProcessor(SubQueryInterface.SubQueryInterface):
-        def __init__(self, inMemoryDap, rowProcessor, target_field_name):
-            self.inMemoryDap = inMemoryDap
-            self.func = lambda row: rowProcessor(row.get(target_field_name, None))
-
-        def execute(self, agents=None):
-            yield from self.inMemoryDap.processRows(self.func, agents)
-
     def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:
-        rowProcessor = self.operatorFactory.createAttrMatcherProcessor(
-                dapQueryRepnLeaf.target_field_type,
-                dapQueryRepnLeaf.operator,
-                dapQueryRepnLeaf.query_field_type,
-                dapQueryRepnLeaf.query_field_value)
-        return InMemoryDap.ConstraintProcessor(self, rowProcessor, dapQueryRepnLeaf.target_field_name)
-
-    def print(self):
-        print(self.store)
+        return None
 
     """This function will be called with any update to this DAP.
 
@@ -117,3 +78,15 @@ class InMemoryDap(DapInterface.DapInterface):
 
                 if commit:
                     self.store.setdefault(tbname, {}).setdefault(upd.key, {})[upd.fieldname] = v
+
+    def resolve(self, key):
+        address = []
+        try:
+            for tblname in self.store:
+                if key in self.store[tblname]:
+                    for field in self.structure[tblname]:
+                        address.append(self.store[tblname][key][field])
+        except Exception as e:
+            self.log.warn("No address entry for key: "+key.decode("utf-8")+", details: "+str(e))
+            print(self.store)
+        return address
