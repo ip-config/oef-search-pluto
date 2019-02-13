@@ -4,6 +4,7 @@ from ai_search_engine.src.python.SearchEngine import SearchEngine
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 from dap_api.src.python.DapQuery import DapQuery
+from dap_api.src.python import DapQueryRepn
 
 
 def get_attr_b(name, desc, t=2):
@@ -18,12 +19,12 @@ def get_attr_b(name, desc, t=2):
 class SearchEngineTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.se = SearchEngine("search_engine", {"structure": {"dm_store": {"data_model": "dm"}}})
+        cls.se = SearchEngine("search_engine", {"structure": {"dm_store": {"data_model": "embedding"}}})
         cls._setupAgents()
 
     def setUp(self):
         """Call before every test case."""
-        self.se.update(self.update)
+        self.se.blk_update(self.update)
 
     def tearDown(self):
         """Call after every test case."""
@@ -38,8 +39,7 @@ class SearchEngineTest(unittest.TestCase):
         newvalue.value.dm.name = data_model.name
         newvalue.value.dm.description = data_model.description
         newvalue.value.dm.attributes.extend(data_model.attributes)
-        newvalue.key.agent_name = agent_name
-        newvalue.key.core_uri.append("localhost:10000")
+        newvalue.key = agent_name.encode("utf-8")
         return update
 
     @classmethod
@@ -94,7 +94,8 @@ class SearchEngineTest(unittest.TestCase):
     def testDataModelQuery(self):
         """Test case A. note that all test method names must begin with 'test.'"""
 
-        dmq1 = query_pb2.Query.DataModel()
+        qm1 = query_pb2.Query.Model()
+        dmq1 = qm1.model
         dmq1.name = "sunshine"
         dmq1.description = "Give me some weather data"
         dmq1.attributes.extend([
@@ -103,7 +104,8 @@ class SearchEngineTest(unittest.TestCase):
             get_attr_b("pascal", "Under pressure")
         ])
 
-        dmq2 = query_pb2.Query.DataModel()
+        qm2 = query_pb2.Query.Model()
+        dmq2 = qm2.model
         dmq2.name = "novels"
         dmq2.description = "I want to read novels"
         dmq2.attributes.extend([
@@ -116,12 +118,20 @@ class SearchEngineTest(unittest.TestCase):
         print("======================================QUERY BOOK======================================")
         print(dmq2)
 
-        dapQuery = DapQuery()
-        dapQuery.data_model = dmq1
-        results1 = list(self.se.query(dapQuery))
+        query_wrapper =  DapQueryRepn.DapQueryRepn.Leaf(
+            operator="CLOSE_TO",
+            query_field_value=dmq1,
+            query_field_type="data_model",
+            target_field_name="data_model",
+            target_table_name="dm_store",
+        )
+        query = self.se.constructQueryConstraintObject(query_wrapper)
 
-        dapQuery.data_model = dmq2
-        results2 = list(self.se.query(dapQuery))
+        results1 = list(query.execute())
+
+        query_wrapper.query_field_value = dmq2
+        query = self.se.constructQueryConstraintObject(query_wrapper)
+        results2 = list(query.execute())
 
         print("Looking for weather")
         print(results1)
@@ -141,16 +151,21 @@ class SearchEngineTest(unittest.TestCase):
         print("======================================QUERY NOVEL======================================")
         print(sq2)
 
-        dapQuery = DapQuery()
-        dapQuery.description = sq1
-        results1 = list(self.se.query(dapQuery))
+        query_wrapper = DapQueryRepn.DapQueryRepn.Leaf(
+            operator="CLOSE_TO",
+            query_field_value=sq1,
+            query_field_type="string",
+            target_field_name="data_model",
+            target_table_name="dm_store",
+        )
+        query = self.se.constructQueryConstraintObject(query_wrapper)
+        results1 = list(query.execute())
 
-        dapQuery.description = sq2
-        results2 = list(self.se.query(dapQuery))
+        query_wrapper.query_field_value = sq2
+        query = self.se.constructQueryConstraintObject(query_wrapper)
+        results2 = list(query.execute())
 
         print("Looking for weather")
-        print(results1)
         print("Looking for book")
-        print(results2)
         assert len(results1) == 2
         assert len(results2) == 2

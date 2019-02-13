@@ -139,6 +139,10 @@ class SearchEngine(DapInterface):
             row[v.name] = v
             row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)
 
+    def blk_update(self, update_data: DapUpdate):
+        for upd in update_data.update:
+            self.update(upd)
+
     # def query(self, query: DapQuery, agents=None):
     #     if len(self.store) == 0:
     #         return []
