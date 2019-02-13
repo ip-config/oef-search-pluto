@@ -130,19 +130,11 @@ class SearchEngine(DapInterface):
             k, v = "dm", upd.value.dm
             tbname = self.tablenames[0]
             if upd.fieldname not in self.structure[tbname]:
-                raise DapBadUpdateRow("No such field", tbname, upd.key.agent_name, upd.key.core_uri,
-                                      upd.fieldname, k)
+                raise DapBadUpdateRow("No such field", tbname, upd.key, upd.fieldname, k)
 
             field_type = self.structure[tbname][upd.fieldname]['type']
             if field_type != 'embedding':
-                raise DapBadUpdateRow("Bad type",
-                                          table_name=tbname,
-                                          agent_name=upd.key.agent_name,
-                                          core_uri=upd.key.core_uri,
-                                          field_name=upd.fieldname,
-                                          value_type=k,
-                                          field_type=field_type
-                                          )
+                raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, field_type, k)
             row = self.store.setdefault(tbname, {}).setdefault(upd.key, {})
             row[v.name] = v
             row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)

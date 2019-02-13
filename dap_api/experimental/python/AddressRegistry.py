@@ -68,13 +68,13 @@ class AddressRegistry(DapInterface.DapInterface):
                 k, v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
 
                 if upd.fieldname not in self.fields:
-                    raise DapBadUpdateRow("No such field", None, upd.key.agent_name, upd.key.core_uri, upd.fieldname, k)
+                    raise DapBadUpdateRow("No such field", None, upd.key, upd.fieldname, k)
                 else:
                     tbname = self.fields[upd.fieldname]["tablename"]
                     ftype = self.fields[upd.fieldname]["type"]
 
                 if ftype != k:
-                    raise DapBadUpdateRow("Bad type", tbname, upd.key.agent_name, upd.key.core_uri, upd.fieldname, k)
+                    raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, k)
 
                 if commit:
                     self.store.setdefault(tbname, {}).setdefault(upd.key, {})[upd.fieldname] = v
