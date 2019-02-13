@@ -1,5 +1,4 @@
-from fetch_teams.oef_core_protocol import query_pb2
-from utils.src.python.Logging import has_logger
+
 import gensim
 import gensim.downloader
 from nltk.tokenize import word_tokenize
@@ -8,17 +7,19 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 import numpy as np
 import scipy.spatial.distance as distance
-from dap_api.src.python.DapQueryRepn import DapQueryRepn
-from dap_api.src.python.DapInterface import DapInterface
-from dap_api.src.python.SubQueryInterface import SubQueryInterface
-from dap_api.src.python.DapInterface import DapBadUpdateRow
-from dap_api.src.protos.dap_update_pb2 import DapUpdate
+
 from dap_api.src.protos import dap_description_pb2
+from dap_api.src.protos.dap_update_pb2 import DapUpdate
+from dap_api.src.python.DapInterface import DapBadUpdateRow
+from dap_api.src.python.DapInterface import DapInterface
 from dap_api.src.python.DapQuery import DapQuery
+from dap_api.src.python.DapQueryRepn import DapQueryRepn
 from dap_api.src.python.DapQueryResult import DapQueryResult
+from dap_api.src.python.SubQueryInterface import SubQueryInterface
+from fetch_teams.oef_core_protocol import query_pb2
+from utils.src.python.Logging import has_logger
 
 from typing import List
-
 
 class SearchEngine(DapInterface):
     @has_logger
