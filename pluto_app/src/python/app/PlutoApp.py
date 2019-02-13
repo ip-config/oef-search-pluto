@@ -113,11 +113,13 @@ class PlutoApp:
         parser.add_argument("--ssl_certificate",  required=True, type=str, help="specify an SSL certificate PEM file.")
         parser.add_argument("--http_port",        required=True, type=int, help="which port to run the HTTP interface on.")
         parser.add_argument("--socket_port",      required=True, type=int, help="which port to run the socket interface on.")
+        parser.add_argument("--html_dir",         required=False, type=str, help="where ", default="api/src/resources/website")
         self.args = parser.parse_args()
 
         self.setup()
         self.executor.submit(run_socket_server, "0.0.0.0", self.args.socket_port, self.router)
-        self.executor.submit(run_http_server, "0.0.0.0", self.args.http_port, self.args.ssl_certificate, self.router)
+        self.executor.submit(run_http_server, "0.0.0.0", self.args.http_port, self.args.ssl_certificate,
+                             self.args.html_dir, self.router)
         self.executor.shutdown(wait=True)
 
     def getField(self, fieldname):
