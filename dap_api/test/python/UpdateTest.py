@@ -51,14 +51,13 @@ class UpdateTest(unittest.TestCase):
         newvalue.fieldname = "wibble"
         newvalue.value.type = 2
         newvalue.value.s = "moo"
-        newvalue.key.agent_name = "007/James/Bond"
-        newvalue.key.core_uri.append("localhost:10000")
+        newvalue.key = "007/James/Bond".encode("utf-8")
         return update
 
     def testUpdate(self):
         """Test case A. note that all test method names must begin with 'test.'"""
         update = self._createUpdate()
-        self.dap1.update(update)
+        self.dap1.update(update.update[0])
 
     def testUpdateBadType(self):
         """Test case A. note that all test method names must begin with 'test.'"""
@@ -67,11 +66,11 @@ class UpdateTest(unittest.TestCase):
         update.update[0].value.i = 12345
 
         with self.assertRaises(Exception) as context:
-            self.dap1.update(update)
+            self.dap1.update(update.update[0])
 
     def testNoTableUpdate(self):
         update = self._createUpdate()
 
         with self.assertRaises(Exception) as context:
-            self.dap2.update(update)
+            self.dap2.update(update.update[0])
 
