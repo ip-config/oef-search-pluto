@@ -184,48 +184,47 @@ class DapManager(object):
         dapQueryRepn.visitDescending(v1)
         return list(self._execute(dapQueryRepn.root))
 
-    def _execute(self, node, agents=None):
+    def _execute(self, node, cores=None):
         if node.query:
-            yield from node.query.execute(agents)
+            yield from node.query.execute(cores)
         elif node.combiner == "any":
-            yield from self._executeOr(node, agents)
+            yield from self._executeOr(node, cores)
         elif node.combiner == "all":
-            yield from self._executeAnd(node, agents)
+            yield from self._executeAnd(node, cores)
         else:
             raise Exception("Node combiner '{}' not handled.".format(node.combiner))
 
-    def _executeOr(self, node, agents=None):
+    def _executeOr(self, node, cores=None):
         for n in node.subnodes:
-            yield from self._execute(n, agents)
+            yield from self._execute(n, cores)
         for n in node.leaves:
             yield from n.query.execute()
 
     # This is naive -- there's a functional way of making this more efficient.
-    def _executeAnd(self, node, agents=None):
-        if agents == None:
+    def _executeAnd(self, node, cores=None):
+        if cores is None:
             if len(node.leaves) > 0:
-                agents = list(node.leaves[0].query.execute())
+                cores = list(node.leaves[0].query.execute())
 
-        if agents == None:
+        if cores is None:
             if len(node.subnodes) > 0:
-                agents = self._execute(node.subnodes[0])
+                cores = self._execute(node.subnodes[0])
 
-        if agents == None or agents == []:
+        if cores is None or cores == []:
             return []
 
-
-        agents = list(agents)
+        cores = list(cores)
         for n in node.leaves:
-            agents = list(n.query.execute(agents))
-            if len(agents) == 0:
+            cores = list(n.query.execute(cores))
+            if len(cores) == 0:
                 return []
 
         for n in node.subnodes:
-            agents = list(self._execute(n, agents))
-            if len(agents) == 0:
+            cores = list(self._execute(n, cores))
+            if len(cores) == 0:
                 return []
 
-        return agents
+        return cores
 
     # passing in the embedding system is part of the hack SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
     def setDataModelEmbedder(self, embedderName, embeddingTableName, embeddingFieldName):

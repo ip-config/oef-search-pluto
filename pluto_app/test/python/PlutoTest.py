@@ -41,6 +41,16 @@ class PlutoTest(unittest.TestCase):
                     },
                 },
             },
+            "address_registry": {
+                "class": "AddressRegistry",
+                "config": {
+                    "structure": {
+                        "address_registry_table": {
+                            "address_field": "address"
+                        },
+                    },
+                },
+            }
         }
 
         self.pluto = PlutoApp.PlutoApp()
@@ -99,8 +109,7 @@ class PlutoTest(unittest.TestCase):
         if typename == "dm":
             newvalue.value.dm.CopyFrom(data)
 
-        newvalue.key.agent_name = agent_name
-        newvalue.key.core_uri.append("localhost:10000")
+        newvalue.key = agent_name.encode("utf-8")
         return update
 
     def setupAgents(self):
@@ -140,6 +149,5 @@ class PlutoTest(unittest.TestCase):
 
         dapQuery = self.pluto.dapManager.makeQuery(qm)
         results = list(self.pluto.dapManager.execute(dapQuery))
-
         assert len(results) == 1
-        assert results[0][0] ==  "007/James/Bond/Weather"
+        assert results[0].key == "007/James/Bond/Weather".encode("utf-8")

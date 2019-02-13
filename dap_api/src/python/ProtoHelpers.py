@@ -10,6 +10,7 @@ TYPE_FLOAT = "float"
 TYPE_DOUBLE = "double"
 TYPE_BOOL = "bool"
 TYPE_LOCATION = "location"
+TYPE_ADDRESS = "address"
 
 OPERATOR_EQ = "=="
 OPERATOR_NE = "!="
@@ -45,6 +46,7 @@ def decodeAttributeValueToInfo(av):
         7: ( TYPE_INT32,lambda x: x.i32),
         8: ( TYPE_BOOL,lambda x: x.b),
         9: ( TYPE_LOCATION,lambda x: x.l),
+        10: (TYPE_ADDRESS, lambda x: x.a)
     }.get(av.type, ( None, lambda x: None))
 
 

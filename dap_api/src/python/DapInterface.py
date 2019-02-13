@@ -65,8 +65,7 @@ class DapBadUpdateRow(Exception):
             self,
             message,
             table_name="?TABLE",
-            agent_name="?AGENT",
-            core_uri="?URI",
+            core_key="?COREKEY",
             field_name="?FIELD",
             field_type="?FIELDTYPE",
             value_type="?TYPE",
@@ -74,21 +73,19 @@ class DapBadUpdateRow(Exception):
         ):
         self.message = message
         self.table_name = table_name
-        self.agent_name = agent_name
-        self.core_uri = core_uri
+        self.core_key = core_key
         self.field_name = field_name
         self.value_type = value_type
         self.field_type = field_type
         self.value = value
         super(DapBadUpdateRow, self).__init__(
-            "{}: table({}), field({})/({}), value({})/({}), agent(), core({})".format(
+            "{}: table({}), field({})/({}), value({})/({}), core({})".format(
                 message,
                 self.table_name,
                 self.field_name,
                 self.field_type,
                 self.value,
                 self.value_type,
-                self.agent_name,
-                self.core_uri,
+                self.core_key,
             )
         )

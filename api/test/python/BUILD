@@ -10,9 +10,9 @@ py_binary(
 )
 
 py_binary(
-    name = "register_agents",
-    srcs = ["RegisterAgents.py"],
-    main = "RegisterAgents.py",
+    name = "register_oefs",
+    srcs = ["RegisterOEFs.py"],
+    main = "RegisterOEFs.py",
     deps = [
         "//network/src/python/async_socket:async_socket",
         "//api/src/proto:py_api_pb",

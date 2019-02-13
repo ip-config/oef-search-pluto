@@ -4,6 +4,7 @@ import sys
 from dap_api.src.python import DapManager
 from ai_search_engine.src.python import SearchEngine
 from dap_api.experimental.python import InMemoryDap
+from dap_api.experimental.python import AddressRegistry
 import api.src.python.ProtoWrappers as ProtoWrappers
 from api.src.python.EndpointSearch import SearchQuery
 from api.src.python.EndpointUpdate import UpdateEndpoint, BlkUpdateEndpoint
@@ -53,6 +54,16 @@ class PlutoApp:
                         },
                     },
                 },
+                "address_registry": {
+                    "class": "AddressRegistry",
+                    "config": {
+                        "structure": {
+                            "address_registry_table": {
+                                "address_field": "address"
+                            },
+                        },
+                    },
+                }
             }
 
         self.dapManager.setup(
@@ -68,16 +79,25 @@ class PlutoApp:
         self.executor = ThreadPoolExecutor(max_workers=2)
 
     def _setup_endpoints(self):
-        update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, {
-            "table": "data_model_table",
-            "field": "data_model"
-        })
+        AttrName = ProtoWrappers.AttributeName
+        update_config = ProtoWrappers.ConfigBuilder(ProtoWrappers.UpdateData)\
+            .data_model("data_model_table", "data_model")\
+            .attribute(AttrName.Value("LOCATION"), "location_table", "coords")\
+            .attribute(AttrName.Value("COUNTRY"), "location_table", "country")\
+            .attribute(AttrName.Value("CITY"), "location_table", "city")\
+            .attribute(AttrName.Value("NETWORK_ADDRESS"), "address_registry_table", "address_field")\
+            .default("default_table", "default_field")\
+            .build()
+
+        address_registry = self.dapManager.getInstance("address_registry")
+
+        update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, update_config, address_registry)
         query_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.QueryData, self.dapManager)
 
         search_engine = self.dapManager.getInstance("data_model_searcher")
 
         # endpoints
-        self._search_endpoint = SearchQuery(self.dapManager, query_wrapper)
+        self._search_endpoint = SearchQuery(self.dapManager, query_wrapper, address_registry)
         self._update_endpoint = UpdateEndpoint(self.dapManager, update_wrapper)
         self._blk_update_endpoint = BlkUpdateEndpoint(self.dapManager, update_wrapper)
 

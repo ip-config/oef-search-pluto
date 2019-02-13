@@ -49,6 +49,7 @@ class QueryTest(unittest.TestCase):
                 },
             },
         }
+        self.dapManager.setDataModelEmbedder("", "", "")
         self.dapManager.setup(
             sys.modules[__name__],
             dapManagerConfig)
@@ -67,34 +68,32 @@ class QueryTest(unittest.TestCase):
         newvalue.fieldname = "wibble"
         newvalue.value.type = 2
         newvalue.value.s = "moo"
-        newvalue.key.agent_name = "007/James/Bond"
-        newvalue.key.core_uri.append("localhost:10000")
+        newvalue.key = "007/James/Bond".encode("utf-8")
         return update
 
     def _setupAgents(self):
-        for agent_name, wibble_value in [
+        for core_key, wibble_value in [
             ("007/James/Bond",   "apple"),
             ("White/Spy",        "banana"),
             ("Black/Spy",        "carrot"),
             ("86/Maxwell/Smart", "carrot"),
         ]:
             update = self._createUpdate()
-            update.update[0].key.agent_name = agent_name
+            update.update[0].key = core_key.encode("utf-8")
             update.update[0].value.s = wibble_value
-            self.dap1.update(update)
+            self.dap1.update(update.update[0])
 
-        for agent_name, wobble_value in [
-            ("007/James/Bond",   "apple"),
-            ("White/Spy",        "banana"),
-            ("Black/Spy",        "carrot"),
-            ("86/Maxwell/Smart", "carrot"),
+        for core_key in [
+            "007/James/Bond/apple",
+            "White/Spy/banana",
+            "Black/Spy/carrot",
+            "86/Maxwell/Smart/carrot",
         ]:
             update = self._createUpdate()
             update.update[0].tablename = "wobbles"
             update.update[0].fieldname = "wobble"
-            update.update[0].key.agent_name = agent_name
-            update.update[0].value.s = wobble_value
-            self.dap2.update(update)
+            update.update[0].key = core_key.encode("utf-8")
+            self.dap2.update(update.update[0])
 
 
     def testQuery(self):
