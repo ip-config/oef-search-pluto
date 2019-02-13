@@ -9,7 +9,7 @@ from dap_api.src.python import DapQueryRepn
 from dap_api.src.python import ProtoHelpers
 from dap_api.src.python import SubQueryInterface
 from dap_api.src.python.DapInterface import DapBadUpdateRow
-from dap_e_r_network.src.python import Graph
+from dap_2d_geo.src.python import GeoStore
 
 class DapGeo(DapInterface.DapInterface):
 
@@ -18,11 +18,11 @@ class DapGeo(DapInterface.DapInterface):
 
     def __init__(self, name, configuration):
         self.name = name
-        self.graphs = {}
+        self.geos = {}
         self.structure_pb = configuration['structure']
 
         for table_name, fields in self.structure_pb.items():
-            self.graphs[table_name] = GeoStore.GeoStore()
+            self.geos[table_name] = GeoStore.GeoStore()
 
         self.operatorFactory = DapOperatorFactory.DapOperatorFactory()
 
@@ -30,7 +30,7 @@ class DapGeo(DapInterface.DapInterface):
         result = dap_description_pb2.DapDescription()
         result.name = self.name
 
-        for table_name in self.graphs.keys():
+        for table_name in self.geos.keys():
             result_table = result.table.add()
             result_table.name = table_name
 
@@ -45,18 +45,17 @@ class DapGeo(DapInterface.DapInterface):
         return result
 
     def getGeoByTableName(self, table_name):
-        return self.graphs[table_name]
+        return self.geos[table_name]
 
     class DapGeoQuery(SubQueryInterface.SubQueryInterface):
         def __init__(self):
-            self.weight = None
-            self.labels = None
-            self.origins = None
+            self.radius = None
+            self.locations = None
             self.tablename = None
-            self.graph = None
+            self.geo = None
 
-        def setGraph(self, graph):
-            self.graph = graph
+        def setGeo(self, geo):
+            self.geo = geo
 
         def setTablename(self, tablename):
             if self.tablename != None and self.tablename != tablename:
@@ -68,48 +67,32 @@ class DapGeo(DapInterface.DapInterface):
                 raise Exception("GeoQuery only supports one weight limit")
             self.radius = radius
 
-        def addLabel(self, label):
-            if self.labels == None:
-                self.labels = []
-            self.labels.append(label)
+        def addLocation(self, loc):
+            if self.locations == None:
+                self.locations = []
+            self.locations.append(loc)
 
-        def addLabels(self, labels):
-            if self.labels == None:
-                self.labels = []
-            self.labels.extend(labels)
-
-        def addOrigin(self, origin):
-            if self.origins == None:
-                self.origins = []
-            self.origins.append(origin)
-
-        def addOrigins(self, origins):
-            if self.origins == None:
-                self.origins = []
-            self.origins.extend(origins)
+        def addLocations(self, locs):
+            if self.locations == None:
+                self.locations = []
+            self.origins.extend(locs)
 
         def printable(self):
-            return "{} via {} < {}".format(
-                self.origins,
-                self.labels if self.labels != None else "*",
-                self.weight if self.labels != None else "inf",
+            return "{} < {}".format(
+                self.locations,
+                self.radius
             )
 
         def sanity(self):
-            if self.origins == None:
+            if self.locations == None:
                 raise Exception("GeoQuery must have one or more origins")
+            if self.radius == None:
+                raise Exception("GeoQuery must have a search radius in METRES")
             return self
 
         def execute(self, agents: Sequence[str]=None):
-            filter_move_function = lambda x:  x in self.labels if self.labels != None else lambda x: True
-            filter_distance_function = lambda move, total:  total < self.weight if self.weight != None else lambda move, total: True
-
-            for origin in self.origins:
-                yield from self.graph.explore(
-                    origin,
-                    filter_move_function=filter_move_function,
-                    filter_distance_function=filter_distance_function
-                )
+            for location in self.locations:
+                yield from self.geo.search( location, self.radius )
 
     def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
         # We'll let someone else handle any bigger branching logic.
@@ -125,9 +108,12 @@ class DapGeo(DapInterface.DapInterface):
             geoQuery.setTablename(leaf.target_table_name)
 
         processes = {
-            (geoQuery.tablename + ".location", "location"):      lambda q,x: q.addOrigin(x),
-            (geoQuery.tablename + ".location", "location"):      lambda q,x: q.addOrigin(x),
-            (geoQuery.tablename + ".radius", "string_list"): lambda q,x: q.addOrigins(x),
+            (geoQuery.tablename + ".location", "location"):      lambda q,x: q.addLocation(x),
+            (geoQuery.tablename + ".location", "location_list"): lambda q,x: q.addLocations(x),
+            (geoQuery.tablename + ".radius", "double"):          lambda q,x: q.addRadius(x),
+            (geoQuery.tablename + ".radius", "float"):           lambda q,x: q.addRadius(x),
+            (geoQuery.tablename + ".radius", "i32"):             lambda q,x: q.addRadius(x),
+            (geoQuery.tablename + ".radius", "i64"):             lambda q,x: q.addRadius(x),
         }
 
         for leaf in dapQueryRepnBranch.leaves:
@@ -142,7 +128,7 @@ class DapGeo(DapInterface.DapInterface):
         return geoQuery.sanity()
 
     def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:
-        raise Exception("DapERNetwork must create queries from subtrees, not leaves")
+        raise Exception("GeoQuery must be created from subtrees, not leaves")
 
     """This function will be called with any update to this DAP.
 

@@ -125,3 +125,8 @@ class GeoStoreTest(unittest.TestCase):
 
         assert sorted(r) == expected
 
+
+
+
+
+        
