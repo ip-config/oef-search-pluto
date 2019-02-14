@@ -3,6 +3,7 @@ from abc import abstractmethod
 
 from fetch_teams.oef_core_protocol import query_pb2
 from dap_api.src.python import DapQueryRepn
+from dap_api.src.python import ProtoHelpers
 
 class DapQueryRepnFromProtoBuf(object):
     def __init__(self):
@@ -22,17 +23,17 @@ class DapQueryRepnFromProtoBuf(object):
         return (None, None)
 
     def _SET_VALUES_toTypeVal(self, values_pb):
-        if value_pb.HasField("s"):
-            return ("string_list", values_pb.s)
-        if value_pb.HasField("d"):
-            return ("double_list", values_pb.d)
-        if value_pb.HasField("b"):
-            return ("bool_list", values_pb.b)
-        if value_pb.HasField("i"):
-            return ("int64_list", values_pb.i)
-        if value_pb.HasField("l"):
+        if values_pb.HasField("s"):
+            return ("string_list", values_pb.s.vals)
+        if values_pb.HasField("d"):
+            return ("double_list", values_pb.d.vals)
+        if values_pb.HasField("b"):
+            return ("bool_list", values_pb.b.vals)
+        if values_pb.HasField("i"):
+            return ("int64_list", values_pb.i.vals)
+        if values_pb.HasField("l"):
             return ("location_list", [
-                (foo.lat, foo.lon) for foo in values_pb.l])
+                (foo.lat, foo.lon) for foo in values_pb.l.vals])
         return (None, None)
 
     def _RANGE_VALUES_toTypeVal(self, values_pb):
@@ -48,8 +49,8 @@ class DapQueryRepnFromProtoBuf(object):
 
     def _CONSTRAINT_SET_toRepn(self, set_pb, attr_name):
         comparator = {
-            0: "IN",
-            1: "NOTIN",
+            0: ProtoHelpers.OPERATOR_IN,
+            1: ProtoHelpers.OPERATOR_NOT_IN,
         }[set_pb.op]
         query_field_type, query_field_value = self._SET_VALUES_toTypeVal(set_pb.vals)
         return DapQueryRepn.DapQueryRepn.Leaf(
@@ -61,7 +62,7 @@ class DapQueryRepnFromProtoBuf(object):
 
     def _CONSTRAINT_EMBEDDING_toRepn(self, embedding_pb, attr_name):
         comparator = {
-            0: "CLOSETO",
+            0: ProtoHelpers.OPERATOR_CLOSE_TO,
         }[embedding_pb.op]
 
         resultdata = list(embedding_pb.val.v)
@@ -74,12 +75,12 @@ class DapQueryRepnFromProtoBuf(object):
 
     def _CONSTRAINT_RELATION_toRepn(self, relation_pb, attr_name):
         comparator = {
-            0: "==",
-            1: "<",
-            2: "<=",
-            3: ">",
-            4: ">=",
-            5: "!=",
+            0: ProtoHelpers.OPERATOR_EQ,
+            1: ProtoHelpers.OPERATOR_LT,
+            2: ProtoHelpers.OPERATOR_LE,
+            3: ProtoHelpers.OPERATOR_GT,
+            4: ProtoHelpers.OPERATOR_GE,
+            5: ProtoHelpers.OPERATOR_NE,
         }[relation_pb.op]
         query_field_type, query_field_value = self._VALUE_toTypeVal(relation_pb.val)
         return DapQueryRepn.DapQueryRepn.Leaf(
@@ -128,13 +129,13 @@ class DapQueryRepnFromProtoBuf(object):
 
         if ce_pb.HasField("or_"):
             subs = ce_pb.or_.expr
-            combiner = "any"
+            combiner = ProtoHelpers.COMBINER_ANY
         elif ce_pb.HasField("and_"):
             subs = ce_pb.and_.expr
-            combiner = "all"
+            combiner = ProtoHelpers.COMBINER_ALL
         elif ce_pb.HasField("not_"):
             subs = ce_pb.not_.expr
-            combiner = "none"
+            combiner = ProtoHelpers.COMBINER_NONE
         else:
             raise Exception("_CONSTRAINT_EXPR_toRepn ==> None")
 
@@ -154,7 +155,7 @@ class DapQueryRepnFromProtoBuf(object):
         #resultdata = list(vector)
 
         return DapQueryRepn.DapQueryRepn.Leaf(
-            operator="CLOSE_TO",
+            operator=ProtoHelpers.OPERATOR_CLOSE_TO,
             query_field_value=data_model,
             query_field_type="data_model",
             target_field_name=embeddingInfo.FieldName,
@@ -166,7 +167,7 @@ class DapQueryRepnFromProtoBuf(object):
         #resultdata = list(vector)
 
         return DapQueryRepn.DapQueryRepn.Leaf(
-            operator="CLOSE_TO",
+            operator=OPERATOR_CLOSE_TO,
             query_field_value=description,
             query_field_type="string",
             target_field_name=embeddingInfo.FieldName,

@@ -1,0 +1,4 @@
+http://openpopgrid.geodata.soton.ac.uk/OpenPopGrid_ProductDocumentation.pdf
+
+https://opendatacommons.org/licenses/dbcl/1.0/
+
