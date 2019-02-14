@@ -41,6 +41,10 @@ def run_socket_server(host: str, port: str, router: BackendRouter):
 
 
 def serve_site(html_dir: str, path: str):
+    if path.find(".js") > 0:
+        bottle.response.headers['Content-Type'] = 'text/javascript'
+    elif path.find(".css") > 0:
+        bottle.response.headers['Content-Type'] = 'text/css'
     return resources.textfile(os.path.join(html_dir, path))
 
 
