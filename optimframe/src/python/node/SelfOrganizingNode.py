@@ -25,6 +25,11 @@ class DummyGeoOrgNode(SONode):
         }
         self.T = 0
         self.jump = 1
+        self.best = {
+            "coord": self.coord,
+            "value": self.value()
+        }
+        self.alpha  = 0.0
 
     def setHits(self, x: float) -> None:
         self.h = x
@@ -69,32 +74,36 @@ class DummyGeoOrgNode(SONode):
         ]
 
     def temperature(self, fraction):
-        return max(0.001, min(1, 1 - fraction))
+        return max(0.001, min(1, 1 - 2*fraction))
 
     def prob(self, v: float, v_new: float, T: float):
-        if v_new > v:
-            return 0.9
-        else:
-            return np.exp(-(v-v_new)/T)
+        return np.exp(-(v-v_new)/T)
 
     def getT(self):
         return self.T
 
-    def getMoveProbs(self, max_index):
+    def getMoveProbs(self, max_index, alpha=0.1):
         w = []
+        b = self.best["coord"]
         for m in self.move_vector:
-            w.append((self.coord.x+m.x)**2+(self.coord.y+m.y)**2)
+            w.append((self.coord.x+m.x-b.x)**2+(self.coord.y+m.y-b.x)**2)
         w = np.array(w)
-        w = w-np.min(w)
+        w = 1./w
+        w = w-np.mean(w)
         w = np.divide(w, np.max(w))
-        max_index = 7
-        w = 0.7*w+1./float(max_index)
+        w = alpha*w+1./float(max_index)
         w = np.divide(w, np.sum(w))
         return w
+
+    def setAlpha(self, alpha):
+        self.alpha = alpha
 
     def tick(self, iter: int, max_iter: int):
         self.T = self.temperature(float(iter)/float(max_iter))
         v = self.value()
+        if v > self.best["value"]:
+            self.best["value"] = v
+            self.best["coord"] = self.coord
         if self.prob(v, self.prev["value"], self.T) >= random.random():
             self.coord = self.prev["coord"]
             self.h = self.prev["h"]
@@ -105,13 +114,11 @@ class DummyGeoOrgNode(SONode):
         if r > 0.9:
             long = 2.
         if r > 0.95:
-            long = 4.
+            long = 3.
         if r > 0.99:
-            long = 6
-        w = []
-
-
-        dir_id = random.randint(0, 7)
+            long = 4
+        num_of_moves = 8
+        dir_id = np.random.choice(range(num_of_moves), p=self.getMoveProbs(num_of_moves, self.alpha))
         move = self.move_vector[dir_id]
         self.coord = self.coord + move*self.jump*long
         if self.coord.x>self.top_right.x:

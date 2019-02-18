@@ -36,13 +36,14 @@ def get_grid(file, z0=10.):
 
 
 def node(com, bottom_left, top_right, dx, dy, z):
-    i0 = 500
-    j0 = 450
+    i0 = 300
+    j0 = 350
     n = DummyGeoOrgNode("", com, z[i0,j0], bottom_left+Coord(dx*i0,dy*j0),[])
     n.setRange(bottom_left, top_right)
     n.setStep(dx, dx, dy, dy)
     N = 10000
-    n.setJumpSize(2)
+    n.setJumpSize(1)
+    n.setAlpha(0)
     def move():
         nonlocal N, n, z
         for i in range(1,N):
