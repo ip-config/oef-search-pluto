@@ -1,11 +1,28 @@
 from abc import ABC, abstractmethod
 from typing import List
+import numpy as np
 
 
 class Coord:
     def __init__(self, x: float, y: float):
         self.x = x
         self.y = y
+
+    def __add__(self, other):
+        return Coord(self.x+other.x, self.y+other.y)
+
+    def __sub__(self, other):
+        return Coord(self.x - other.x, self.y - other.y)
+
+    def len(self) -> float:
+        return np.sqrt(np.square(self.x)+np.square(self.y))
+
+    def __mul__(self, other: float):
+        return Coord(self.x*other, self.y*other)
+
+    def normalized(self):
+        r = self.len()
+        return Coord(self.x/r, self.y/r)
 
 
 class ComInterface(ABC):
@@ -20,7 +37,7 @@ class ComInterface(ABC):
 
 class SONode(ABC):
     @abstractmethod
-    def __init__(self, name: str, com: ComInterface, initial_peers: List[str]):
+    def __init__(self, name: str, com: ComInterface, initial_h: float, initial_coord: Coord, initial_peers: List[str]):
         pass
 
     @abstractmethod
@@ -36,6 +53,10 @@ class SONode(ABC):
         pass
 
     @abstractmethod
+    def setJumpSize(self, jump: float) -> None:
+        pass
+
+    @abstractmethod
     def getCoord(self) -> Coord:
         pass
 
@@ -48,5 +69,5 @@ class SONode(ABC):
         pass
 
     @abstractmethod
-    def tick(self):
+    def tick(self, iter: int, max_iter: int):
         pass
