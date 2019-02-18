@@ -59,26 +59,38 @@ class DummyGeoOrgNode(SONode):
         diag = lambda v1, v2: (v1+v2).normalized()*(np.sqrt(np.square(v1.len())+np.square(v2.len())))
         return [
             self.step_up,
-            #diag(self.step_up, self.step_right),
+            diag(self.step_up, self.step_right),
             self.step_right,
-            #diag(self.step_right, self.step_down),
+            diag(self.step_right, self.step_down),
             self.step_down,
-            #diag(self.step_down, self.step_left),
+            diag(self.step_down, self.step_left),
             self.step_left,
-            #diag(self.step_left, self.step_up)
+            diag(self.step_left, self.step_up)
         ]
 
     def temperature(self, fraction):
-        return max(0.001, min(1, 1 - fraction*2.))
+        return max(0.001, min(1, 1 - fraction))
 
     def prob(self, v: float, v_new: float, T: float):
-        if v_new < v:
-            return 1.0
+        if v_new > v:
+            return 0.9
         else:
-            return np.exp(-(v_new-v)/T)
+            return np.exp(-(v-v_new)/T)
 
     def getT(self):
         return self.T
+
+    def getMoveProbs(self, max_index):
+        w = []
+        for m in self.move_vector:
+            w.append((self.coord.x+m.x)**2+(self.coord.y+m.y)**2)
+        w = np.array(w)
+        w = w-np.min(w)
+        w = np.divide(w, np.max(w))
+        max_index = 7
+        w = 0.7*w+1./float(max_index)
+        w = np.divide(w, np.sum(w))
+        return w
 
     def tick(self, iter: int, max_iter: int):
         self.T = self.temperature(float(iter)/float(max_iter))
@@ -88,6 +100,21 @@ class DummyGeoOrgNode(SONode):
             self.h = self.prev["h"]
         self.prev["value"] = self.value()
         self.prev["coord"] = self.coord
-        dir_id = random.randint(0, 3)
+        long = 1.
+        r = random.random()
+        if r > 0.9:
+            long = 2.
+        if r > 0.95:
+            long = 4.
+        if r > 0.99:
+            long = 6
+        w = []
+
+
+        dir_id = random.randint(0, 7)
         move = self.move_vector[dir_id]
-        self.coord = self.coord + move*self.jump
+        self.coord = self.coord + move*self.jump*long
+        if self.coord.x>self.top_right.x:
+            self.coord.x = self.top_right.x
+        if self.coord.y>self.top_right.y:
+            self.coord.y = self.top_right.y
