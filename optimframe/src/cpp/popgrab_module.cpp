@@ -75,6 +75,7 @@ static PyObject *popgrab_run(PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+
 static char module_docstring[] =
   "A Python module that computes population allocations based on distance.";
 
