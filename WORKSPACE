@@ -67,3 +67,20 @@ py_library(
 #    visibility = ["//visibility:public"]
 #)
 
+
+
+new_local_repository(
+    name = "python_headers",
+    path = "/opt/local/Library/Frameworks/Python.framework/Versions/3.6/include/python3.6m",
+    build_file_content = """
+package(
+    default_visibility = [
+        "//visibility:public",
+    ],
+)
+cc_library(
+    name = "headers",
+    srcs = glob(["**/*.h"]),
+)
+""",
+)
