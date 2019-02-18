@@ -16,9 +16,12 @@ from concurrent.futures import ThreadPoolExecutor
 class PlutoApp:
     def __init__(self):
         self.args = None
+        self.dapManager = DapManager.DapManager()
+
+    def addClass(self, name, maker):
+        self.dapManager.addClass(name, maker)
 
     def setup(self, dapManagerConfig=None):
-        self.dapManager = DapManager.DapManager()
         if not dapManagerConfig:
             dapManagerConfig = {
                 "dap1": {

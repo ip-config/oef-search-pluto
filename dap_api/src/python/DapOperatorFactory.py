@@ -1,50 +1,51 @@
 import scipy.spatial.distance as distance
 
+from dap_api.src.python import ProtoHelpers
 
 class DapOperatorFactory(object):
     def __init__(self):
         self.store = {}
 
-        self.add("string", "==", "string", lambda a,b: a == b)
-        self.add("string", "!=", "string", lambda a,b: a != b)
-        self.add("string", "<",  "string", lambda a,b: a < b)
-        self.add("string", ">",  "string", lambda a,b: a > b)
-        self.add("string", "<=", "string", lambda a,b: a <= b)
-        self.add("string", ">=", "string", lambda a,b: a >= b)
+        self.add("string", ProtoHelpers.OPERATOR_EQ, "string", lambda a,b: a == b)
+        self.add("string", ProtoHelpers.OPERATOR_NE, "string", lambda a,b: a != b)
+        self.add("string", ProtoHelpers.OPERATOR_LT, "string", lambda a,b: a < b)
+        self.add("string", ProtoHelpers.OPERATOR_GT, "string", lambda a,b: a > b)
+        self.add("string", ProtoHelpers.OPERATOR_LE, "string", lambda a,b: a <= b)
+        self.add("string", ProtoHelpers.OPERATOR_GE, "string", lambda a,b: a >= b)
 
-        self.add("bool", "==", "bool", lambda a,b: a == b)
-        self.add("bool", "!=", "bool", lambda a,b: a != b)
+        self.add("bool", ProtoHelpers.OPERATOR_EQ, "bool", lambda a,b: a == b)
+        self.add("bool", ProtoHelpers.OPERATOR_NE, "bool", lambda a,b: a != b)
 
-        self.add("location", "==", "location", lambda a,b: a == b)
-        self.add("location", "!=", "location", lambda a,b: a != b)
+        self.add("location", ProtoHelpers.OPERATOR_EQ, "location", lambda a,b: a == b)
+        self.add("location", ProtoHelpers.OPERATOR_NE, "location", lambda a,b: a != b)
 
-        self.add("int", "==", "int", lambda a,b: a == b)
-        self.add("int", "!=", "int", lambda a,b: a == b)
-        self.add("int", "<",  "int", lambda a,b: a == b)
-        self.add("int", ">",  "int", lambda a,b: a == b)
-        self.add("int", "<=", "int", lambda a,b: a == b)
-        self.add("int", ">=", "int", lambda a,b: a >= b)
+        self.add("int", ProtoHelpers.OPERATOR_EQ, "int", lambda a,b: a == b)
+        self.add("int", ProtoHelpers.OPERATOR_NE, "int", lambda a,b: a == b)
+        self.add("int", ProtoHelpers.OPERATOR_LT, "int", lambda a,b: a == b)
+        self.add("int", ProtoHelpers.OPERATOR_GT, "int", lambda a,b: a == b)
+        self.add("int", ProtoHelpers.OPERATOR_LE, "int", lambda a,b: a == b)
+        self.add("int", ProtoHelpers.OPERATOR_GE, "int", lambda a,b: a >= b)
 
-        self.add("float", "==", "float", lambda a,b: a == b)
-        self.add("float", "!=", "float", lambda a,b: a != b)
-        self.add("float", "<",  "float", lambda a,b: a < b)
-        self.add("float", ">",  "float", lambda a,b: a > b)
-        self.add("float", "<=", "float", lambda a,b: a <= b)
-        self.add("float", ">=", "float", lambda a,b: a >= b)
+        self.add("float", ProtoHelpers.OPERATOR_EQ, "float", lambda a,b: a == b)
+        self.add("float", ProtoHelpers.OPERATOR_NE, "float", lambda a,b: a != b)
+        self.add("float", ProtoHelpers.OPERATOR_LT, "float", lambda a,b: a < b)
+        self.add("float", ProtoHelpers.OPERATOR_GT, "float", lambda a,b: a > b)
+        self.add("float", ProtoHelpers.OPERATOR_LE, "float", lambda a,b: a <= b)
+        self.add("float", ProtoHelpers.OPERATOR_GE, "float", lambda a,b: a >= b)
 
-        self.add("float",    "IN",    "float_list",    lambda a,b: a in b)
-        self.add("float",    "NOTIN", "float_list",    lambda a,b: a not in b)
-        self.add("int",      "IN",    "int_list",      lambda a,b: a in b)
-        self.add("int"  ,    "NOTIN", "int_list",      lambda a,b: a not in b)
-        self.add("string",   "IN",    "string_list",   lambda a,b: a in b)
-        self.add("string",   "NOTIN", "string_list",   lambda a,b: a not in b)
-        self.add("location", "IN",    "location_list", lambda a,b: a in b)
-        self.add("location", "NOTIN", "location_list", lambda a,b: a not in b)
+        self.add("float",    ProtoHelpers.OPERATOR_IN,     "float_list",    lambda a,b: a in b)
+        self.add("float",    ProtoHelpers.OPERATOR_NOT_IN, "float_list",    lambda a,b: a not in b)
+        self.add("int",      ProtoHelpers.OPERATOR_IN,     "int_list",      lambda a,b: a in b)
+        self.add("int"  ,    ProtoHelpers.OPERATOR_NOT_IN, "int_list",      lambda a,b: a not in b)
+        self.add("string",   ProtoHelpers.OPERATOR_IN,     "string_list",   lambda a,b: a in b)
+        self.add("string",   ProtoHelpers.OPERATOR_NOT_IN, "string_list",   lambda a,b: a not in b)
+        self.add("location", ProtoHelpers.OPERATOR_IN,     "location_list", lambda a,b: a in b)
+        self.add("location", ProtoHelpers.OPERATOR_NOT_IN, "location_list", lambda a,b: a not in b)
 
-        self.add("float",    "IN", "float_range",    lambda a,b: a > b[0] and a < b[1])
-        self.add("int",      "IN", "int_range",      lambda a,b: a > b[0] and a < b[1])
-        self.add("string",   "IN", "string_range",   lambda a,b: a > b[0] and a < b[1])
-        self.add("location", "IN", "location_range", lambda a,b:
+        self.add("float",    ProtoHelpers.OPERATOR_IN, "float_range",    lambda a,b: a > b[0] and a < b[1])
+        self.add("int",      ProtoHelpers.OPERATOR_IN, "int_range",      lambda a,b: a > b[0] and a < b[1])
+        self.add("string",   ProtoHelpers.OPERATOR_IN, "string_range",   lambda a,b: a > b[0] and a < b[1])
+        self.add("location", ProtoHelpers.OPERATOR_IN, "location_range", lambda a,b:
                      a[0] > b[0][0] and a[0] < b[1][0] and
                      a[1] > b[0][1] and a[1] < b[1][1]
                      )

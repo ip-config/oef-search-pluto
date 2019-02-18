@@ -22,6 +22,9 @@ OPERATOR_CLOSE_TO = "CLOSE_TO"
 OPERATOR_IN = "IN"
 OPERATOR_NOT_IN = "NOTIN"
 
+COMBINER_ALL = "all"
+COMBINER_ANY = "any"
+COMBINER_NONE = "none"
 
 def listOf(x):
     return("{}_list".format(x))
