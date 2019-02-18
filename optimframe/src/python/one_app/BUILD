@@ -7,9 +7,4 @@ py_binary(
          "//optimframe/src/python/openpopgrid:openpopgrid",
          "//optimframe/src/python/lib:lib",
     ],
-    data = [
-#         "//optimframe/src/cpp:popgrab.so",
-#         "//bazel-bin/optimframe/src/cpp/popgrab.so"
-         "popgrab.so"
-    ],
 )
