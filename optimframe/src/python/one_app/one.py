@@ -1,59 +1,35 @@
-from optimframe.src.python.openpopgrid import EnglandPopDistro
-
-import popgrab
 import random
 
+from optimframe.src.python.lib import NodeBase
+
+class TestNode(NodeBase.NodeBase):
+    def __init__(self, name, x, y):
+        super().__init__()
+        self.name = name
+        self.put(x,y)
+
+    def hits(self, hitcount):
+        print(self.name, hitcount)
+        self.hitcount = hitcount
+
+
 def main():
-    print("Hello")
 
-    eng = EnglandPopDistro.EnglandPopDistro()
-    print("LOADING...")
-    eng.load("optimframe/src/data")
+    NodeBase.NodeBase.setup()
 
-    class SetPopVisitor(object):
-        def __init__(self):
-            pass
+    NAMES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 
-        def visit(self,x,y,p):
-            popgrab.set_pop(x,y,p)
-
-    eng.visit(SetPopVisitor())
-
-    POPS = [
-        (1,        ' '),
-        (10,       u"\u2591"),
-        (100,      u"\u2592"),
-        (1000,     u"\u2593"),
-        (10000000, u"\u2588"),
+    nodes = [
+        TestNode(n, random.randint(0, 699), random.randint(0, 699))
+        for n in NAMES
     ]
-    for y in range(0, 700):
-        row = ""
-        for x in range(0, 700):
-            p = popgrab.read_pop(x,y)
-            c = ' '
-            for thresh,s in POPS:
-                if p>thresh:
-                    c = s
-            row += c
-        print(row)
 
-    for s in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789':
-        popgrab.put(ord(s), random.randint(0, 699), random.randint(0, 699))
+    NodeBase.NodeBase.run()
 
-    popgrab.run()
-
-    for y in range(0, 700):
-        row = ""
-        for x in range(0, 700):
-            c = popgrab.read_reg(x,y)
-            row += chr(c)
-        print(row)
-
-    t = 0
-    for s in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789':
-        c = popgrab.get(ord(s))
-        print("{} => {}".format(s, c))
-        t += c
+    t = sum([
+        n.hitcount
+        for n in nodes
+    ])
     print(t)
 
 if __name__ == "__main__":

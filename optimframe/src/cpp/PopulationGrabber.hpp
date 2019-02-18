@@ -116,7 +116,7 @@ private:
       pending.push_back( Pending( kv.second.first, kv.second.second, kv.first, 0 ) );
     }
 
-    int paint = 0;
+    //    int paint = 0;
     while(!pending.empty())
     {
       auto p = pending.front();
@@ -130,11 +130,11 @@ private:
           (there.distance > p.distance)
           )
       {
-        paint++;
-        if ((paint % 10000) == 0)
-        {
-          cout << "Paint " << paint << "/" << w*h << " ... " << pending.size() << endl;
-        }
+//        paint++;
+//        if ((paint % 10000) == 0)
+//        {
+//          cout << "Paint " << paint << "/" << w*h << " ... " << pending.size() << endl;
+//        }
 
         access(p.x, p.y).distance = p.distance;
         access(p.x, p.y).region = p.region;
