@@ -3,3 +3,5 @@ bazel-*/**
 bazel-*
 tmp/**
 docker-images/project.tar.gz
+optimframe/src/data/*.xml
+optimframe/src/data/*.asc
