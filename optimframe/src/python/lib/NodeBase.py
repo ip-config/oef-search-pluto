@@ -2,7 +2,7 @@ from abc import ABC
 from abc import abstractmethod
 from optimframe.src.python.openpopgrid import EnglandPopDistro
 
-import popgrab
+from optimframe.src.python.lib import popgrab
 import random
 
 class NodeBase(ABC):
