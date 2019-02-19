@@ -30,6 +30,7 @@ class DummyGeoOrgNode(SONode):
             "value": self.value()
         }
         self.alpha  = 0.0
+        self.temp_dec_speed = 1.
 
     def setHits(self, x: float) -> None:
         self.h = x
@@ -39,10 +40,10 @@ class DummyGeoOrgNode(SONode):
         self.top_right = top_right
 
     def setStep(self, left: float, right: float, up: float, down: float) -> None:
-        self.step_left = Coord(-left, 0)
+        self.step_left = Coord(left, 0)
         self.step_right = Coord(right, 0)
         self.step_up = Coord(0, up)
-        self.step_down = Coord(0, -up)
+        self.step_down = Coord(0, down)
         self.move_vector = self.calculate_move_vector()
 
     def setJumpSize(self, jump: float):
@@ -58,7 +59,7 @@ class DummyGeoOrgNode(SONode):
         return self.name
 
     def value(self) -> float:
-        return self.h
+        return 1./(self.h+0.1)
 
     def calculate_move_vector(self):
         diag = lambda v1, v2: (v1+v2).normalized()*(np.sqrt(np.square(v1.len())+np.square(v2.len())))
@@ -74,10 +75,13 @@ class DummyGeoOrgNode(SONode):
         ]
 
     def temperature(self, fraction):
-        return max(0.001, min(1, 1 - 2*fraction))
+        return max(0.001, min(1, 1 - self.temp_dec_speed*fraction))
 
     def prob(self, v: float, v_new: float, T: float):
-        return np.exp(-(v-v_new)/T)
+        #if v_new < v:
+        #    return 0.8
+        #else:
+            return np.exp(-(v_new-v)/T)
 
     def getT(self):
         return self.T
@@ -90,7 +94,11 @@ class DummyGeoOrgNode(SONode):
         w = np.array(w)
         w = 1./w
         w = w-np.mean(w)
-        w = np.divide(w, np.max(w))
+        mv = np.max(w)
+        amin = np.abs(np.min(w))
+        if mv<amin:
+            mv = amin
+        w = np.divide(w, mv)
         w = alpha*w+1./float(max_index)
         w = np.divide(w, np.sum(w))
         return w
@@ -99,16 +107,21 @@ class DummyGeoOrgNode(SONode):
         self.alpha = alpha
 
     def tick(self, iter: int, max_iter: int):
-        self.T = self.temperature(float(iter)/float(max_iter))
         v = self.value()
-        if v > self.best["value"]:
-            self.best["value"] = v
-            self.best["coord"] = self.coord
-        if self.prob(v, self.prev["value"], self.T) >= random.random():
+        self.T = self.temperature(float(iter)/float(max_iter))
+        if self.prob(self.prev["value"], v, self.T) < random.random():
             self.coord = self.prev["coord"]
             self.h = self.prev["h"]
-        self.prev["value"] = self.value()
+            v = self.value()
+
+        if v < self.best["value"]:
+            self.best["value"] = v
+            self.best["coord"] = self.coord
+
+        #store current values as prev
+        self.prev["value"] = v
         self.prev["coord"] = self.coord
+        #make a random move
         long = 1.
         r = random.random()
         if r > 0.9:
@@ -119,9 +132,16 @@ class DummyGeoOrgNode(SONode):
             long = 4
         num_of_moves = 8
         dir_id = np.random.choice(range(num_of_moves), p=self.getMoveProbs(num_of_moves, self.alpha))
+        #dir_id = np.random.randint(0, num_of_moves-1)
         move = self.move_vector[dir_id]
         self.coord = self.coord + move*self.jump*long
-        if self.coord.x>self.top_right.x:
-            self.coord.x = self.top_right.x
-        if self.coord.y>self.top_right.y:
-            self.coord.y = self.top_right.y
+
+        if self.coord.x <= self.bottom_left.x:
+            self.coord.x = (self.bottom_left+self.step_right).x
+        elif self.coord.x > self.top_right.x:
+            self.coord.x = (self.top_right+self.step_left).x
+
+        if self.coord.y <= self.top_right.y:
+            self.coord.y = (self.top_right+self.step_down).y
+        elif self.coord.y>self.bottom_left.y:
+            self.coord.y = (self.bottom_left+self.step_up).y

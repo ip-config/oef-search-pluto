@@ -71,7 +71,7 @@ py_library(
 
 new_local_repository(
     name = "python_headers",
-    path = "/opt/local/Library/Frameworks/Python.framework/Versions/3.6/include/python3.6m",
+    path = "/usr/local/Frameworks/Python.framework/Versions/3.7/include/python3.7m",
     build_file_content = """
 package(
     default_visibility = [

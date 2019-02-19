@@ -113,14 +113,16 @@ private:
     deque<Pending> pending;
     for(auto kv : starts)
     {
-      pending.push_back( Pending( kv.second.first, kv.second.second, kv.first, 0 ) );
+      pending.push_back( Pending( kv.second.first, kv.second.second, kv.first, 1 ) );
     }
 
-    //    int paint = 0;
+  //      int paint = 0;
     while(!pending.empty())
     {
       auto p = pending.front();
       pending.pop_front();
+
+      if (!has(p.x, p.y)) continue;
 
       auto there = access(p.x, p.y);
 
@@ -130,11 +132,11 @@ private:
           (there.distance > p.distance)
           )
       {
-//        paint++;
-//        if ((paint % 10000) == 0)
-//        {
-//          cout << "Paint " << paint << "/" << w*h << " ... " << pending.size() << endl;
-//        }
+       // paint++;
+       // if ((paint % 10000) == 0)
+       // {
+       //  cout << "Paint " << paint << "/" << w*h << " ... " << pending.size() << endl;
+       //  }
 
         access(p.x, p.y).distance = p.distance;
         access(p.x, p.y).region = p.region;
@@ -176,7 +178,7 @@ private:
   {
     for(int i=0;i<w*h;i++)
     {
-      totals[array[i].region] += array[i].population;
+      totals[array[i].region] += array[i].population*(1-1./((double)array[i].distance));
     }
   }
 
@@ -204,7 +206,7 @@ private:
   map<int, std::pair<int,int>> starts;
   map<int, int> totals;
 
-  bool has(int x, int y) const { return x>=0 && x<w && y>=0 && y<w; }
+  bool has(int x, int y) const { return x>=0 && x<w && y>=0 && y<h; }
 
   Cell &access(int x, int y) { return array[x + y*w ]; }
 };

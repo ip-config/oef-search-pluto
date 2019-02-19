@@ -5,6 +5,7 @@ py_binary(
     visibility = ["//visibility:public"],
     deps = [
          "//optimframe/src/python/openpopgrid:openpopgrid",
-         "//optimframe/src/python/node:self_org_node"
-    ],
+         "//optimframe/src/python/node:self_org_node",
+         "//optimframe/src/python/lib:lib",
+    ]
 )

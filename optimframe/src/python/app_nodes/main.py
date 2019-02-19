@@ -6,7 +6,21 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Ellipse
 from optimframe.src.python.openpopgrid import EnglandPopDistro
+from optimframe.src.python.lib import NodeBase
 
+
+class TestNode(NodeBase.NodeBase):
+    def __init__(self, node: DummyGeoOrgNode):
+        super().__init__()
+        self.name = node.name
+        self.node = node
+
+    def hits(self, hitcount):
+        self.node.setHits(hitcount)
+
+    def update_coords(self):
+        coord = self.node.getCoord()
+        self.put(int(coord.y+0.5), int(coord.x+0.5))
 
 
 class Com(ComInterface):
@@ -22,62 +36,77 @@ def get_grid(file, z0=10.):
     print("LOADING...")
     eng.load(file)
 
-    top_left = Coord(0, 700)
-    bottom_right = Coord(700, 0)
+    top_left = Coord(0, 0)
+    bottom_right = Coord(700, 700)
     w = eng.w
     h = eng.h
 
     data = np.zeros((w, h), dtype=np.float)
     for i in range(h):
         for j in range(w):
-            data[i,j] = eng.get(i,j)+z0
+            data[j,i] = eng.get(i,j)+z0
+
+    data = np.flipud(data)
 
     return data, w, h, top_left, bottom_right
 
 
-def node(com, bottom_left, top_right, dx, dy, z):
-    i0 = 300
-    j0 = 350
-    n = DummyGeoOrgNode("", com, z[i0,j0], bottom_left+Coord(dx*i0,dy*j0),[])
-    n.setRange(bottom_left, top_right)
-    n.setStep(dx, dx, dy, dy)
-    N = 10000
-    n.setJumpSize(1)
-    n.setAlpha(0)
+def setup_nodes(num_of_nodes, ax, com, bottom_left, top_right, dx, dy, z, N=10000):
+    nodes = []
+    points = []
+    for i in range(num_of_nodes):
+        i0 = np.random.randint(200, 600)
+        j0 = np.random.randint(100, 600)
+        coord = Coord(bottom_left.x+dx * i0, top_right.y+dy * j0)
+        n = DummyGeoOrgNode("", com, z[i0, j0], coord, [])
+        n.setRange(bottom_left, top_right)
+        n.setStep(-dx, dx, dy, -dy)
+        n.setJumpSize(4)
+        n.setAlpha(0.01)
+        n.temp_dec_speed = 4.
+        node_wrapper = TestNode(n)
+        nodes.append(node_wrapper)
+        point = Ellipse((coord.x, coord.y), 10, 10, 0)
+        point.set_facecolor('white')
+        ax.add_artist(point)
+        points.append(point)
     def move():
-        nonlocal N, n, z
-        for i in range(1,N):
-            n.tick(i, N)
-            p = n.getCoord()
-            xi = int((p.x - bottom_left.x) / dx)
-            yi = int((p.y - bottom_left.y) / dy)
-            n.setHits(z[xi, yi])
-            yield [i, n.getT(), [xi, yi]]
+        nonlocal nodes, points
+        for i in range(1, N):
+            NodeBase.NodeBase.run()
+            for n in range(len(nodes)):
+                nodes[n].node.tick(i, N)
+                nodes[n].update_coords()
+                p = nodes[n].node.getCoord()
+                #xi = int((p.x - top_right.x) / dx)
+                #yi = int((p.y - top_right.y) / dy)
+                xi = int(np.ceil((p.x - bottom_left.x) / dx))
+                yi = int(np.ceil((p.y - top_right.y) / dy))
+                T  = nodes[n].node.getT()
+                points[n].set_center([xi, yi])
+            yield [i, T]
     return move
 
 
 def main():
+    NodeBase.NodeBase.setup()
     land, w, h, top_left, bottom_right = get_grid("optimframe/src/data")
     dx = np.abs(top_left.x - bottom_right.x) / float(w)
     dy = np.abs(top_left.y - bottom_right.y) / float(h)
-
     fig, ax = plt.subplots(subplot_kw={'aspect': 'equal'})
     ax.set_xlim(0, w)
     ax.set_ylim(0, h)
     plt.imshow(np.log(land), cmap="hot")
     plt.colorbar()
 
-    point = Ellipse((100, 100), 10, 10, 0)
-    point.set_facecolor('white')
-    ax.add_artist(point)
     bottom_left = Coord(top_left.x, bottom_right.y)
     top_right = Coord(bottom_right.x, top_left.y)
-    n = node(Com(), bottom_left, top_right, dx, dy, land)
+
+    n = setup_nodes(50, ax, Com(), bottom_left, top_right, dx, dy, land)
     txt = plt.text(350, 730, "Iter: 0, Temp: 1e9")
     for d in n():
-        i, T, p = d
+        i, T = d
         txt.set_text("Iter: %d, Temp: %.3f"%(i, T))
-        point.set_center(p)
         fig.canvas.draw()
         plt.pause(0.01)
 
