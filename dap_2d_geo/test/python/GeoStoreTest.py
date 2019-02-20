@@ -50,14 +50,35 @@ class GeoStoreTest(unittest.TestCase):
             'JFK',
         ])
 
-        r = list(self.g.searchWithDistances(self.BHX, 25000))
+        r = list(self.g.searchWithData(self.BHX, 25000))
 
         r = [
             (entity, int(dist/1000))
-            for (entity, dist) in r
+            for (entity, dist, br) in r
         ]
 
         assert ('CVT/ENGLAND', 20) in r
+
+    def testBearings1(self):
+        self.add(limit = [
+            'CVT',
+            'BHX',
+            'LHR',
+            'YEO',
+            'JFK',
+        ])
+
+        r = list(self.g.searchWithData(self.BHX, 250000))
+
+        print(r)
+
+        assert sorted(r, key=lambda x: x[0]) == [
+            ('BHX/ENGLAND', 0, 0),
+            ('CVT/ENGLAND', 20436, 233),
+            ('LHR/ENGALND', 139916, 151),
+                 # Yes, misspelled in data.
+            ('YEO/UK', 171994, 216),
+        ]
 
     def testBasic2(self):
         self.add(limit = [

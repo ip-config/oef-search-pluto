@@ -29,16 +29,25 @@ class GeoStore(object):
         d = math.sqrt((x*x + y*y)) * radius;
         return d
 
-    def search(self, location, radius_in_m):
+    # Bearing of POS2 from POS1 along a great circle.
+    def InitialBearing(self, pos1, pos2):
+        φ1,λ1 = pos1
+        φ2,λ2 = pos2
+        y = math.sin(λ2-λ1) * math.cos(φ2)
+        x = math.cos(φ1)*math.sin(φ2) - math.sin(φ1)*math.cos(φ2)*math.cos(λ2-λ1)
+        brng = math.degrees(math.atan2(y, x))
+        return (brng + 360) % 360
+
+    def search(self, location, radius_in_m, bearing=None, bearing_width=None):
+        results = self.searchWithData(location, radius_in_m, bearing=bearing, bearing_width=bearing_width)
+        for r in results:
+            yield r[0]
+
+    def searchWithData(self, location, radius_in_m, bearing=None, bearing_width=None):
         for entity, loc in self.store.items():
             d = self.EquirectangularDistance(location, loc)
-            if d < radius_in_m:
-                yield entity
-
-    def searchWithDistances(self, location, radius_in_m):
-        for entity, loc in self.store.items():
-            d = self.EquirectangularDistance(location, loc)
-            r = (entity, d)
-            if d < radius_in_m:
-                yield r
-
+            br = self.InitialBearing(location, loc)
+            r = (entity, int(d), int(br))
+            if d > radius_in_m:
+                continue
+            yield r
