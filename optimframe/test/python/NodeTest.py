@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from optimframe.src.python.node.Interfaces import Coord, ComInterface
-from optimframe.src.python.node.SelfOrganizingNode import DummyGeoOrgNode
+from optimframe.src.python.node.DummyGeoOrgNode import DummyGeoOrgNode
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Ellipse

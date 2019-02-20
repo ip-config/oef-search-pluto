@@ -59,7 +59,7 @@ class DummyGeoOrgNode(SONode):
         return self.name
 
     def value(self) -> float:
-        return 1./(self.h+0.1)
+        return 1000000./(np.abs(self.h)+10)
 
     def calculate_move_vector(self):
         diag = lambda v1, v2: (v1+v2).normalized()*(np.sqrt(np.square(v1.len())+np.square(v2.len())))

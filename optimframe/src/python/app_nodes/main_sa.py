@@ -11,13 +11,13 @@ from optimframe.src.python.lib import NodeBase
 
 
 class TestNode(NodeBase.NodeBase):
-    def __init__(self, node: QGeoOrgNode):
+    def __init__(self, node: DummyGeoOrgNode):
         super().__init__()
         self.name = node.name
         self.node = node
 
     def hits(self, hitcount):
-        self.node.setHits(np.log(hitcount+100))
+        self.node.setHits(hitcount)
 
     def update_coords(self):
         coord = self.node.getCoord()
@@ -60,14 +60,14 @@ def setup_nodes(num_of_nodes, ax, com, bottom_left, top_right, dx, dy, z, N=1000
         i0 = np.random.randint(200, 600)
         j0 = np.random.randint(100, 600)
         coord = Coord(bottom_left.x+dx * i0, top_right.y+dy * j0)
-        n = QGeoOrgNode(str(i), com, z[i0, j0], coord, [])
+        n = DummyGeoOrgNode(str(i), com, z[i0, j0], coord, [])
         n.setRange(bottom_left, top_right)
         n.setStep(-dx, dx, dy, -dy)
         n.setJumpSize(4)
-        #n.setAlpha(0.1)
-        n.setEpsilon(0.1)
-        n.setStateSize(700,700)
-        n.setQParams(0.01, 0.9)
+        n.setAlpha(0.1)
+        #n.setEpsilon(0.1)
+        #n.setStateSize(700,700)
+        #n.setQParams(0.01, 0.9)
         n.temp_dec_speed = 4.
         node_wrapper = TestNode(n)
         nodes.append(node_wrapper)
@@ -75,27 +75,25 @@ def setup_nodes(num_of_nodes, ax, com, bottom_left, top_right, dx, dy, z, N=1000
         point.set_facecolor('blue')
         ax.add_artist(point)
         points.append(point)
+    regions = np.ones((700,700), dtype=np.int)
     def move():
-        nonlocal nodes, points
+        nonlocal nodes, points, regions
         for i in range(1, N):
             NodeBase.NodeBase.run()
             rewards = ""
             for n in range(len(nodes)):
-                rewards += "%d: %.2f (%.2f), "%(n, nodes[n].node.value(), nodes[n].node.h)
                 nodes[n].node.tick(i, N)
                 nodes[n].update_coords()
                 p = nodes[n].node.getCoord()
                 xi = int(np.ceil((p.x - bottom_left.x) / dx))
                 yi = int(np.ceil((p.y - top_right.y) / dy))
-                T  = i#nodes[n].node.getT()
+                T  = nodes[n].node.getT()
                 points[n].set_center([xi, yi])
-            if i%2==0:
-                print("Rewards: {}".format(rewards))
-                print_phase = False
-            if i%10==0:
-                yield [i, T]
-            if i%1000==0:
-                nodes[n].node.reset()
+                rewards += "%d: %.2f; "%(n, nodes[n].node.value())
+            NodeBase.NodeBase.set_regions(regions)
+            #print(rewards)
+            print(regions)
+            yield [i, T]
     return move
 
 

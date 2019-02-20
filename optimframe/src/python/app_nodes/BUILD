@@ -9,3 +9,14 @@ py_binary(
          "//optimframe/src/python/lib:lib",
     ]
 )
+py_binary(
+    name = "main_sa",
+    srcs = ["main_sa.py"],
+    main = "main_sa.py",
+    visibility = ["//visibility:public"],
+    deps = [
+         "//optimframe/src/python/openpopgrid:openpopgrid",
+         "//optimframe/src/python/node:self_org_node",
+         "//optimframe/src/python/lib:lib",
+    ]
+)

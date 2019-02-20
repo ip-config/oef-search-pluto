@@ -75,6 +75,25 @@ static PyObject *popgrab_run(PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+static PyObject *popgrab_get_region(PyObject *self, PyObject *args)
+{
+    int w, h;
+    void *ptr;
+    int ok = PyArg_ParseTuple(args, "O", &ptr);
+    if (ok)
+    {
+
+        int* numpy_array = pg->get_region_array(w,h);
+        int * arr_ptr = static_cast<int*>(ptr);
+        for(int i=0;i<w;++i){
+            cout << arr_ptr[i] << " " << numpy_array[i] << "; " << endl;
+        }
+        memcpy(numpy_array, arr_ptr, w*h*sizeof(int));
+
+    }
+    Py_RETURN_NONE;
+}
+
 
 static char module_docstring[] =
   "A Python module that computes population allocations based on distance.";
@@ -89,6 +108,7 @@ static PyMethodDef module_methods[] = {
   {"put", popgrab_put, METH_VARARGS, one_docstring},
   {"run", popgrab_run, METH_VARARGS, one_docstring},
   {"get", popgrab_get, METH_VARARGS, one_docstring},
+  {"get_region", popgrab_get_region, METH_VARARGS, one_docstring},
   {NULL, NULL, 0, NULL}
 };
 

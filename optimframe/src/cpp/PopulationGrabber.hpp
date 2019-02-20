@@ -43,8 +43,11 @@ public:
     this->h = h;
 
     array = new Cell[w*h];
+    region_array = new int[w*h];
 
     memset(array, 0, w*h*sizeof(Cell));
+    memset(region_array, -1, w*h*sizeof(int));
+
   }
 
   virtual ~PopulationGrabber()
@@ -107,6 +110,12 @@ public:
     return -1;
   }
 
+  int* get_region_array(int& w, int& h){
+    w = this->w;
+    h = this->h;
+    return region_array;
+  }
+
 private:
   void fill()
   {
@@ -140,6 +149,7 @@ private:
 
         access(p.x, p.y).distance = p.distance;
         access(p.x, p.y).region = p.region;
+        access_region(p.x, p.y) = p.region;
 
         auto g = p.distance + 1;
 
@@ -203,10 +213,12 @@ private:
   int w;
   int h;
   Cell *array;
+  int *region_array;
   map<int, std::pair<int,int>> starts;
   map<int, int> totals;
 
   bool has(int x, int y) const { return x>=0 && x<w && y>=0 && y<h; }
 
   Cell &access(int x, int y) { return array[x + y*w ]; }
+  int &access_region(int x, int y){return region_array[x+y*w];}
 };
