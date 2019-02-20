@@ -30,24 +30,46 @@ class GeoStore(object):
         return d
 
     # Bearing of POS2 from POS1 along a great circle.
-    def InitialBearing(self, pos1, pos2):
-        φ1,λ1 = pos1
-        φ2,λ2 = pos2
+    def InitialBearing(pos1, pos2):
+        φ1,λ1 = math.radians(pos1[0]), math.radians(pos1[1])
+        φ2,λ2 = math.radians(pos2[0]), math.radians(pos2[1])
         y = math.sin(λ2-λ1) * math.cos(φ2)
         x = math.cos(φ1)*math.sin(φ2) - math.sin(φ1)*math.cos(φ2)*math.cos(λ2-λ1)
-        brng = math.degrees(math.atan2(y, x))
-        return (brng + 360) % 360
+        ang = math.atan2(y, x)
+        brng = math.degrees(ang)
+        return int((brng + 360) % 360)
 
     def search(self, location, radius_in_m, bearing=None, bearing_width=None):
         results = self.searchWithData(location, radius_in_m, bearing=bearing, bearing_width=bearing_width)
         for r in results:
             yield r[0]
 
+    def containsBearing(left, right, bearing):
+        if right > left:
+            if bearing > left and bearing < right:
+                return True
+        else:
+            if bearing > left or bearing < right:
+                return True
+        return False
+
     def searchWithData(self, location, radius_in_m, bearing=None, bearing_width=None):
+        left = None
+        right = None
+
+        if bearing != None and bearing_width != None:
+            if bearing_width < 0:
+                bearing_width = -1 * bearing_width
+            left = (bearing - bearing_width + 360) % 360
+            right = (bearing + bearing_width + 360) % 360
+
         for entity, loc in self.store.items():
             d = self.EquirectangularDistance(location, loc)
-            br = self.InitialBearing(location, loc)
+            br = GeoStore.InitialBearing(location, loc)
             r = (entity, int(d), int(br))
             if d > radius_in_m:
                 continue
+            if left != None:
+                if not GeoStore.containsBearing(left, right, br):
+                    continue
             yield r
