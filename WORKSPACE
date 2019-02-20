@@ -68,19 +68,25 @@ py_library(
 #)
 
 
+# This is the original of the python getter replaced by the new repo rule.
+#
+#new_local_repository(
+#    name = "python_headers",
+#    path = find_python(), #"/opt/local/Library/Frameworks/Python.framework/Versions/3.6/include/python3.6m",
+#    build_file_content = """
+#package(
+#    default_visibility = [
+#        "//visibility:public",
+#    ],
+#)
+#cc_library(
+#    name = "headers",
+#    srcs = glob(["**/*.h"]),
+#)
+#""",
+#)
 
-new_local_repository(
-    name = "python_headers",
-    path = "/opt/local/Library/Frameworks/Python.framework/Versions/3.6/include/python3.6m",
-    build_file_content = """
-package(
-    default_visibility = [
-        "//visibility:public",
-    ],
-)
-cc_library(
-    name = "headers",
-    srcs = glob(["**/*.h"]),
-)
-""",
+load("//tools:find_python.bzl", "new_system_python_headers_repository")
+new_system_python_headers_repository(
+        name="python_headers",
 )

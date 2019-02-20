@@ -1,4 +1,3 @@
-
 cc_library(
     name = "popgrab_lib",
     visibility = [
@@ -11,7 +10,6 @@ cc_library(
          "@python_headers//:headers",
     ],
     hdrs = ["PopulationGrabber.hpp"],
-    #copts = ["-I/opt/local/Library/Frameworks/Python.framework/Versions/3.6/include/python3.6m"],
 )
 
 cc_binary(
@@ -20,7 +18,6 @@ cc_binary(
         "//visibility:public",
     ],
     srcs = [
-#        "foo.h",
     ],
     deps = [
          ":popgrab_lib"
