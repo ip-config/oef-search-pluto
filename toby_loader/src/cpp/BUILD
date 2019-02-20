@@ -1,0 +1,26 @@
+cc_library(
+     name="toby_loader_lib",
+     visibility=["//visibility:public"],
+     srcs=[
+        "PlaceRepository.cpp",
+     ],
+     hdrs=[
+        "PlaceRepository.h",
+     ],
+     deps=[
+     ],
+)
+
+cc_binary(
+     name="toby_loader",
+     visibility=["//visibility:public"],
+     srcs=[
+        "main.cpp"
+     ],
+     deps=[
+        ":toby_loader_lib"
+     ],
+     data=[
+        "//toby_loader/data/binary:tobydata",
+    ]
+)
