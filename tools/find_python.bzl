@@ -22,6 +22,8 @@ def find_python():
 
     versions = []
     for p in POSSIBLE_PYTHON_SOURCE_VERSION_LOCATIONS:
+        if not os.path.exists(p):
+            continue
         dirs = os.listdir(p)
         versions.extend([
             (v, d, p)
@@ -37,7 +39,6 @@ def find_python():
             for h
             in glob.glob(p +  d + "/include/*/Python.h")
         ])
-
     best = sorted(locations, key=lambda x: x[0], reverse=True)[0]
 
     return best[2]+best[1]+"/"+best[3]
@@ -64,7 +65,6 @@ def create_file_list(fn, path, files_processed):
 def main():
     original = find_python()
     output = os.getcwd()
-
     r = create_file_list(
         "Python.h",
         original,
@@ -83,6 +83,7 @@ if __name__ == '__main__':
 def python_system_headers_repository(repository_ctx):
     repository_ctx.file("FINDER", content=FINDER)
     r = repository_ctx.execute(["python3", "./FINDER"], timeout=15)
+    print(r.stdout)
     repository_ctx.file("BUILD", content="""
 package(
     default_visibility = [
