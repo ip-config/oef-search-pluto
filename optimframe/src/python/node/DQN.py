@@ -59,6 +59,7 @@ class DQN:
         self._action_space = dimensions[-1]
         self._model = self._build_model(*dimensions)
         self._name = name
+        self._loss = []
 
     def _conv(self, f, kernel, stride=(1, 1)):
         def builder(x):
@@ -109,7 +110,8 @@ class DQN:
         q_next = reward + self._gamma*np.amax(self._model.predict(next_state), axis=1, keepdims=True)
         target_s = self._model.predict(state)
         target_s[np.arange(target_s.shape[0]), action.reshape((-1))] = q_next.reshape((-1))
-        self._model.fit(state, target_s, epochs=1)
+        history = self._model.fit(state, target_s, epochs=1)
+        self._loss.append(history.history["loss"][0])
         #for i in range(len(batch)):
         #    state, action, reward, next_state = batch[i]
         #
@@ -121,6 +123,9 @@ class DQN:
         #self._model.fit(state_rs, target_s, epochs=1)
         if self._epsilon > self._epsilon_min:
             self._epsilon *= self._epsilon_decay
+
+    def getLoss(self):
+        return self._loss
 
     def predict_action(self, state):
         if np.random.random() <= self._epsilon:

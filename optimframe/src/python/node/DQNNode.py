@@ -64,6 +64,9 @@ class DQNGeoOrgNode:
     def setOthersState(self, everybody):
         self.state[:, :, 1] = everybody[:, :, 0]-self.state[:, :, 0]
 
+    def getLoss(self):
+        return self.agent.getLoss()
+
     def update_state(self, state, action):
         w = state.shape[0]
         h = state.shape[1]

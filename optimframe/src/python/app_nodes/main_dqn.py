@@ -1,4 +1,5 @@
 import numpy as np
+import os, sys
 from optimframe.src.python.node.Interfaces import Coord, ComInterface
 from optimframe.src.python.node.DQNNode import DQNGeoOrgNode, StateAdaptor
 import matplotlib.pyplot as plt
@@ -86,7 +87,7 @@ def setup_nodes(num_of_nodes, ax, bottom_left, top_right, dx, dy, episodes, N):
     stateAdaptor = StateAdaptor(bottom_left, top_right, np.array([700, 700]), np.array([350, 350]))
     for i in range(num_of_nodes):
         n = DQNGeoOrgNode(str(i), stateAdaptor)
-        n.setJump(2)
+        n.setJump(6)
         node_wrapper = TestNode(n)
         nodes.append(node_wrapper)
 
@@ -101,14 +102,18 @@ def setup_nodes(num_of_nodes, ax, bottom_left, top_right, dx, dy, episodes, N):
             for i in range(N):
                 NodeBase.NodeBase.run()
                 rewards = ""
+                losses = ""
                 for ni in range(len(nodes)):
                     rewards += "e: %d, i: %d, n: %d: %.2f (%.2f), " % (e, i, ni, nodes[ni].n.reward(), nodes[ni].n._h)
+                    losses += "e: {}, i: {}, n: {}: {};".format(e, i, ni, str(nodes[ni].n.getLoss()))
                     nodes[ni].tick()
                     p = nodes[ni].n.getCoord()
                     points[ni].set_center([p.x, p.y])
                 updateNodeStateChannel1(nodes)
                 if i % 2 == 1:
                     print("Rewards: {}".format(rewards))
+                    print("Losses: {}".format(losses))
+                if e%2 == 0 and i%2 == 0:
                     yield [e, i]
             for n in nodes:
                 n.n.train()
@@ -117,6 +122,11 @@ def setup_nodes(num_of_nodes, ax, bottom_left, top_right, dx, dy, episodes, N):
 
 
 def main():
+    print(os.getcwd())
+    path = os.getcwd()
+    anim_dir = path + "/anim"
+    if not os.path.exists(anim_dir):
+        os.mkdir(anim_dir)
     NodeBase.NodeBase.setup()
     land, w, h, top_left, bottom_right = get_grid("optimframe/src/data", -10)
     dx = np.abs(top_left.x - bottom_right.x) / float(w)
@@ -135,7 +145,10 @@ def main():
     for d in n():
         txt.set_text("Episode: %d, Iter: %d" % (d[0], d[1]))
         fig.canvas.draw()
-        plt.pause(0.01)
+        episode_dir = anim_dir + "/{}".format(d[0])
+        if not os.path.exists(episode_dir):
+            os.mkdir(episode_dir)
+        plt.savefig("{}/{}.png".format(episode_dir, d[1]))
 
 
 if __name__ == "__main__":
