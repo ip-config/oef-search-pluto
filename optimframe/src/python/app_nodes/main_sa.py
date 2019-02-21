@@ -56,9 +56,11 @@ def get_grid(file, z0=10.):
 def setup_nodes(num_of_nodes, ax, com, bottom_left, top_right, dx, dy, z, N=100000):
     nodes = []
     points = []
+    f = open("toby_loader/data/csv/centres-ordered-by-population.csv","r")
+    cities = [line.split(',') for line in f.readlines()]
     for i in range(num_of_nodes):
-        i0 = np.random.randint(200, 600)
-        j0 = np.random.randint(100, 600)
+        i0 = int(cities[i][2])
+        j0 = int(cities[i][1])
         coord = Coord(bottom_left.x+dx * i0, top_right.y+dy * j0)
         n = DummyGeoOrgNode(str(i), com, z[i0, j0], coord, [])
         n.setRange(bottom_left, top_right)
@@ -90,9 +92,9 @@ def setup_nodes(num_of_nodes, ax, com, bottom_left, top_right, dx, dy, z, N=1000
                 T  = nodes[n].node.getT()
                 points[n].set_center([xi, yi])
                 rewards += "%d: %.2f; "%(n, nodes[n].node.value())
-            NodeBase.NodeBase.set_regions(regions)
+            #NodeBase.NodeBase.set_regions(regions)
             #print(rewards)
-            print(regions)
+            #print(regions)
             yield [i, T]
     return move
 

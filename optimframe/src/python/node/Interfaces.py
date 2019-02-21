@@ -36,7 +36,6 @@ class ComInterface(ABC):
 
 
 class SONode(ABC):
-    @abstractmethod
     def __init__(self, name: str, com: ComInterface, initial_h: float, initial_coord: Coord, initial_peers: List[str]):
         pass
 

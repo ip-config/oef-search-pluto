@@ -1,9 +1,9 @@
 #empty
 
 filegroup(
-    name="tobydata",
+    name="cities",
     visibility=["//visibility:public"],
     srcs=[
-        "uk.bin",
+        "centres-ordered-by-population.csv",
     ],
 )

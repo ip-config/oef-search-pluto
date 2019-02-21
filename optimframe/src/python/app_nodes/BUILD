@@ -18,5 +18,23 @@ py_binary(
          "//optimframe/src/python/openpopgrid:openpopgrid",
          "//optimframe/src/python/node:self_org_node",
          "//optimframe/src/python/lib:lib",
+    ],
+    data = [
+        "//toby_loader/data/csv:cities"
+    ]
+)
+
+py_binary(
+    name = "main_dqn",
+    srcs = ["main_dqn.py"],
+    main = "main_dqn.py",
+    visibility = ["//visibility:public"],
+    deps = [
+         "//optimframe/src/python/openpopgrid:openpopgrid",
+         "//optimframe/src/python/node:self_org_node",
+         "//optimframe/src/python/lib:lib",
+    ],
+    data = [
+        "//toby_loader/data/csv:cities"
     ]
 )
