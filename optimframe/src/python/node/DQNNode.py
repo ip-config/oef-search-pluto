@@ -38,9 +38,10 @@ class DQNGeoOrgNode:
         self._h = 0
         self._h_prev = 0
         self.update_step = True
-        self.agent = DQN(16, 64, (stateAdaptor.state_dim[0], stateAdaptor.state_dim[1], 2, 4), name)
+        self.agent = DQN(32, 128, (stateAdaptor.state_dim[0], stateAdaptor.state_dim[1], 2, 4), name)
         self.current_action = None
         self.prev_state = None
+        self.jump = 1
 
     def setHits(self, x: float) -> None:
         self._h_prev = self._h
@@ -51,6 +52,9 @@ class DQNGeoOrgNode:
 
     def reward(self) -> float:
         return self._h-self._h_prev
+
+    def setJump(self, jump):
+        self.jump = jump
 
     def initState(self, initial_position: Coord):
         self.state = np.zeros((self.state_adaptor.state_dim[0], self.state_adaptor.state_dim[1], 2))
@@ -68,13 +72,13 @@ class DQNGeoOrgNode:
         state[pos[0], pos[1], 0] = 0
         new_pos = np.array(pos)
         if action == 0:
-            new_pos[0] = min(pos[0]+1, w-1)
+            new_pos[0] = min(pos[0]+self.jump, w-1)
         elif action == 1:
-            new_pos[1] = min(pos[1]+1, h-1)
+            new_pos[1] = min(pos[1]+self.jump, h-1)
         elif action == 2:
-            new_pos[0] = max(pos[0]-1, 0)
+            new_pos[0] = max(pos[0]-self.jump, 0)
         elif action == 3:
-            new_pos[1] = max(pos[1]-1, 0)
+            new_pos[1] = max(pos[1]-self.jump, 0)
         else:
             print("Unknown action: {}".format(action))
         state[new_pos[0], new_pos[1]] = 1

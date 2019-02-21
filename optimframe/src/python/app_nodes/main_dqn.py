@@ -53,6 +53,8 @@ def node_initializer(bottom_left, top_right, dx, dy):
         for i in range(len(nodes)):
             i0 = int(cities[i][2])
             j0 = int(cities[i][1])
+            i0 = np.random.randint(0, 699)
+            j0 = np.random.randint(0, 699)
             coord = Coord(bottom_left.x + dx * i0, top_right.y + dy * j0)
             nodes[i].n.initState(coord)
     return init
@@ -84,6 +86,7 @@ def setup_nodes(num_of_nodes, ax, bottom_left, top_right, dx, dy, episodes, N):
     stateAdaptor = StateAdaptor(bottom_left, top_right, np.array([700, 700]), np.array([350, 350]))
     for i in range(num_of_nodes):
         n = DQNGeoOrgNode(str(i), stateAdaptor)
+        n.setJump(2)
         node_wrapper = TestNode(n)
         nodes.append(node_wrapper)
 
@@ -127,7 +130,7 @@ def main():
     bottom_left = Coord(top_left.x, bottom_right.y)
     top_right = Coord(bottom_right.x, top_left.y)
 
-    n = setup_nodes(20, ax, bottom_left, top_right, dx, dy, 200, 64)
+    n = setup_nodes(10, ax, bottom_left, top_right, dx, dy, 200, 64)
     txt = plt.text(350, 730, "Iter: 0")
     for d in n():
         txt.set_text("Episode: %d, Iter: %d" % (d[0], d[1]))
