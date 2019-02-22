@@ -38,7 +38,8 @@ class DQNGeoOrgNode:
         self._h = 0
         self._h_prev = 0
         self.update_step = True
-        self.agent = DQN(32, 128, (stateAdaptor.state_dim[0], stateAdaptor.state_dim[1], 2, 4), name)
+        self._channels = 3
+        self.agent = DQN(32, 128, (stateAdaptor.state_dim[0], stateAdaptor.state_dim[1], self._channels, 4), name)
         self.current_action = None
         self.prev_state = None
         self.jump = 1
@@ -57,12 +58,15 @@ class DQNGeoOrgNode:
         self.jump = jump
 
     def initState(self, initial_position: Coord):
-        self.state = np.zeros((self.state_adaptor.state_dim[0], self.state_adaptor.state_dim[1], 2))
+        self.state = np.zeros((self.state_adaptor.state_dim[0], self.state_adaptor.state_dim[1], self._channels))
         tipi, tipj = self.state_adaptor.coord_to_state(initial_position)
         self.state[tipi, tipj, 0] = 1
 
     def setOthersState(self, everybody):
         self.state[:, :, 1] = everybody[:, :, 0]-self.state[:, :, 0]
+
+    def setLastChannel(self, data):
+        self.state[:, :, 2] = data
 
     def getLoss(self):
         return self.agent.getLoss()
