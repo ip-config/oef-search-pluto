@@ -167,9 +167,3 @@ class GeoStoreTest(unittest.TestCase):
         r = list(self.g.search(self.BHX, 200000))
 
         assert sorted(r) == expected
-
-
-
-
-
-        
