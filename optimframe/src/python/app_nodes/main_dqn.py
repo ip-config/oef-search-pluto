@@ -46,16 +46,22 @@ def get_grid(file, z0=10.):
     return data, w, h, top_left, bottom_right
 
 
-def node_initializer(bottom_left, top_right, dx, dy):
+def node_initializer(bottom_left, top_right, dx, dy, num_of_rand_nodes = 0):
     f = open("toby_loader/data/csv/centres-ordered-by-population.csv", "r")
     cities = [line.split(',') for line in f.readlines()]
 
     def init(nodes):
+        rnd_i = 0
+        citi_i = 0
         for i in range(len(nodes)):
-            i0 = int(cities[i][2])
-            j0 = int(cities[i][1])
-            i0 = np.random.randint(0, 699)
-            j0 = np.random.randint(0, 699)
+            if rnd_i < num_of_rand_nodes:
+                rnd_i += 1
+                i0 = np.random.randint(50, 650)
+                j0 = np.random.randint(50, 650)
+            else:
+                i0 = int(cities[citi_i][2])
+                j0 = int(cities[citi_i][1])
+                citi_i += 1
             coord = Coord(bottom_left.x + dx * i0, top_right.y + dy * j0)
             nodes[i].n.initState(coord)
     return init
@@ -80,11 +86,16 @@ def updateNodeStateChannel1(nodes):
         node.n.setOthersState(res)
 
 
-def setup_nodes(num_of_nodes, ax, bottom_left, top_right, dx, dy, episodes, N):
-    node_init = node_initializer(bottom_left, top_right, dx, dy)
+def updateLastChannel(nodes, land):
+    for node in nodes:
+        node.n.setLastChannel(land)
+
+
+def setup_nodes(num_of_nodes, ax, bottom_left, top_right, dx, dy, episodes, N, land):
+    node_init = node_initializer(bottom_left, top_right, dx, dy, 2)
 
     nodes = []
-    stateAdaptor = StateAdaptor(bottom_left, top_right, np.array([700, 700]), np.array([350, 350]))
+    stateAdaptor = StateAdaptor(bottom_left, top_right, np.array([700, 700]), np.array([700, 700]))
     for i in range(num_of_nodes):
         n = DQNGeoOrgNode(str(i), stateAdaptor)
         n.setJump(6)
@@ -94,6 +105,7 @@ def setup_nodes(num_of_nodes, ax, bottom_left, top_right, dx, dy, episodes, N):
     node_init(nodes)
     points = getVisPoints(ax, nodes)
     updateNodeStateChannel1(nodes)
+    updateLastChannel(nodes, land)
 
     def move():
         nonlocal nodes, points
@@ -113,7 +125,7 @@ def setup_nodes(num_of_nodes, ax, bottom_left, top_right, dx, dy, episodes, N):
                 if i % 2 == 1:
                     print("Rewards: {}".format(rewards))
                     print("Losses: {}".format(losses))
-                if e%2 == 0 and i%2 == 0:
+                if e%2 == 0 and i % 2 == 0:
                     yield [e, i]
             for n in nodes:
                 n.n.train()
@@ -140,7 +152,7 @@ def main():
     bottom_left = Coord(top_left.x, bottom_right.y)
     top_right = Coord(bottom_right.x, top_left.y)
 
-    n = setup_nodes(10, ax, bottom_left, top_right, dx, dy, 200, 64)
+    n = setup_nodes(12, ax, bottom_left, top_right, dx, dy, 200, 64, np.log(land+20))
     txt = plt.text(350, 730, "Iter: 0")
     for d in n():
         txt.set_text("Episode: %d, Iter: %d" % (d[0], d[1]))

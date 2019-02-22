@@ -61,9 +61,9 @@ class DQN:
         self._name = name
         self._loss = []
 
-    def _conv(self, f, kernel, stride=(1, 1)):
+    def _conv(self, f, kernel, strides=(1, 1), padding="same"):
         def builder(x):
-            y = Conv2D(f, kernel, strides=stride)(x)
+            y = Conv2D(f, kernel, padding=padding, strides=strides)(x)
             y = Activation('relu')(y)
             y = BatchNormalization()(y)
             return y
@@ -85,12 +85,9 @@ class DQN:
         x = MaxPool2D()(x)
         x = self._conv(64, (3, 3))(x)
         x = self._conv(64, (3, 3))(x)
-        #x = MaxPool2D()(x)
-        #x = self._conv(128, (3, 3))(x)
-        #x = self._conv(128, (3, 3))(x)
-        #x = MaxPool2D()(x)
-        #x = self._conv(256, (3, 3))(x)
-        #x = self._conv(256, (3, 3))(x)
+        x = MaxPool2D()(x)
+        x = self._conv(128, (3, 3))(x)
+        x = self._conv(128, (3, 3))(x)
         x = GlobalAveragePooling2D()(x)
         x = Dense(action_space, activation=None)(x)
         model = Model(inputs=input_layer, outputs=x)
