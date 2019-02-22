@@ -12,14 +12,21 @@ def num(s):
     try:
         return float(s)
     except ValueError:
-        return None
+        try:
+            if s.find("python") != -1:
+                v = s.replace("python", "").replace("m", "")
+                return float(v)
+            else:
+                return None
+        except ValueError:
+            return None
 
 def find_python():
     POSSIBLE_PYTHON_SOURCE_VERSION_LOCATIONS=[
         ("/opt/local/Library/Frameworks/Python.framework/Versions/"),
         ("/usr/local/Frameworks/Python.framework/Versions/"),
+	("/usr/include/")
     ]
-
     versions = []
     for p in POSSIBLE_PYTHON_SOURCE_VERSION_LOCATIONS:
         if not os.path.exists(p):
@@ -31,7 +38,6 @@ def find_python():
             [ (num(d), d, p) for d in dirs ]
             if v != None
         ])
-
     locations = []
     for v, d, p in versions:
         locations.extend([
@@ -39,8 +45,12 @@ def find_python():
             for h
             in glob.glob(p +  d + "/include/*/Python.h")
         ])
+        locations.extend([
+            (v, d, p,os.path.dirname(h).replace(p+d,""))
+	    for h
+	    in glob.glob(p+d+"/Python.h")
+        ])
     best = sorted(locations, key=lambda x: x[0], reverse=True)[0]
-
     return best[2]+best[1]+"/"+best[3]
 
 def create_file_list(fn, path, files_processed):
@@ -63,7 +73,9 @@ def create_file_list(fn, path, files_processed):
     return files_processed
 
 def main():
+    print("BEFORE FIND")
     original = find_python()
+    print(original)
     output = os.getcwd()
     r = create_file_list(
         "Python.h",
@@ -84,6 +96,7 @@ def python_system_headers_repository(repository_ctx):
     repository_ctx.file("FINDER", content=FINDER)
     r = repository_ctx.execute(["python3", "./FINDER"], timeout=15)
     print(r.stdout)
+    print(r.stderr)
     repository_ctx.file("BUILD", content="""
 package(
     default_visibility = [
