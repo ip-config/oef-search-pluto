@@ -1,34 +1,46 @@
-#include <map>
 #include <deque>
-#include <utility>
 #include <iostream>
+#include <map>
+#include <set>
+#include <utility>
 
 using std::cout;
+using std::deque;
 using std::endl;
 using std::map;
 using std::pair;
-using std::deque;
+using std::set;
 
 class PopulationGrabber
 {
 public:
+  using NYDistance = int;
+  using Easting = int;
+  using Northing = int;
+  using RegionNumber = int;
+  using PopCount = int;
+  using Location = pair<Easting,Northing>;
+  using StartLocations = map<RegionNumber, Location>;
+  using PopulationPerRegion = map<RegionNumber, PopCount>;
+  using NeighbourList = set<RegionNumber>;
+  using NeighbourListPerRegion = map<RegionNumber, NeighbourList>;
 
   struct Cell
   {
-    int region;
-    int population;
+    RegionNumber region;
+    PopCount population;
 
-    int distance; // from region owner
+    NYDistance distance; // from region owner
   };
 
   struct Pending
   {
     int x;
     int y;
-    int region;
-    int distance;
+    RegionNumber region;
+    NYDistance distance;
 
-    Pending(int x, int y, int r, int d)
+    Pending(int x, int y, RegionNumber r, NYDistance d)
     {
       this->x = x;
       this->y = y;
@@ -60,12 +72,11 @@ public:
     array = new Cell[w*h];
     memset(array, 0, w*h*sizeof(Cell));
   }
-
-  void put(int id, int x, int y)
+  void put(RegionNumber id, int x, int y)
   {
     starts[id] = std::make_pair(x,y);
   }
-  void remove(int id)
+  void remove(RegionNumber id)
   {
     starts.erase(id);
   }
@@ -79,7 +90,7 @@ public:
     collect();
   }
 
-  int get(int id)
+  int get(RegionNumber id)
   {
     auto iter = totals.find(id);
     if (iter != totals.end())
@@ -89,7 +100,18 @@ public:
     return -1;
   }
 
-  void set_pop(int x, int y, int population)
+  const NeighbourList &get_neigh(RegionNumber id)
+  {
+    static NeighbourList empty;
+    auto iter = neighbours.find(id);
+    if (iter != neighbours.end())
+    {
+      return iter->second;
+    }
+    return empty;
+  }
+
+  void set_pop(int x, int y, PopCount population)
   {
     if (has(x,y))
     {
@@ -119,12 +141,13 @@ private:
   void fill()
   {
     deque<Pending> pending;
+    neighbours.clear();
     for(auto kv : starts)
     {
       pending.push_back( Pending( kv.second.first, kv.second.second, kv.first, 0 ) );
+      neighbours[kv.first] = NeighbourList();
     }
 
-    //    int paint = 0;
     while(!pending.empty())
     {
       auto p = pending.front();
@@ -138,12 +161,6 @@ private:
           (there.distance > p.distance)
           )
       {
-//        paint++;
-//        if ((paint % 10000) == 0)
-//        {
-//          cout << "Paint " << paint << "/" << w*h << " ... " << pending.size() << endl;
-//        }
-
         access(p.x, p.y).distance = p.distance;
         access(p.x, p.y).region = p.region;
 
@@ -165,6 +182,11 @@ private:
 
             auto t = access(p.x+i, p.y+j);
 
+            if (t.region != -1 && t.region != p.region)
+            {
+              neighbours[p.region].insert(t.region);
+              neighbours[t.region].insert(p.region);
+            }
             if (
                 (t.region == -1)
                 ||
@@ -209,8 +231,9 @@ private:
   int w;
   int h;
   Cell *array;
-  map<int, std::pair<int,int>> starts;
-  map<int, int> totals;
+  StartLocations starts;
+  PopulationPerRegion totals;
+  NeighbourListPerRegion neighbours;
 
   bool has(int x, int y) const { return x>=0 && x<w && y>=0 && y<w; }
 

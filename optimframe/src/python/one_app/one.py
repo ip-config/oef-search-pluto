@@ -10,7 +10,6 @@ class TestNode(NodeBase.NodeBase):
         self.put(x,y)
 
     def hits(self, hitcount):
-        print(self.name, hitcount)
         self.hitcount = hitcount
 
 

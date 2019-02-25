@@ -57,6 +57,24 @@ static PyObject *popgrab_read_reg(PyObject *self, PyObject *args)
   return ret;
 }
 
+static PyObject *popgrab_get_neigh(PyObject *self, PyObject *args)
+{
+  int region;
+  int ok = PyArg_ParseTuple(args, "i", &region);
+  if (ok)
+  {
+    PyObject *my_list = PyList_New(0);
+    for(auto &n : pg->get_neigh(region))
+    {
+      auto neighbour = Py_BuildValue("i", n);
+      PyList_Append(my_list, neighbour);
+    }
+
+    return my_list;
+  }
+  Py_RETURN_NONE;
+}
+
 static PyObject *popgrab_put(PyObject *self, PyObject *args)
 {
   int x,y,region=-1;
@@ -102,6 +120,7 @@ static PyMethodDef module_methods[] = {
   {"run", popgrab_run, METH_VARARGS, one_docstring},
   {"get", popgrab_get, METH_VARARGS, one_docstring},
   {"remove", popgrab_remove, METH_VARARGS, one_docstring},
+  {"get_neigh", popgrab_get_neigh, METH_VARARGS, one_docstring},
   {NULL, NULL, 0, NULL}
 };
 
