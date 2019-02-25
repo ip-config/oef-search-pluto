@@ -126,6 +126,6 @@ class DQN:
 
     def predict_action(self, state):
         if np.random.random() <= self._epsilon:
-            return np.random.randint(0, self._action_space-1)
+            return np.random.randint(0, self._action_space)
         pred = self._model.predict(state.reshape((1, *state.shape)))
         return np.argmax(pred[0])
