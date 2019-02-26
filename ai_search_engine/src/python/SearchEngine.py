@@ -144,6 +144,31 @@ class SearchEngine(DapInterface):
         for upd in update_data.update:
             self.update(upd)
 
+    def remove(self, remove_data):
+        success = False
+        upd = remove_data
+        if upd:
+            k, v = "dm", upd.value.dm
+            tbname = self.tablenames[0]
+            if upd.fieldname not in self.structure[tbname]:
+                raise DapBadUpdateRow("No such field", tbname, upd.key, upd.fieldname, k)
+
+            field_type = self.structure[tbname][upd.fieldname]['type']
+            if field_type != 'embedding':
+                raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, field_type, k)
+            try:
+                row = self.store[tbname][upd.key]
+                success |= row.pop(v.name, None) is not None
+                row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)
+                if np.sum(row[upd.fieldname]) == 0:
+                    self.store[tbname].pop(upd.key)
+            except KeyError:
+                pass
+        return success
+
+    def removeAll(self, key):
+        return self.store[self.tablenames[0]].pop(key, None) is not None
+
     # def query(self, query: DapQuery, agents=None):
     #     if len(self.store) == 0:
     #         return []
