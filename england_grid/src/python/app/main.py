@@ -15,11 +15,10 @@ class App(object):
         self.grid = None
 
     def getRoot(self):
-        return "Hello"
+        return bottle.redirect("/svg")
 
     def getPop(self):
         return bottle.static_file("england_grid/resources/images/pop.png", root=os.getcwd())
-
 
     def genPop(self):
         m = float(self.grid.pop.max())
@@ -55,74 +54,16 @@ class App(object):
 
     def getSVG(self):
         bottle.response.content_type = "image/svg+xml;charset=utf-8"
-        r = """
-        <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 700 700">
-            <g style="fill-opacity:0.7; stroke:black; stroke-width:0.05;">
-            <image href="pop" x="0" y="0" height="700" width="700"/>
-        """
-
-        for entity in self.grid.entities.values():
-
-            if entity.kind == "AIRPORT":
-                r += """
-                <circle cx="{}" cy="{}" r="3" style="fill-opacity:1.0; fill:yellow; stroke-width:0.1" />
-                """.format(
-                    entity.coords[0],
-                    entity.coords[1],
-                )
-            elif entity.kind == "CITY":
-                r += """
-                <circle cx="{}" cy="{}" r="3" style="fill-opacity:1; fill:red; stroke-width: 0.1" id="{}"/>
-                """.format(
-                    entity.coords[0],
-                    entity.coords[1],
-                    entity.name
-                )
-
-        for entity in self.grid.entities.values():
-            for link in entity.links:
-                target = link[0]
-                kind = link[1]
-                colour = {
-                    'GND':'red',
-                    'AIR':'yellow',
-                }[kind]
-                r += """
-<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" id="{}-{}" style="stroke: {}; stroke-width: 0.5"/>
-""".format(
-                    entity.coords[0], entity.coords[1],
-                    target.coords[0], target.coords[1],
-                    'black',
-                    entity.name, target.name,
-                    colour
-                )
-
-        r += """
-            </g>
-        </svg>
-        """
-
-        print(r)
-
-        return r
-
-
+        return self.grid.getSVG()
 
     def run(self, args):
         self.grid = EnglandGrid.EnglandGrid()
-        self.grid.loadAirports()
-        self.grid.loadCities()
-        self.grid.connectCities()
-        self.grid.connectAirports()
-        self.grid.connectAirportsAndCities()
-
-        self.getPop()
+        self.grid.load()
 
         self.server = bottle.Bottle()
         self.server.route('/', method='GET', callback=functools.partial(self.getRoot))
         self.server.route('/svg', method='GET', callback=functools.partial(self.getSVG))
         self.server.route('/pop', method='GET', callback=functools.partial(self.getPop))
-#        self.server.route('/static/<filepath:path>', method='GET', callback=functools.partial(getStatic, self))
         self.server.run(host="0.0.0.0", port=args.http_port)
 
 

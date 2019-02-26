@@ -26,9 +26,64 @@ class EnglandGrid(object):
         self.pop = EnglandPopDistro.EnglandPopDistro()
         self.pop.load("optimframe/src/data")
 
+    def load(self):
+        self.loadAirports()
+        self.loadCities()
+        self.connectCities()
+        self.connectAirports()
+        self.connectAirportsAndCities()
+
+    def getSVG(self):
+        r = """
+        <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 700 700">
+            <g style="fill-opacity:0.7; stroke:black; stroke-width:0.05;">
+            <image href="pop" x="0" y="0" height="700" width="700"/>
+        """
+
+        for entity in self.entities.values():
+
+            if entity.kind == "AIRPORT":
+                r += """
+                <circle cx="{}" cy="{}" r="3" style="fill-opacity:1.0; fill:yellow; stroke-width:0.1" />
+                """.format(
+                    entity.coords[0],
+                    entity.coords[1],
+                )
+            elif entity.kind == "CITY":
+                r += """
+                <circle cx="{}" cy="{}" r="3" style="fill-opacity:1; fill:red; stroke-width: 0.1" id="{}"/>
+                """.format(
+                    entity.coords[0],
+                    entity.coords[1],
+                    entity.name
+                )
+
+        for entity in self.entities.values():
+            for link in entity.links:
+                target = link[0]
+                kind = link[1]
+                colour = {
+                    'GND':'red',
+                    'TXF':'orange',
+                    'AIR':'yellow',
+                }[kind]
+                r += """
+<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" id="{}-{}" style="stroke: {}; stroke-width: 1"/>
+""".format(
+                    entity.coords[0], entity.coords[1],
+                    target.coords[0], target.coords[1],
+                    'black',
+                    entity.name, target.name,
+                    colour
+                )
+
+        r += """
+            </g>
+        </svg>
+        """
+        return r
 
     def print(self):
-
         class PrintVisitor(object):
             def __init__(self, grid):
                 self.row = ""
@@ -62,6 +117,7 @@ class EnglandGrid(object):
         self.entity_locations.setdefault(entity.coords, []).append(entity)
 
     def loadCities(self, fn="toby_loader/data/csv/centres-ordered-by-population.csv"):
+        cities = 0
         with open(fn, "r") as fh:
             reader = csv.reader(fh)
             for citynumber, row in enumerate(reader):
@@ -69,6 +125,9 @@ class EnglandGrid(object):
                 coords = (int(row[2]), 699-int(row[1]))
                 pop = row[3]
                 self.addEntity(EnglandGrid.GridEntity(city, coords, "CITY", { "pop": int(pop) }))
+                cities += 1
+                if cities >= 50:
+                    break
 
     def connectAirportsAndCities(self):
         temp = popgrab.PopGrab(700, 700)
@@ -85,7 +144,7 @@ class EnglandGrid(object):
                 airport = r[region]
                 diff = abs(city.coords[0]-airport.coords[0]) + abs(city.coords[1]-airport.coords[1])
                 if diff < 30:
-                    city.links.extend([ (airport, "GND") ])
+                    city.links.extend([ (airport, "TXF") ])
 
     def connectAirports(self):
         temp = popgrab.PopGrab(700, 700)
@@ -138,13 +197,17 @@ class EnglandGrid(object):
                     continue
 
                 os_grid_y, os_grid_x = EnglandGrid._latlonToOSGrid(lat, lon)
+                os_grid_y = 699 - os_grid_y
 
                 if os_grid_x < 0 or os_grid_x >= 700:
                     continue
                 if os_grid_y < 0 or os_grid_y >= 700:
                     continue
 
-                self.addEntity(EnglandGrid.GridEntity(airport, (os_grid_x, 699 - os_grid_y), "AIRPORT"))
+                if sum([self.pop.get(x, os_grid_y) for x in range(os_grid_x-10, os_grid_x+10)]) == 0.0:
+                    continue
+
+                self.addEntity(EnglandGrid.GridEntity(airport, (os_grid_x, os_grid_y), "AIRPORT"))
 
     def _latlonToOSGrid(lat, lon):
           φ = math.radians(lat)
