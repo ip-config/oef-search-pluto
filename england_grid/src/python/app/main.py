@@ -35,12 +35,12 @@ class App(object):
                 n /= m
 
                 if p == 0.0:
-                    r = 0
-                    g = 0.4
-                    b = 0.8
+                    r = 0.6
+                    g = 0.8
+                    b = 1.0
                 else:
                     r = 0.75 - 0.75 * math.sqrt(math.sqrt(n))
-                    g = r
+                    g = r*1.1
                     b = r
 
                 self.array[y,x,0] = r*255
@@ -64,6 +64,7 @@ class App(object):
         self.server.route('/', method='GET', callback=functools.partial(self.getRoot))
         self.server.route('/svg', method='GET', callback=functools.partial(self.getSVG))
         self.server.route('/pop', method='GET', callback=functools.partial(self.getPop))
+        self.server.route('/genpop', method='GET', callback=functools.partial(self.genPop))
         self.server.run(host="0.0.0.0", port=args.http_port)
 
 
