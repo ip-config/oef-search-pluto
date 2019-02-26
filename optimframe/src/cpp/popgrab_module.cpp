@@ -166,7 +166,7 @@ PopGrab_init(PopGrab_Object *self, PyObject *args, PyObject *kwds)
   return 0;
 }
 
-static PyObject *PopGrab_get(PopGrab_Object *self, PyObject *args)
+static PyObject *PopGrab_get(PopGrab_Object *self, PyObject *args, PyObject *kwds)
 {
   int region, p=-1;
   int ok = PyArg_ParseTuple(args, "i", &region);
@@ -178,7 +178,7 @@ static PyObject *PopGrab_get(PopGrab_Object *self, PyObject *args)
   return ret;
 }
 
-static PyObject *PopGrab_set_pop(PopGrab_Object *self, PyObject *args)
+static PyObject *PopGrab_set_pop(PopGrab_Object *self, PyObject *args, PyObject *kwds)
 {
   int x,y,p;
   int ok = PyArg_ParseTuple(args, "iii", &x, &y, &p);
@@ -189,7 +189,7 @@ static PyObject *PopGrab_set_pop(PopGrab_Object *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
-static PyObject *PopGrab_read_pop(PopGrab_Object *self, PyObject *args)
+static PyObject *PopGrab_read_pop(PopGrab_Object *self, PyObject *args, PyObject *kwds)
 {
   int x,y,p=-1;
   int ok = PyArg_ParseTuple(args, "ii", &x, &y);
@@ -215,7 +215,7 @@ static PyObject *PopGrab_read_reg(PopGrab_Object *self, PyObject *args, PyObject
   return ret;
 }
 
-static PyObject *PopGrab_put(PopGrab_Object *self, PyObject *args)
+static PyObject *PopGrab_put(PopGrab_Object *self, PyObject *args, PyObject *kwds)
 {
   int x,y,region=-1;
   int ok = PyArg_ParseTuple(args, "iii", &region, &x, &y);
@@ -227,7 +227,24 @@ static PyObject *PopGrab_put(PopGrab_Object *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
-static PyObject *PopGrab_remove(PopGrab_Object *self, PyObject *args)
+static PyObject *PopGrab_get_neigh(PopGrab_Object *self, PyObject *args, PyObject *kwds)
+{
+  int region;
+  int ok = PyArg_ParseTuple(args, "i", &region);
+  if (ok)
+  {
+    PyObject *my_list = PyList_New(0);
+    for(auto &n : self->pg->get_neigh(region))
+    {
+      auto neighbour = Py_BuildValue("i", n);
+      PyList_Append(my_list, neighbour);
+    }
+
+    return my_list;
+  }
+  Py_RETURN_NONE;
+}
+static PyObject *PopGrab_remove(PopGrab_Object *self, PyObject *args, PyObject *kwds)
 {
   int region=-1;
   int ok = PyArg_ParseTuple(args, "i", &region);
@@ -239,7 +256,7 @@ static PyObject *PopGrab_remove(PopGrab_Object *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
-static PyObject *PopGrab_run(PopGrab_Object *self, PyObject *args)
+static PyObject *PopGrab_run(PopGrab_Object *self, PyObject *args, PyObject *kwds)
 {
   self -> pg->run();
   Py_RETURN_NONE;
@@ -253,6 +270,7 @@ static PyMethodDef PopGrab_methods[] = {
   {"run",  (PyCFunction) PopGrab_run, METH_VARARGS, one_docstring},
   {"get",  (PyCFunction) PopGrab_get, METH_VARARGS, one_docstring},
   {"remove",  (PyCFunction) PopGrab_remove, METH_VARARGS, one_docstring},
+  {"get_neigh", (PyCFunction) PopGrab_get_neigh, METH_VARARGS, one_docstring},
   {NULL}  /* Sentinel */
 };
 

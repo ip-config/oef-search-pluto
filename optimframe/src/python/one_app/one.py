@@ -42,7 +42,11 @@ def main():
         for x in range(0,100):
             s += chr(temp.read_reg(x,y))
         print(s)
-
+    for a in "ABCDE":
+        s=""
+        for c in temp.get_neigh(ord(a)):
+            s += chr(c)
+        print(a," -- ", s)
 
 if __name__ == "__main__":
     main()
