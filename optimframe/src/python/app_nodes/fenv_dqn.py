@@ -40,48 +40,29 @@ class TestNode:
 
 
 def get_grid(file, z0=10.):
-    eng = EnglandPopDistro.EnglandPopDistro()
-    print("LOADING...")
-    eng.load(file)
 
     top_left = Coord(0, 0)
-    bottom_right = Coord(700, 700)
-    w = eng.w
-    h = eng.h
-
-    data = np.zeros((w, h), dtype=np.float)
-    for i in range(h):
-        for j in range(w):
-            data[j,i] = eng.get(i,j)+z0
-
-    data = np.flipud(data)
+    bottom_right = Coord(350, 350)
+    w =350 #eng.w
+    h =350 #eng.h
 
     x = np.linspace(top_left.x, bottom_right.x, w)
     y = np.linspace(top_left.y, bottom_right.y, h)
     xx, yy = np.meshgrid(x, y)
-    g1 = 1e8/((xx-200) ** 2 + (yy-200) ** 2)
-    g2 = 1e8/((xx-400) ** 2 + (yy-400) ** 2)
+    g1 = 1e8/((xx-100) ** 2 + (yy-100) ** 2)
+    g2 = 1e8/((xx-200) ** 2 + (yy-200) ** 2)
     land = g1+g2
 
     return land, w, h, top_left, bottom_right, g1, g2
 
 
 def node_initializer(bottom_left, top_right, dx, dy, num_of_rand_nodes = 0):
-    f = open("toby_loader/data/csv/centres-ordered-by-population.csv", "r")
-    cities = [line.split(',') for line in f.readlines()]
 
     def init(nodes):
-        rnd_i = 0
-        citi_i = 0
         for i in range(len(nodes)):
-            if rnd_i < num_of_rand_nodes:
-                rnd_i += 1
-                i0 = np.random.randint(50, 650)
-                j0 = np.random.randint(50, 650)
-            else:
-                i0 = int(cities[citi_i][2])
-                j0 = int(cities[citi_i][1])
-                citi_i += 1
+            i0 = np.random.randint(50, 350)
+            j0 = np.random.randint(50, 350)
+
             coord = Coord(bottom_left.x + dx * i0, top_right.y + dy * j0)
             nodes[i].n.initState(coord)
     return init
@@ -115,11 +96,11 @@ def setup_nodes(num_of_nodes, ax, bottom_left, top_right, dx, dy, episodes, N, l
     node_init = node_initializer(bottom_left, top_right, dx, dy, 2)
 
     nodes = []
-    stateAdaptor = StateAdaptor(bottom_left, top_right, np.array([700, 700]), np.array([700, 700]))
+    stateAdaptor = StateAdaptor(bottom_left, top_right, np.array([350, 350]), np.array([350, 350]))
     for i in range(num_of_nodes):
         n = DQNGeoOrgNode(str(i), stateAdaptor)
         n.setJump(6)
-        node_wrapper = TestNode(n, land, g2, Coord(200, 200), Coord(400,400))
+        node_wrapper = TestNode(n, land, g2, Coord(100, 100), Coord(200,200))
         nodes.append(node_wrapper)
 
     node_init(nodes)
@@ -145,10 +126,10 @@ def setup_nodes(num_of_nodes, ax, bottom_left, top_right, dx, dy, episodes, N, l
                 if i % 2 == 1:
                     print("Rewards: {}".format(rewards))
                     print("Losses: {}".format(losses))
-                if e%2 == 0 and i % 2 == 0:
+                if i % 2 == 0:
                     yield [e, i]
             for n in nodes:
-                n.n.train()
+                n.n.train(e)
 
     return move
 
@@ -171,7 +152,7 @@ def main():
     bottom_left = Coord(top_left.x, bottom_right.y)
     top_right = Coord(bottom_right.x, top_left.y)
 
-    n = setup_nodes(2, ax, bottom_left, top_right, dx, dy, 200, 256, land, g1, g2)
+    n = setup_nodes(2, ax, bottom_left, top_right, dx, dy, 200, 128, land, g1, g2)
     txt = plt.text(350, 730, "Iter: 0")
     for d in n():
         txt.set_text("Episode: %d, Iter: %d" % (d[0], d[1]))
@@ -179,7 +160,8 @@ def main():
         episode_dir = anim_dir + "/{}".format(d[0])
         if not os.path.exists(episode_dir):
             os.mkdir(episode_dir)
-        plt.savefig("{}/{}.png".format(episode_dir, d[1]))
+        plt.pause(0.001)
+        #plt.savefig("{}/{}.png".format(episode_dir, d[1]))
 
 
 if __name__ == "__main__":

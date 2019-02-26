@@ -54,7 +54,7 @@ class DQN:
         self._learning_rate = 1e-3
         self._gamma = 0.9
         self._epsilon = 1.0
-        self._epsilon_decay = 0.98
+        self._epsilon_decay = 0.92
         self._epsilon_min = 0.01
         self._action_space = dimensions[-1]
         self._model = self._build_model(*dimensions)
@@ -98,8 +98,8 @@ class DQN:
     def remember(self, state, action, reward, next_state):
         self._memory.push(state, action, reward, next_state)
 
-    def replay(self):
-        print("REPLAY {}".format(self._name))
+    def replay(self, episode):
+        print("REPLAY {}, episode {}".format(self._name, episode))
         mem = self._memory.sample(self._batch_size)
         if mem is None:
             return
@@ -128,4 +128,5 @@ class DQN:
         if np.random.random() <= self._epsilon:
             return np.random.randint(0, self._action_space)
         pred = self._model.predict(state.reshape((1, *state.shape)))
+        print(self._name, ": ", np.argmax(pred[0]), "     ", pred[0])
         return np.argmax(pred[0])

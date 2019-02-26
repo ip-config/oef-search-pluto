@@ -29,6 +29,9 @@ class StateAdaptor:
         j = j0*self.dim_rescale_inv[1]
         return int(i+0.5), int(j+0.5)
 
+    def near_edge(self, coord, jump):
+        return coord.x<=jump or coord.x>=(self.top_right.x-jump) or coord.y<=jump or coord.y>=(self.bottom_left.y-jump)
+
 
 class DQNGeoOrgNode:
     def __init__(self, name: str, stateAdaptor: StateAdaptor):
@@ -43,16 +46,28 @@ class DQNGeoOrgNode:
         self.current_action = None
         self.prev_state = None
         self.jump = 1
+        self._cached_coord = None
 
     def setHits(self, x: float) -> None:
         self._h_prev = self._h
         self._h = x
 
     def getCoord(self) -> Coord:
-        return self.state_adaptor.state_to_coord(self.state)
+        if self._cached_coord is not None:
+            return self._cached_coord
+        self._cached_coord = self.state_adaptor.state_to_coord(self.state)
+        return self._cached_coord
 
     def reward(self) -> float:
-        return 10*(self._h-self._h_prev)
+        #if self.state_adaptor.near_edge(self.getCoord(), self.jump):
+        #    return -1.
+        diff = self._h - self._h_prev
+        r = 0
+        if diff>0:
+            r = 1
+        elif diff<0:
+            r = -1
+        return r
 
     def setJump(self, jump):
         self.jump = jump
@@ -63,7 +78,7 @@ class DQNGeoOrgNode:
         self.state[tipi, tipj, 0] = 1
 
     def setOthersState(self, everybody):
-        self.state[:, :, 1] = everybody[:, :, 0]-self.state[:, :, 0]
+        self.state[:, :, 1] = (everybody[:, :, 0]-self.state[:, :, 0])
 
     def setLastChannel(self, data):
         self.state[:, :, 2] = data
@@ -72,11 +87,12 @@ class DQNGeoOrgNode:
         return self.agent.getLoss()
 
     def update_state(self, state, action):
+        self._cached_coord = None
         w = state.shape[0]
         h = state.shape[1]
         pos = np.unravel_index(np.argmax(state[:, :, 0]), dims=(w, h))
         pos = np.array(pos)
-        state[pos[0], pos[1], 0] = 0
+        state[pos[0], pos[1], 0] = 0.
         new_pos = np.array(pos)
         if action == 0:
             new_pos[0] = min(pos[0]+self.jump, w-self.jump)
@@ -88,17 +104,17 @@ class DQNGeoOrgNode:
             new_pos[1] = max(pos[1]-self.jump, self.jump)
         else:
             print("Unknown action: {}".format(action))
-        state[new_pos[0], new_pos[1]] = 1
+        state[new_pos[0], new_pos[1], 0] = 1.
 
     def tick(self):
         if self.update_step:
             self.update_step = False
-            self.current_action = self.agent.predict_action(self.state)
-            self.prev_state = self.state
+            self.prev_state = np.copy(self.state)
+            self.current_action = self.agent.predict_action(self.prev_state)
             self.update_state(self.state, self.current_action)
         else:
             self.update_step = True
             self.agent.remember(self.prev_state, self.current_action, self.reward(), self.state)
 
-    def train(self):
-        self.agent.replay()
+    def train(self, episode):
+        self.agent.replay(episode)
