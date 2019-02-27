@@ -129,6 +129,6 @@ class PlutoApp:
     def getField(self, fieldname):
         return self.dapManager.getField(fieldname)
 
-    def callMe(self, path, data):
+    async def callMe(self, path, data):
         return await self.router.route(path, data)
 

@@ -4,7 +4,7 @@ from api.src.python.Serialization import serializer, deserializer
 from utils.src.python.Logging import has_logger
 from ai_search_engine.src.python.SearchEngine import SearchEngine
 from api.src.python.ProtoWrappers import ProtoWrapper
-from fetch_teams.oef_core_protocol import query_pb2
+from api.src.proto import query_pb2
 from dap_api.src.python.DapManager import DapManager
 from dap_api.experimental.python.AddressRegistry import AddressRegistry
 
@@ -18,16 +18,16 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler):
         self._address_registry = address_registry
 
     @serializer
-    def serialize(self, data: bytes) -> query_pb2.Query.Model:
+    def serialize(self, data: bytes) -> query_pb2.Query:
         pass
 
     @deserializer
     def deserialize(self, proto_msg: response_pb2.SearchResponse) -> bytes:
         pass
 
-    async def handle_message(self, msg: query_pb2.Query.Model) -> response_pb2.SearchResponse:
+    async def handle_message(self, msg: query_pb2.Query) -> response_pb2.SearchResponse:
         resp = response_pb2.SearchResponse()
-        query = self._proto_wrapper.get_instance(msg)
+        query = self._proto_wrapper.get_instance(msg.model)
         result = self._dap_manager.execute(query.toDapQuery())
         items = []
         for element in result:

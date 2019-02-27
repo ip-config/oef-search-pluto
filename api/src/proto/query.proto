@@ -1,5 +1,8 @@
 syntax = "proto3";
 
+import "fetch_teams/oef_core_protocol/query.proto";
+
 message Query {
-    string name = 1;
+    bytes core_key = 1;
+    fetch.oef.pb.Query.Model model = 2;
 }
