@@ -3,9 +3,9 @@ syntax = "proto3";
 message UpdateResponse {
     enum ResponseType {
         SUCCESS = 0;
-        ERROR = 1;
-        MISSING_ADDRESS = 2;
-        INVALID_ATTRIBUTE = 3;
+        MISSING_ADDRESS = 1;
+        INVALID_ATTRIBUTE = 2;
+        ERROR = 3;
     }
     ResponseType status = 1;
     string message = 2;
@@ -27,8 +27,8 @@ message SearchResponse {
 message RemoveResponse {
     enum ResponseType {
         SUCCESS = 0;
-        ERROR = 1;
-        NOT_FOUND = 2;
+        NOT_FOUND = 1;
+        ERROR = 2;
     }
     ResponseType status = 1;
     string message = 2;

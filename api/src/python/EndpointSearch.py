@@ -1,5 +1,5 @@
 from api.src.proto import response_pb2
-from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer
+from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, HasResponseMerger
 from api.src.python.Serialization import serializer, deserializer
 from utils.src.python.Logging import has_logger
 from ai_search_engine.src.python.SearchEngine import SearchEngine
@@ -7,9 +7,11 @@ from api.src.python.ProtoWrappers import ProtoWrapper
 from api.src.proto import query_pb2
 from dap_api.src.python.DapManager import DapManager
 from dap_api.experimental.python.AddressRegistry import AddressRegistry
+import abc
+from typing import List
 
 
-class SearchQuery(HasProtoSerializer, HasMessageHandler):
+class SearchQuery(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
 
     @has_logger
     def __init__(self, dap_manager: DapManager, proto_wrapper: ProtoWrapper, address_registry: AddressRegistry):
@@ -24,6 +26,15 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler):
     @deserializer
     def deserialize(self, proto_msg: response_pb2.SearchResponse) -> bytes:
         pass
+
+    def get_response_type(self):
+        return response_pb2.SearchResponse.__class__
+
+    def merge_response(self, resps: List[response_pb2.SearchResponse]) -> response_pb2.SearchResponse:
+        resp = response_pb2.SearchResponse()
+        for r in resps:
+            resp.result.extend(r.result)
+        return resp
 
     async def handle_message(self, msg: query_pb2.Query) -> response_pb2.SearchResponse:
         resp = response_pb2.SearchResponse()

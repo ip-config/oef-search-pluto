@@ -101,7 +101,6 @@ class PlutoApp:
         update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, update_config, address_registry)
         query_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.QueryData, self.dapManager)
 
-        search_engine = self.dapManager.getInstance("data_model_searcher")
 
         # endpoints
         self._search_endpoint = SearchQuery(self.dapManager, query_wrapper, address_registry)
@@ -112,6 +111,7 @@ class PlutoApp:
     def _setup_router(self):
         # router
         self.router = BackendRouter()
+        self.router.register_response_merger(self._search_endpoint)
         self.router.register_serializer("search", self._search_endpoint)
         self.router.register_handler("search",  self._search_endpoint)
         self.router.register_serializer("update",  self._update_endpoint)
@@ -120,6 +120,9 @@ class PlutoApp:
         self.router.register_handler("blk_update",  self._blk_update_endpoint)
         self.router.register_serializer("remove", self._remove_endpoint)
         self.router.register_handler("remove", self._remove_endpoint)
+
+    def add_handler(self, path, handler):
+        self.router.register_handler(path, handler)
 
     def run(self, com=None):
         self.setup()
