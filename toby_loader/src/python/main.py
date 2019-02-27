@@ -34,7 +34,7 @@ def main():
 
     for k,pop in by_pop:
         if k in coords:
-            print("{},{},{}".format(k, coords[k][0], coords[k][1]))
+            print("{},{},{},{}".format(k, coords[k][0], coords[k][1], pop))
 
 if __name__ == '__main__':
     main()

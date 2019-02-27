@@ -67,6 +67,14 @@ public:
     delete array;
   }
 
+  void setSize(int w,int h)
+  {
+    delete array;
+    this->w = w;
+    this->h = h;
+    array = new Cell[w*h];
+    memset(array, 0, w*h*sizeof(Cell));
+  }
   void put(RegionNumber id, int x, int y)
   {
     starts[id] = std::make_pair(x,y);

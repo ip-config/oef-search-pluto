@@ -1,7 +1,7 @@
 filegroup(
-    name="cities",
+    name="pop-images",
     visibility=["//visibility:public"],
     srcs=[
-        "centres-ordered-by-population.csv"
+        "pop.png",
     ],
 )
