@@ -1,4 +1,3 @@
-import argparse
 import sys
 
 from dap_api.src.python import DapManager
@@ -10,14 +9,12 @@ from api.src.python.EndpointSearch import SearchQuery
 from api.src.python.EndpointUpdate import UpdateEndpoint, BlkUpdateEndpoint
 from api.src.python.EndpointRemove import RemoveEndpoint
 from api.src.python.BackendRouter import BackendRouter
-from api.src.python.CommunicationHandler import run_socket_server, run_http_server
-from concurrent.futures import ThreadPoolExecutor
 from dap_2d_geo.src.python import DapGeo
 from dap_e_r_network.src.python import DapERNetwork
 
+
 class PlutoApp:
     def __init__(self):
-        self.args = None
         self.dapManager = DapManager.DapManager()
 
     def addClass(self, name, maker):
@@ -88,8 +85,6 @@ class PlutoApp:
         self._setup_endpoints()
         self._setup_router()
 
-        self.executor = ThreadPoolExecutor(max_workers=2)
-
     def _setup_endpoints(self):
         AttrName = ProtoWrappers.AttributeName
         update_config = ProtoWrappers.ConfigBuilder(ProtoWrappers.UpdateData)\
@@ -126,19 +121,9 @@ class PlutoApp:
         self.router.register_serializer("remove", self._remove_endpoint)
         self.router.register_handler("remove", self._remove_endpoint)
 
-    def run(self):
-        parser = argparse.ArgumentParser(description='Test application for PLUTO.')
-        parser.add_argument("--ssl_certificate",  required=True, type=str, help="specify an SSL certificate PEM file.")
-        parser.add_argument("--http_port",        required=True, type=int, help="which port to run the HTTP interface on.")
-        parser.add_argument("--socket_port",      required=True, type=int, help="which port to run the socket interface on.")
-        parser.add_argument("--html_dir",         required=False, type=str, help="where ", default="api/src/resources/website")
-        self.args = parser.parse_args()
-
+    def run(self, com):
         self.setup()
-        self.executor.submit(run_socket_server, "0.0.0.0", self.args.socket_port, self.router)
-        self.executor.submit(run_http_server, "0.0.0.0", self.args.http_port, self.args.ssl_certificate,
-                             self.args.html_dir, self.router)
-        self.executor.shutdown(wait=True)
+        com.start(self.router)
 
     def getField(self, fieldname):
         return self.dapManager.getField(fieldname)

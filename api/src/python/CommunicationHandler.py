@@ -7,6 +7,7 @@ from utils.src.python.Logging import get_logger
 from functools import partial
 import utils.src.python.resources as resources
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 
 def socket_handler(router: BackendRouter):
@@ -36,7 +37,7 @@ def http_json_handler(router):
     return on_request
 
 
-def run_socket_server(host: str, port: str, router: BackendRouter):
+def socket_server(host: str, port: str, router: BackendRouter):
     asyncio.run(run_server(socket_handler(router), host, port))
 
 
@@ -48,7 +49,7 @@ def serve_site(html_dir: str, path: str):
     return resources.textfile(os.path.join(html_dir, path))
 
 
-def run_http_server(host: str, port: int, crt_file: str, html_dir: str, router: BackendRouter):
+def http_server(host: str, port: int, crt_file: str, html_dir: str, router: BackendRouter):
     resources.initialise(__package__)
     app = bottle.Bottle()
     srv = SSLWSGIRefServer.SSLWSGIRefServer(host=host, port=port, certificate_file=crt_file)
@@ -56,3 +57,18 @@ def run_http_server(host: str, port: int, crt_file: str, html_dir: str, router: 
     app.route(path="/website/<path:path>", method="GET", callback=partial(serve_site, html_dir))
     app.route(path="/", method="GET", callback=partial(serve_site, html_dir, "index.html"))
     bottle.run(server=srv, app=app)
+
+
+class CommunicationHandler:
+    def __init__(self, max_threads):
+        self.handlers = []
+        self.executor = ThreadPoolExecutor(max_workers=max_threads)
+
+    def add(self, *args, **kwargs):
+        self.handlers.append((args[0], args[1:], kwargs))
+
+    def start(self, router: BackendRouter):
+        for handler in self.handlers:
+            print("Start handler: ", handler)
+            self.executor.submit(handler[0], *handler[1], **handler[2], router=router)
+        self.executor.shutdown(wait=True)
