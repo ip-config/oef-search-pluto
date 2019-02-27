@@ -1,1 +1,8 @@
 V	290203144912Z		01	unknown	/C=GB/ST=Cambridgeshire/O=Fetch.AI/OU=OEF Search/L=Cambridge/CN=OEF Search/emailAddress=katie.lucas@fetch.ai
+V	290210132237Z		02	unknown	/C=GB/ST=Cambridgeshire/O=Fetch.AI/OU=OEF Search/L=Cambridge/CN=localhost/emailAddress=katie.lucas@fetch.ai
+V	290210132915Z		03	unknown	/C=GB/ST=Cambridgeshire/O=Fetch.AI/OU=OEF Search/L=Cambridge/CN=https://localhost/emailAddress=katie.lucas@fetch.ai
+V	290210133537Z		04	unknown	/C=GB/ST=Cambridgeshire/O=Fetch.AI/OU=OEF Search/L=Cambridge/CN=search.oef.economicagents.com/emailAddress=katie.lucas@fetch.ai
+V	290210134235Z		05	unknown	/C=GB/ST=Cambridgeshire/O=Fetch.AI/OU=OEF Search 2/L=Cambridge/CN=search.oef.economicagents.com/emailAddress=katie.lucas@fetch.ai
+V	290210134655Z		06	unknown	/C=GB/ST=Cambridgeshire/O=Fetch.AI/OU=OEF Search 3/L=Cambridge/CN=search.oef.economicagents.com/emailAddress=katie.lucas@fetch.ai
+V	290210135525Z		07	unknown	/C=GB/ST=Cambridgeshire/O=Fetch.AI/OU=OEF Search 4/L=Cambridge/CN=search.oef.economicagents.com/emailAddress=katie.lucas@fetch.ai
+V	290210135644Z		08	unknown	/C=GB/ST=Cambridgeshire/O=Fetch.AI/OU=OEF Search 5/L=Cambridge/CN=search.oef.economicagents.com/emailAddress=katie.lucas@fetch.ai

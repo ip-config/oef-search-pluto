@@ -23,3 +23,14 @@ message SearchResponse {
 
     repeated Item result = 1;
 }
+
+message RemoveResponse {
+    enum ResponseType {
+        SUCCESS = 0;
+        ERROR = 1;
+        NOT_FOUND = 2;
+    }
+    ResponseType status = 1;
+    string message = 2;
+    string narrative = 3;
+}

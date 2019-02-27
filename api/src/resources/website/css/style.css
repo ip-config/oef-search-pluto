@@ -1,0 +1,19 @@
+.title {
+    text-align: center;
+}
+.search_div {
+  text-align: center;
+  margin: 0 auto;
+  margin-top: 80px;
+  width: 1000px;
+}
+.search_box {
+  width: 1000px;
+  height: 40px;
+  font-size: 22px;
+}
+.search_button {
+  margin-top: 16px;
+  height: 30px;
+  width: 80px;
+}

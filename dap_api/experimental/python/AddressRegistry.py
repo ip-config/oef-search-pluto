@@ -90,3 +90,27 @@ class AddressRegistry(DapInterface.DapInterface):
             self.log.warn("No address entry for key: "+key.decode("utf-8")+", details: "+str(e))
             print(self.store)
         return address
+
+    def remove(self, remove_data: dap_update_pb2.DapUpdate.TableFieldValue):
+        success = False
+        for commit in [ False, True ]:
+            upd = remove_data
+            if upd:
+
+                k, v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
+
+                if upd.fieldname not in self.fields:
+                    raise DapBadUpdateRow("No such field", None, upd.key, upd.fieldname, k)
+                else:
+                    tbname = self.fields[upd.fieldname]["tablename"]
+                    ftype = self.fields[upd.fieldname]["type"]
+
+                if ftype != k:
+                    raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, k)
+
+                if commit:
+                    success |= self.store[tbname][upd.key].pop(upd.fieldname, None) is not None
+        return success
+
+    def removeAll(self, key):
+        return self.store[self.tablenames[0]].pop(key, None) is not None

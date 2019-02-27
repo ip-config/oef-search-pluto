@@ -117,3 +117,30 @@ class InMemoryDap(DapInterface.DapInterface):
 
                 if commit:
                     self.store.setdefault(tbname, {}).setdefault(upd.key, {})[upd.fieldname] = v
+
+    def remove(self, remove_data):
+        success = False
+        for commit in [ False, True ]:
+            upd = remove_data
+            if upd:
+
+                k, v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
+
+                if upd.fieldname not in self.fields:
+                    raise DapBadUpdateRow("No such field", None, upd.key, upd.fieldname, k)
+                else:
+                    tbname = self.fields[upd.fieldname]["tablename"]
+                    ftype = self.fields[upd.fieldname]["type"]
+
+                if ftype != k:
+                    raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, k)
+
+                if commit:
+                    success |= self.store[tbname][upd.key].pop(upd.fieldname, None) is not None
+        return success
+
+    def removeAll(self, key):
+        success = False
+        for tbname in self.store:
+            success |= self.store[tbname].pop(key, None) is not None
+        return success

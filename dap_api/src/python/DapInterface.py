@@ -32,6 +32,29 @@ class DapInterface(abc.ABC):
     def update(self, update_data):
         pass
 
+    """This function will be called when the core wants to remove data from search
+    
+    Args:
+        update (DapUpdate): The data which needs to be removed
+        
+    Returns:
+      None
+    """
+    def remove(self, remove_data):
+        pass
+
+    """This function will be called when the core wants to remove all of it's data from search
+
+        Args:
+            key (string): the core key
+
+        Returns:
+          None
+        """
+
+    def removeAll(self, key):
+        pass
+
     """This function will be called with parts of the query's AST. If
     the interface can construct a unified query for the whole subtree
     it may do so.

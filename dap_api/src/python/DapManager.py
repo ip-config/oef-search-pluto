@@ -130,6 +130,19 @@ class DapManager(object):
             cls = self.getField(upd.fieldname)["dap"]
             self.getInstance(cls).update(upd)
 
+    def remove(self, remove: dap_update_pb2.DapUpdate):
+        success = False
+        for upd in remove.update:
+            cls = self.getField(upd.fieldname)["dap"]
+            success |= self.getInstance(cls).remove(upd)
+        return success
+
+    def removeAll(self, key):
+        success = False
+        for instance in self.instances:
+            success |= instance.removeAll(key)
+        return success
+
     def _listClasses(self, module):
         r = {}
         for name, obj in inspect.getmembers(module):

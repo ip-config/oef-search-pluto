@@ -1,5 +1,5 @@
 filegroup(
-    name="tobydata",
+    name="cities",
     visibility=["//visibility:public"],
     srcs=[
         "centres-ordered-by-population.csv"
