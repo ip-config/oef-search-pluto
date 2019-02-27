@@ -52,21 +52,27 @@ class EnglandPopDistro(object):
         for y in range(0, self.h):
             for x in range(0, self.w):
                 p = self.store[y][x]
-                visitor.visit(x,y,p)
+                c = EnglandPopDistro.popToChar(p)
+                visitor.visit(x,y, p, character=c)
+            if hasattr(visitor, 'rowcomplete'):
+                visitor.rowcomplete()
+
+    def popToChar(p):
+        c = ' '
+        if p > 1:
+            c = '.'
+        if p > 10:
+            c = ':'
+        if p > 25:
+            c = '='
+        if p > 50:
+            c = '#'
+        return c
 
     def print(self):
         for y in range(0, self.h):
             s=""
             for x in range(0, self.w):
                 p = self.store[y][x]
-                c = ' '
-                if p > 1:
-                    c = '.'
-                if p > 10:
-                    c = ':'
-                if p > 25:
-                    c = '='
-                if p > 50:
-                    c = '#'
-                s += c
+                s += EnglandPopDistro.popToChar(p)
             print(s)

@@ -1,6 +1,7 @@
 import random
 
 from optimframe.src.python.lib import NodeBase
+from optimframe.src.python.lib import popgrab
 
 class TestNode(NodeBase.NodeBase):
     def __init__(self, name, x, y):
@@ -30,6 +31,22 @@ def main():
         for n in nodes
     ])
     print(t)
+
+
+    temp = popgrab.PopGrab(100, 100)
+    for a in "ABCDE":
+        temp.put(ord(a), random.randint(0, 99), random.randint(0, 99))
+    temp.run()
+    for y in range(0,100):
+        s=""
+        for x in range(0,100):
+            s += chr(temp.read_reg(x,y))
+        print(s)
+    for a in "ABCDE":
+        s=""
+        for c in temp.get_neigh(ord(a)):
+            s += chr(c)
+        print(a," -- ", s)
 
 if __name__ == "__main__":
     main()
