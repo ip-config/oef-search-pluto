@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+import "fetch_teams/oef_core_protocol/query.proto";
+import "api/src/proto/update.proto";
+
+message Remove {
+    bytes key = 1;
+    bool all = 2;
+    repeated Update.Attribute attributes = 3;
+    repeated fetch.oef.pb.Query.DataModel data_models = 4;
+}

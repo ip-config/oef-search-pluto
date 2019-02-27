@@ -20,3 +20,15 @@ py_binary(
     ],
     srcs_version = "PY3",
 )
+
+py_binary(
+    name = "remove_oefs",
+    srcs = ["RemoveOEFs.py"],
+    main = "RemoveOEFs.py",
+    deps = [
+        "//network/src/python/async_socket:async_socket",
+        "//api/src/proto:py_api_pb",
+        "//fetch_teams/oef_core_protocol:py_oef_protocol",
+    ],
+    srcs_version = "PY3",
+)

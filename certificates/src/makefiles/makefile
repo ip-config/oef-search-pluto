@@ -8,7 +8,7 @@ CA_NAME:=	$(CA_DIR)/fetch-ca
 ROOT_CERT:=	$(CA_NAME).cert
 
 # comment me to make the CA cleanable.
-LOCK	:=	lockout
+cerLOCK	:=	lockout
 
 #-----------------------------------------------------------------------------
 # How to build parts of the certificate authority.
@@ -58,15 +58,15 @@ $(LOCK)clean:
 
 
 %.priv:
-	openssl genrsa -out $*.priv 1024
+	openssl genrsa -out $*.priv 2048
 	openssl rsa -in $*.priv -out $*.pub
 
 %.req:	%.cnf %.priv
-	openssl req -new -config $*.cnf -key $*.priv \
+	openssl req -new -config $*.cnf -key $*.priv -sha256 \
 	-out $*.req -outform PEM
 
 %.cert:	%.priv %.req $(CA_NAME).cert
-	openssl ca -batch -in $*.req -out $*.cert \
+	openssl ca -batch -in $*.req -out $*.cert  \
 	-config $(CA_NAME).cnf -days 3650
 
 %.p12:	%.priv %.cert

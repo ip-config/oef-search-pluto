@@ -8,6 +8,7 @@ from dap_api.experimental.python import AddressRegistry
 import api.src.python.ProtoWrappers as ProtoWrappers
 from api.src.python.EndpointSearch import SearchQuery
 from api.src.python.EndpointUpdate import UpdateEndpoint, BlkUpdateEndpoint
+from api.src.python.EndpointRemove import RemoveEndpoint
 from api.src.python.BackendRouter import BackendRouter
 from api.src.python.CommunicationHandler import run_socket_server, run_http_server
 from concurrent.futures import ThreadPoolExecutor
@@ -111,6 +112,7 @@ class PlutoApp:
         self._search_endpoint = SearchQuery(self.dapManager, query_wrapper, address_registry)
         self._update_endpoint = UpdateEndpoint(self.dapManager, update_wrapper)
         self._blk_update_endpoint = BlkUpdateEndpoint(self.dapManager, update_wrapper)
+        self._remove_endpoint = RemoveEndpoint(self.dapManager, update_wrapper)
 
     def _setup_router(self):
         # router
@@ -121,17 +123,21 @@ class PlutoApp:
         self.router.register_handler("update",  self._update_endpoint)
         self.router.register_serializer("blk_update",  self._blk_update_endpoint)
         self.router.register_handler("blk_update",  self._blk_update_endpoint)
+        self.router.register_serializer("remove", self._remove_endpoint)
+        self.router.register_handler("remove", self._remove_endpoint)
 
     def run(self):
         parser = argparse.ArgumentParser(description='Test application for PLUTO.')
         parser.add_argument("--ssl_certificate",  required=True, type=str, help="specify an SSL certificate PEM file.")
         parser.add_argument("--http_port",        required=True, type=int, help="which port to run the HTTP interface on.")
         parser.add_argument("--socket_port",      required=True, type=int, help="which port to run the socket interface on.")
+        parser.add_argument("--html_dir",         required=False, type=str, help="where ", default="api/src/resources/website")
         self.args = parser.parse_args()
 
         self.setup()
         self.executor.submit(run_socket_server, "0.0.0.0", self.args.socket_port, self.router)
-        self.executor.submit(run_http_server, "0.0.0.0", self.args.http_port, self.args.ssl_certificate, self.router)
+        self.executor.submit(run_http_server, "0.0.0.0", self.args.http_port, self.args.ssl_certificate,
+                             self.args.html_dir, self.router)
         self.executor.shutdown(wait=True)
 
     def getField(self, fieldname):

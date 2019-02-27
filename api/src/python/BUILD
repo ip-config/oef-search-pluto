@@ -55,7 +55,10 @@ py_library(
         "//fetch_teams/bottle:bottle",
         "//utils/src/python:py_utils",
         "//dap_api/src/python:dap_api",
-        ":utils"
+        ":utils",
+    ],
+    data = [
+        "//api/src/resources:website"
     ],
     srcs_version = "PY3",
     visibility = ["//visibility:public"],

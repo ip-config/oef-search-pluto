@@ -167,7 +167,7 @@ class DapQueryRepnFromProtoBuf(object):
         #resultdata = list(vector)
 
         return DapQueryRepn.DapQueryRepn.Leaf(
-            operator=OPERATOR_CLOSE_TO,
+            operator=ProtoHelpers.OPERATOR_CLOSE_TO,
             query_field_value=description,
             query_field_type="string",
             target_field_name=embeddingInfo.FieldName,

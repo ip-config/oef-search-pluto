@@ -1,6 +1,8 @@
 from abc import ABC
 from abc import abstractmethod
 from optimframe.src.python.openpopgrid import EnglandPopDistro
+import numpy as np
+import ctypes
 
 from optimframe.src.python.lib import popgrab
 import random
@@ -35,6 +37,12 @@ class NodeBase(ABC):
                 popgrab.set_pop(x,y,p)
 
         eng.visit(SetPopVisitor())
+
+    def set_regions(matrix: np.array):
+        print("set regions")
+        pointer = matrix.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
+        print("calling c++")
+        popgrab.get_region(pointer)
 
     def run():
         popgrab.run()
