@@ -121,10 +121,14 @@ class PlutoApp:
         self.router.register_serializer("remove", self._remove_endpoint)
         self.router.register_handler("remove", self._remove_endpoint)
 
-    def run(self, com):
+    def run(self, com=None):
         self.setup()
-        com.start(self.router)
+        if com is not None:
+            com.start(self.router)
 
     def getField(self, fieldname):
         return self.dapManager.getField(fieldname)
+
+    def callMe(self, path, data):
+        return await self.router.route(path, data)
 
