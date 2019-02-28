@@ -12,6 +12,7 @@ py_library(
         "//api/src/python:endpoints",
         "//utils/src/python:py_utils",
         "//api/src/python:utils",
-        "//api/src/python:communication_handler"
+        "//api/src/python:communication_handler",
+        "//fake_oef/src/python/lib:lib"
     ],
 )

@@ -18,8 +18,8 @@ from dap_api.src.python.DapQueryResult import DapQueryResult
 from dap_api.src.python.SubQueryInterface import SubQueryInterface
 from fetch_teams.oef_core_protocol import query_pb2
 from utils.src.python.Logging import has_logger
-
 from typing import List
+
 
 class SearchEngine(DapInterface):
     @has_logger
@@ -47,6 +47,9 @@ class SearchEngine(DapInterface):
             self.tablenames.append(table_name)
             for field_name, field_type in fields.items():
                 self.structure.setdefault(table_name, {}).setdefault(field_name, {})['type'] = field_type
+
+    def inject_w2v(self, w2v):
+        self._w2v = w2v
 
     def _string_to_vec(self, description: str):
         if not self._w2v:
