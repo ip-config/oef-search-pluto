@@ -4,6 +4,8 @@ from api.src.python.Interfaces import HasMessageHandler
 from pluto_app.src.python.app import PlutoApp
 from fake_oef.src.python.lib.FakeOef import SearchComInterface, FakeOef
 import gensim
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 
 class BroadcastFromNode(HasMessageHandler):
@@ -29,6 +31,18 @@ class SearchNetwork:
         self.connection_map = {}
         self.cores = {}
         self.working = {}
+        self.cache = {}
+        self.cache_lifetime = 20
+        self.executor = ThreadPoolExecutor(1)
+        self.last_clean = 0
+
+    def _cache_cleaner(self):
+        t = time.time()
+        if (self.last_clean - t) < self.cache_lifetime:
+            return
+        for k, v in self.cache.items():
+            if (v - t) >= self.cache_lifetime:
+                self.cache.pop(k)
 
     def set_connection(self, node: int, connections: List[int]):
         self.connection_map[node] = connections
@@ -42,7 +56,15 @@ class SearchNetwork:
         cos = []
         for i in self.connection_map[node]:
             self.working[i] = self.working.get(i, 0) + 1
-            cos.append(self.nodes[i].callMe(path, data.SerializeToString()))
+            proto = data.SerializeToString()
+            h = hash(path+":"+proto+":"+str(node)+","+str(i))
+            t = time.time()
+            c = self.cache.get(h, t)
+            if (c-t) < self.cache_lifetime:
+                continue
+            self.cache[h] = t
+            cos.append(self.nodes[i].callMe(path, proto))
+        self.executor.submit(SearchNetwork._cache_cleaner, self)
         return await asyncio.gather(*cos)
 
     def call_node(self, node: int, path: str, data):
