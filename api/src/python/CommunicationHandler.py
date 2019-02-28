@@ -63,12 +63,18 @@ class CommunicationHandler:
     def __init__(self, max_threads):
         self.handlers = []
         self.executor = ThreadPoolExecutor(max_workers=max_threads)
+        self._router = None
 
     def add(self, *args, **kwargs):
         self.handlers.append((args[0], args[1:], kwargs))
+
+    def set_router(self, router: BackendRouter):
+        self._router = router
 
     def start(self, router: BackendRouter):
         for handler in self.handlers:
             print("Start handler: ", handler)
             self.executor.submit(handler[0], *handler[1], **handler[2], router=router)
+
+    def wait(self):
         self.executor.shutdown(wait=True)

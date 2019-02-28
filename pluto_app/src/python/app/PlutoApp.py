@@ -124,7 +124,7 @@ class PlutoApp:
     def add_handler(self, path, handler):
         self.router.register_handler(path, handler)
 
-    def run(self, com=None):
+    def start(self, com=None):
         self.setup()
         if com is not None:
             com.start(self.router)
