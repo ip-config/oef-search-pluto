@@ -47,3 +47,8 @@ class FakeOefTest(unittest.TestCase):
 
         assert len(self.oef1.connections) == 3
         assert len(self.oef2.connections) == 1
+
+    def testShutdowns(self):
+        for loop in range(0,100):
+            self.testRegistration()
+            self.tearDown()
