@@ -1,5 +1,5 @@
 py_binary(
-    name = "foo",
+    name = "england_grid",
     srcs = ["main.py"],
     main = "main.py",
     visibility = ["//visibility:public"],
