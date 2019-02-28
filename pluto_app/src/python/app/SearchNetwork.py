@@ -18,10 +18,27 @@ class BroadcastFromNode(HasMessageHandler):
         return await self._network.broadcast_from_node(self._node, self._path, msg)
 
 
+class LazyW2V:
+    def __init__(self, model="glove-wiki-gigaword-50"):
+        self._w2v = None
+        self._model = model
+
+    def load(self):
+        self._w2v = gensim.downloader.load(self._model)
+
+    def __getitem__(self, item):
+        if not self._w2v:
+            self.load()
+        return self._w2v[item]
+
+    def __getattr__(self, item):
+        return getattr(self._w2v, item)
+
+
 class SearchNetwork:
     def __init__(self, coms={}, number_of_nodes=10):
         self.nodes = []
-        w2v = gensim.downloader.load("glove-wiki-gigaword-50")
+        w2v = LazyW2V()
         for i in range(number_of_nodes):
             app = PlutoApp.PlutoApp()
             self.nodes.append(app)
@@ -30,9 +47,8 @@ class SearchNetwork:
             app.add_handler("search", BroadcastFromNode("search", self, i))
         self.connection_map = {}
         self.cores = {}
-        self.working = {}
         self.cache = {}
-        self.cache_lifetime = 20
+        self.cache_lifetime = 10
         self.executor = ThreadPoolExecutor(1)
         self.last_clean = 0
 
@@ -52,12 +68,12 @@ class SearchNetwork:
         return self.cores[node]
 
     async def broadcast_from_node(self, node: int, path: str, data):
-        self.working = {node: 1}
         cos = []
         for i in self.connection_map[node]:
-            self.working[i] = self.working.get(i, 0) + 1
+            if i == node:
+                continue
             proto = data.SerializeToString()
-            h = hash(path+":"+proto+":"+str(node)+","+str(i))
+            h = hash(path+":"+proto+":"+":"+str(i))
             t = time.time()
             c = self.cache.get(h, t)
             if (c-t) < self.cache_lifetime:
@@ -68,7 +84,6 @@ class SearchNetwork:
         return await asyncio.gather(*cos)
 
     def call_node(self, node: int, path: str, data):
-        self.working = {node: 1}
         return asyncio.run(self.nodes[node].callMe(path, data))
 
 
