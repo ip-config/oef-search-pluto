@@ -1,4 +1,4 @@
-
+import functools
 
 class Connection(object):
     def __init__(self, **kwargs):
@@ -6,6 +6,14 @@ class Connection(object):
             setattr(self, k, kwargs.get(k, None))
 
         self.core.agent_register(self.agent, self.agent_id, self.subject, self)
+        self.supported_ops = ["register_service"]
+
+    def __getattr__(self, item):
+        if item in self.supported_ops:
+            func = getattr(self.core, item)
+            return func
+        else:
+            raise AttributeError("Attribute {} not found!".format(item))
 
     def destroy(self):
         self.agent.connection_dropped(self)
