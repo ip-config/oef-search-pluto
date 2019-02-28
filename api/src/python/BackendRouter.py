@@ -32,13 +32,16 @@ class BackendRouter:
                 cos = []
                 for handler in self.__routing_handler[path]:
                     cos.append(handler.handle_message(msg))
-                proto_list = await asyncio.gather(*cos)
+                proto_list = await asyncio.gather(*cos, return_exceptions=True)
                 if len(proto_list) == 1:
                     response = proto_list[0]
                 else:
                     protos_by_type = {}
                     for p in proto_list:
-                        protos_by_type.setdefault(p.__class__.__name__, []).append(p)
+                        if isinstance(p, Exception):
+                            self.log.warn("Exception happened in handler for path {}: {}".format(path, str(p)))
+                        else:
+                            protos_by_type.setdefault(p.__class__, []).append(p)
                     merged_list = []
                     for k in protos_by_type:
                         if k in self.__response_merger:
