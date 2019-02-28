@@ -56,11 +56,11 @@ if __name__ == "__main__":
     search_network = SearchNetwork.SearchNetwork({0: com}, 5)
 
     # Search connectivity
-    #search_network.set_connection(0, [1, 4])
-    #search_network.set_connection(1, [2, 3])
-    #search_network.set_connection(2, [3, 4])
-    #search_network.set_connection(3, [4, 0])
-    #search_network.set_connection(4, [1, 2])
+    search_network.set_connection(0, [1, 4])
+    search_network.set_connection(1, [2, 3])
+    search_network.set_connection(2, [3, 4])
+    search_network.set_connection(3, [4, 0])
+    search_network.set_connection(4, [1, 2])
 
     connection_factory = ConnectionFactory.ConnectionFactory()
 

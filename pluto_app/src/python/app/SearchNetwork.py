@@ -3,6 +3,7 @@ import asyncio
 from api.src.python.Interfaces import HasMessageHandler
 from pluto_app.src.python.app import PlutoApp
 from fake_oef.src.python.lib.FakeOef import SearchComInterface, FakeOef
+import gensim
 
 
 class BroadcastFromNode(HasMessageHandler):
@@ -18,10 +19,12 @@ class BroadcastFromNode(HasMessageHandler):
 class SearchNetwork:
     def __init__(self, coms={}, number_of_nodes=10):
         self.nodes = []
+        w2v = gensim.downloader.load("glove-wiki-gigaword-50")
         for i in range(number_of_nodes):
             app = PlutoApp.PlutoApp()
             self.nodes.append(app)
             app.start(coms.get(i, None))
+            app.inject_w2v(w2v)
             app.add_handler("search", BroadcastFromNode("search", self, i))
         self.connection_map = {}
         self.cores = {}
