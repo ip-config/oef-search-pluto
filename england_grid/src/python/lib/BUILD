@@ -8,10 +8,11 @@ py_library(
     data = [
          "popgrab.so",
          "//dap_2d_geo/test/resources:airports",
-         "//toby_loader/data/csv:tobydata",
+         "//fetch_teams/bottle:bottle",
          "//optimframe/src/data:popdata",
          "//optimframe/src/python/lib:lib",
-         "//fetch_teams/bottle:bottle",
+         "//svg_output/src/python/lib:lib",
+         "//toby_loader/data/csv:cities",
     ],
 )
 

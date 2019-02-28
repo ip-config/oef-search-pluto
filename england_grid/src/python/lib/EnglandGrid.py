@@ -5,6 +5,9 @@ from optimframe.src.python.openpopgrid import EnglandPopDistro
 from england_grid.src.python.lib import colours
 from optimframe.src.python.lib import popgrab
 
+from svg_output.src.python.lib import SvgElements
+from svg_output.src.python.lib import SvgStyle
+
 class EnglandGrid(object):
 
     class GridEntity(object):
@@ -34,6 +37,13 @@ class EnglandGrid(object):
         self.connectAirportsAndCities()
 
     def getSVG(self):
+
+        airport_dot_style   = SvgStyle.SvgStyle({"fill-opacity": 1, " fill": "yellow", " stroke-width": 0.1})
+        city_dot_style      = SvgStyle.SvgStyle({"fill-opacity": 1, " fill": "red", " stroke-width": 0.1})
+        airport_line_style  = SvgStyle.SvgStyle({"stroke": " yellow", " stroke-width": 1})
+        city_line_style     = SvgStyle.SvgStyle({"stroke": " red", " stroke-width": 1})
+        transfer_line_style = SvgStyle.SvgStyle({"stroke": " orange", " stroke-width": 1})
+
         r = """
         <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 700 700">
             <g style="fill-opacity:0.7; stroke:black; stroke-width:0.05;">
@@ -41,46 +51,32 @@ class EnglandGrid(object):
         """
 
         for entity in self.entities.values():
-
-            if entity.kind == "AIRPORT":
-                r += """
-                <circle cx="{}" cy="{}" r="3" style="fill-opacity:1.0; fill:yellow; stroke-width:0.1" />
-                """.format(
-                    entity.coords[0],
-                    entity.coords[1],
-                )
-            elif entity.kind == "CITY":
-                r += """
-                <circle cx="{}" cy="{}" r="3" style="fill-opacity:1; fill:red; stroke-width: 0.1" id="{}"/>
-                """.format(
-                    entity.coords[0],
-                    entity.coords[1],
-                    entity.name
-                )
+            r += SvgElements.SvgCircle(
+                cx=entity.coords[0],
+                cy=entity.coords[1],
+                r=3,
+                style = {
+                    "AIRPORT": airport_dot_style,
+                    "CITY": city_dot_style,
+                }[entity.kind]
+            ).render()
 
         for entity in self.entities.values():
             for link in entity.links:
                 target = link[0]
                 kind = link[1]
-                colour = {
-                    'GND':'red',
-                    'TXF':'orange',
-                    'AIR':'yellow',
-                }[kind]
-                r += """
-<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" id="{}-{}" style="stroke: {}; stroke-width: 1"/>
-""".format(
-                    entity.coords[0], entity.coords[1],
-                    target.coords[0], target.coords[1],
-                    'black',
-                    entity.name, target.name,
-                    colour
-                )
-
-        r += """
-            </g>
-        </svg>
-        """
+                r += SvgElements.SvgLine(
+                    x1 =entity.coords[0],
+                    y1 =entity.coords[1],
+                    x2 =target.coords[0],
+                    y2 =target.coords[1],
+                    cx=entity.coords[0], cy=entity.coords[1], r=3, style = {
+                        "GND": city_line_style,
+                        "AIR": airport_line_style,
+                        "TXF": transfer_line_style,
+                    }[kind]
+                ).render()
+        r += """</g></svg>"""
         return r
 
     def print(self):
