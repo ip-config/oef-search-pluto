@@ -1,7 +1,7 @@
 from typing import List
 import asyncio
 from api.src.python.Interfaces import HasMessageHandler
-from pluto_app.src.python.app import PlutoApp
+from fake_oef.src.python.lib import FakeSearch
 from fake_oef.src.python.lib.FakeOef import SearchComInterface, FakeOef
 import gensim
 import time
@@ -38,6 +38,7 @@ class LazyW2V:
 class SearchNetwork:
     def __init__(self, comms_handlers_to_inject_by_ident={}, search_nodes_to_create=[]):
         self.search_nodes = {}
+        self.w2v = LazyW2V()
         for search_node_id in search_nodes_to_create:
             self.add_search_node(search_node_id, comms_handlers_to_inject_by_ident.get(search_node_id, None))
 
@@ -47,12 +48,11 @@ class SearchNetwork:
         self.cache_lifetime = 10
         self.executor = ThreadPoolExecutor(1)
         self.last_clean = 0
-        self.w2v = LazyW2V()
 
         self.stacks = {}  # mapping of name -> { 'search_node', 'eof_core' }
 
     def add_search_node(self, search_node_id, communication_handler=None):
-        app = PlutoApp.PlutoApp()
+        app = FakeSearch.FakeSearch()
         self.search_nodes[search_node_id] = app
         app.start(communication_handler)
         app.inject_w2v(self.w2v)

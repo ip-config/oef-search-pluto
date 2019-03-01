@@ -2,6 +2,8 @@
 from api.src.proto import update_pb2
 import abc
 
+from fake_oef.src.python.lib import FakeBase
+
 
 class SearchComInterface(abc.ABC):
     def call(self, path: str, data):
@@ -23,7 +25,7 @@ def create_address_attribute_update(key: str, ip: str, port: int):
     return upd
 
 
-class FakeOef(object):
+class FakeOef(FakeBase.FakeBase):
     def __init__(self, **kwargs):
         for k in [ 'search_object', 'id', 'connection_factory', 'search_com' ]:
             setattr(self, k, kwargs.get(k, None))
