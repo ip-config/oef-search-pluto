@@ -47,6 +47,7 @@ class SearchNetwork:
         self.cache_lifetime = 10
         self.executor = ThreadPoolExecutor(1)
         self.last_clean = 0
+        self.w2v = LazyW2V()
 
         self.stacks = {}  # mapping of name -> { 'search_node', 'eof_core' }
 
@@ -54,8 +55,7 @@ class SearchNetwork:
         app = PlutoApp.PlutoApp()
         self.search_nodes[search_node_id] = app
         app.start(communication_handler)
-        w2v = LazyW2V()
-        app.inject_w2v(w2v)
+        app.inject_w2v(self.w2v)
         app.add_handler("search", BroadcastFromNode("search", self, search_node_id))
         return app
 
