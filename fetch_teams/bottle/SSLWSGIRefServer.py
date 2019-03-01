@@ -1,10 +1,10 @@
 from fetch_teams.bottle import bottle
 
-
 class SSLWSGIRefServer(bottle.ServerAdapter):
     def __init__(self, certificate_file=None, **kwargs):
         self.certificate_file = certificate_file
         super(SSLWSGIRefServer, self).__init__(**kwargs)
+        self.srv = None
 
     def run(self, handler):
         from wsgiref.simple_server import make_server, WSGIRequestHandler
@@ -19,4 +19,6 @@ class SSLWSGIRefServer(bottle.ServerAdapter):
             srv.socket,
             certfile=self.certificate_file,  # path to certificate
             server_side=True)
+
+        self.srv = srv
         srv.serve_forever()

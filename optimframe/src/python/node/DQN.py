@@ -54,10 +54,12 @@ class DQN:
         self._learning_rate = 1e-3
         self._gamma = 0.9
         self._epsilon = 1.0
-        self._epsilon_decay = 0.92
+        self._epsilon_decay = 0.95
         self._epsilon_min = 0.01
+        self._tau = 0.125
         self._action_space = dimensions[-1]
-        self._model = self._build_model(*dimensions)
+        self._q_network = self._build_model(*dimensions)
+        self._target_network = self._build_model(*dimensions)
         self._name = name
         self._loss = []
 
@@ -104,22 +106,25 @@ class DQN:
         if mem is None:
             return
         state, action, reward, next_state = mem
-        q_next = reward + self._gamma*np.amax(self._model.predict(next_state), axis=1, keepdims=True)
-        target_s = self._model.predict(state)
-        target_s[np.arange(target_s.shape[0]), action.reshape((-1))] = q_next.reshape((-1))
-        history = self._model.fit(state, target_s, epochs=1)
+
+        future_q = self._target_network.predict(next_state)
+        target = reward + self._gamma*np.amax(future_q, axis=1, keepdims=True)
+
+        y = self._q_network.predict(state)
+        y[np.arange(y.shape[0]), action.reshape((-1))] = target.reshape((-1))
+
+        history = self._q_network.fit(state, y, epochs=1)
+
         self._loss.append(history.history["loss"][0])
-        #for i in range(len(batch)):
-        #    state, action, reward, next_state = batch[i]
-        #
-        #    state_rs = state.reshape((1, *state.shape))
-        #    next_state_rs = next_state.reshape((1, *state.shape))
-        #    target = reward + self._gamma*np.amax(self._model.predict(next_state_rs)[0])
-        #    target_s = self._model.predict(state_rs)
-        #    target_s[0][action] = target
-        #self._model.fit(state_rs, target_s, epochs=1)
         if self._epsilon > self._epsilon_min:
             self._epsilon *= self._epsilon_decay
+
+    def trainTarget(self):
+        weights = self._q_network.get_weights()
+        target_weights = self._target_network.get_weights()
+        for i in range(len(weights)):
+            target_weights[i] = (1-self._tau)*target_weights[i] + self._tau*weights[i]
+        self._target_network.set_weights(target_weights)
 
     def getLoss(self):
         return self._loss
@@ -127,6 +132,6 @@ class DQN:
     def predict_action(self, state):
         if np.random.random() <= self._epsilon:
             return np.random.randint(0, self._action_space)
-        pred = self._model.predict(state.reshape((1, *state.shape)))
+        pred = self._q_network.predict(state.reshape((1, *state.shape)))
         print(self._name, ": ", np.argmax(pred[0]), "     ", pred[0])
         return np.argmax(pred[0])

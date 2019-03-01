@@ -39,12 +39,12 @@ class UpdateEndpoint(HasProtoSerializer, HasMessageHandler):
         self.dap_manager = dap_manager
         self.proto_wrapper = proto_wrapper
 
-    @serializer
-    def serialize(self, data: bytes) -> update_pb2.Update:
+    @deserializer
+    def deserialize(self, data: bytes) -> update_pb2.Update:
         pass
 
-    @deserializer
-    def deserialize(self, proto_msg: response_pb2.UpdateResponse) -> bytes:
+    @serializer
+    def serialize(self, proto_msg: response_pb2.UpdateResponse) -> bytes:
         pass
 
     async def handle_message(self, msg: update_pb2.Update) -> response_pb2.UpdateResponse:
@@ -57,12 +57,12 @@ class BlkUpdateEndpoint(HasProtoSerializer, HasMessageHandler):
         self.dap_manager = dap_manager
         self.proto_wrapper = proto_wrapper
 
-    @serializer
-    def serialize(self, data: bytes) -> update_pb2.Update.BulkUpdate:
+    @deserializer
+    def deserialize(self, data: bytes) -> update_pb2.Update.BulkUpdate:
         pass
 
-    @deserializer
-    def deserialize(self, proto_msg: response_pb2.UpdateResponse) -> bytes:
+    @serializer
+    def serialize(self, proto_msg: response_pb2.UpdateResponse) -> bytes:
         pass
 
     async def handle_message(self, msg: update_pb2.Update.BulkUpdate) -> response_pb2.UpdateResponse:
