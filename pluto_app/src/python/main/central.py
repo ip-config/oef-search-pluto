@@ -64,13 +64,19 @@ if __name__ == "__main__":
 
     connection_factory = ConnectionFactory.ConnectionFactory()
 
-    oef1 = search_network.create_oef_core_for_node(0, "oef1", connection_factory)
-    oef1.register_oef_address(1)
+    oef1 = search_network.create_oef_core_for_node(3, "oef3", connection_factory)
+    oef2 = search_network.create_oef_core_for_node(1, "oef4", connection_factory)
+    oef1.register_oef_address(3)
+    oef2.register_oef_address(1)
 
-    agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id='a0')
-    agent.connect(target="oef1", subject=None)
 
-    agent.register_service(create_weather_dm_update("oef1"))
+    agent1 = FakeAgent.FakeAgent(connection_factory=connection_factory, id='a0')
+    agent1.connect(target="oef3", subject=None)
+    agent1.register_service(create_weather_dm_update("oef3"))
+
+    agent2 = FakeAgent.FakeAgent(connection_factory=connection_factory, id='a1')
+    agent2.connect(target="oef4", subject=None)
+    agent2.register_service(create_weather_dm_update("oef4"))
 
     com.wait()
 

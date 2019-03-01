@@ -34,11 +34,9 @@ class BackendRouter:
         return result
 
     async def route(self, path: str, data) ->bytes:
-        print("ROUTE:", data)
         if path in self.__routing_serializer:
             serializer = self.__routing_serializer[path]
             msg = await serializer.serialize(data)
-            print("ROUTE DESER: ", msg)
             if path in self.__routing_handler:
                 cos = []
                 for handler in self.__routing_handler[path]:
@@ -49,7 +47,6 @@ class BackendRouter:
                 else:
                     protos_by_type = {}
                     for p in proto_list:
-                        print("RESULT router ", p, ", type=", type(p))
                         if p is None:
                             continue
                         if isinstance(p, Exception):
@@ -63,7 +60,6 @@ class BackendRouter:
                             d = [p]
                         for e in d:
                             protos_by_type.setdefault(e.__class__, []).append(e)
-                    print("ROUTER protos_by_type", protos_by_type)
                     merged_list = []
                     for k in protos_by_type:
                         if len(protos_by_type[k]) == 0:
@@ -73,16 +69,13 @@ class BackendRouter:
                         else:
                             for e in protos_by_type[k]:
                                 merged_list.append(e)
-                    print("ROUTER MERGED_LIST ", merged_list)
                     if len(merged_list) == 1:
                         response = merged_list[0]
                     elif len(merged_list) == 0:
                         self.log.warn("Empty merged list")
                         return []
                     else:
-                        print(merged_list)
                         response = self.__response_builder[path].build_responses(merged_list)
-                print(response)
                 if isinstance(data, dict):
                     response = JsonResponse(response)
                 return await serializer.deserialize(response)

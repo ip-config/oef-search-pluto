@@ -40,14 +40,10 @@ class BroadcastFromNode(HasMessageHandler):
 
     async def handle_message(self, msg):
         response = await self._network.broadcast_from_node(self._node, self._path, msg)
-        print("BROADCAST got response 1: ", response)
         if type(response) != list:
             response = [response]
         response = self.__flatten_list(response)
-        print("BROADCAST got response 2: ", response)
-        r = await asyncio.gather(*[self._serializer.serialize(serialized) for serialized in response])
-        print("BROADCAST got response 3: ", r)
-        return r
+        return await asyncio.gather(*[self._serializer.serialize(serialized) for serialized in response])
 
 
 class LazyW2V:
@@ -100,7 +96,6 @@ class SearchNetwork:
         return self.cores[node]
 
     async def broadcast_from_node(self, node: int, path: str, data):
-        print("BROADCAST node {} path {} data {}".format(node, path, data))
         cos = []
         for i in self.connection_map[node]:
             if i == node:
@@ -112,10 +107,9 @@ class SearchNetwork:
             if (t-c) < self.cache_lifetime:
                 continue
             self.cache[h] = t
-            print("BROADCAST TO NODE {} path {} from {}".format(i, path, node))
             cos.append(self.nodes[i].callMe(path, proto))
         self.executor.submit(SearchNetwork._cache_cleaner, self)
-        if len(cos)>0:
+        if len(cos) > 0:
             return await asyncio.gather(*cos)
         return []
 
