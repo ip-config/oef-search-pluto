@@ -296,20 +296,31 @@ static PyMethodDef PopGrab_methods[] = {
 
 static PyTypeObject PopGrab_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "custom.PopGrab",
-    .tp_doc = "PopGrab objects",
-    .tp_basicsize = sizeof(PopGrab_Object),
-    .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT,
-    .tp_new = PopGrab_new,
-    .tp_init = (initproc) PopGrab_init,
-    .tp_dealloc = (destructor) PopGrab_dealloc,
-    .tp_methods = PopGrab_methods,
+    "custom.PopGrab",
+    sizeof(PopGrab_Object),
+    0,
+    (destructor) PopGrab_dealloc,
+    0, //print
+    0, //get attr
+    0, //set attr
+    0, //reserved
+    0, //repr
+    0, 0, 0, //number, seq, mapping
+    0, 0, 0, //hash, call, str
+    0, 0, 0,
+    Py_TPFLAGS_DEFAULT,
+    "PopGrab objects"
 };
+
+
 
 PyMODINIT_FUNC PyInit_popgrab(void)
 {
    Py_Initialize();
+
+   PopGrab_Type . tp_new = PopGrab_new;
+   PopGrab_Type . tp_init = (initproc) PopGrab_init;
+   PopGrab_Type . tp_methods = PopGrab_methods;
 
    if (PyType_Ready(&PopGrab_Type) < 0)
         return NULL;
