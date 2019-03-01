@@ -24,10 +24,19 @@ class BackendRouter:
     def register_response_merger(self, obj: HasResponseMerger):
         self.__response_merger[obj.get_response_type()] = obj
 
+    def __flatten_list(self, src):
+        if type(src) != list:
+            return [src]
+        result = []
+        for e in src:
+            flatten = self.__flatten_list(e)
+            result.extend(flatten)
+        return result
+
     async def route(self, path: str, data) ->bytes:
         if path in self.__routing_serializer:
             serializer = self.__routing_serializer[path]
-            msg = await serializer.serialize(data)
+            msg = await serializer.deserialize(data)
             if path in self.__routing_handler:
                 cos = []
                 for handler in self.__routing_handler[path]:
@@ -38,23 +47,38 @@ class BackendRouter:
                 else:
                     protos_by_type = {}
                     for p in proto_list:
+                        if p is None:
+                            continue
                         if isinstance(p, Exception):
                             self.log.warn("Exception happened in handler for path {}: {}".format(path, str(p)))
+                            continue
+                        elif isinstance(p, list):
+                            if len(p) == 0:
+                                continue
+                            d = self.__flatten_list(p)
                         else:
-                            protos_by_type.setdefault(p.__class__, []).append(p)
+                            d = [p]
+                        for e in d:
+                            protos_by_type.setdefault(e.__class__, []).append(e)
                     merged_list = []
                     for k in protos_by_type:
+                        if len(protos_by_type[k]) == 0:
+                            continue
                         if k in self.__response_merger:
                             merged_list.append(self.__response_merger[k].merge_response(protos_by_type[k]))
                         else:
-                            merged_list.append(protos_by_type[k])
+                            for e in protos_by_type[k]:
+                                merged_list.append(e)
                     if len(merged_list) == 1:
                         response = merged_list[0]
+                    elif len(merged_list) == 0:
+                        self.log.warn("Empty merged list")
+                        return []
                     else:
                         response = self.__response_builder[path].build_responses(merged_list)
                 if isinstance(data, dict):
                     response = JsonResponse(response)
-                return await serializer.deserialize(response)
+                return await serializer.serialize(response)
             else:
                 self.log.error("Message handler not register for path: ", path)
                 return []

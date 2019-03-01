@@ -222,6 +222,5 @@ class QueryData:
         if not self.origin:
             self.origin = query_pb2.Query()
 
-    # TODO support for constraints
     def toDapQuery(self):
         return self.dap_manager.makeQuery(self.origin)

@@ -63,9 +63,9 @@ class DQNGeoOrgNode:
         #    return -1.
         diff = self._h - self._h_prev
         r = 0
-        if diff>0:
+        if diff > 0:
             r = 1
-        elif diff<0:
+        elif diff < 0:
             r = -1
         return r
 
@@ -81,7 +81,7 @@ class DQNGeoOrgNode:
         self.state[:, :, 1] = (everybody[:, :, 0]-self.state[:, :, 0])
 
     def setLastChannel(self, data):
-        self.state[:, :, 2] = data
+        self.state[:, :, 2] = data/np.max(data)
 
     def getLoss(self):
         return self.agent.getLoss()
@@ -118,3 +118,5 @@ class DQNGeoOrgNode:
 
     def train(self, episode):
         self.agent.replay(episode)
+        if episode % 5 == 0:
+            self.agent.trainTarget()

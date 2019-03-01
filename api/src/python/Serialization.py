@@ -9,7 +9,7 @@ class JsonResponse:
         self.data = data
 
 
-def serializer(func):
+def deserializer(func):
     sig = signature(func)
     return_type = sig.return_annotation
     assert return_type != sig.empty, \
@@ -34,7 +34,7 @@ def serializer(func):
     return wrapper
 
 
-def deserializer(func):
+def serializer(func):
     sig = signature(func)
     parameter_type = list(sig.parameters.values())[1]
     assert parameter_type != sig.empty, \
