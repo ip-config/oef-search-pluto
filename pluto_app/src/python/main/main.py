@@ -20,4 +20,6 @@ if __name__ == "__main__":
     com.add(http_server, "0.0.0.0", args.http_port, args.ssl_certificate, args.html_dir)
 
     app = PlutoApp.PlutoApp()
-    app.run(com)
+    app.start(com)
+
+    com.wait()
