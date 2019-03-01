@@ -34,7 +34,7 @@ class FakeOef(FakeBase.FakeBase):
             self.service_directory = {}
         if self.connection_factory:
             self.connection_factory.addCore(self.id, self)
-        super().__init__(**kwargs)
+        super().__init__(self.id, **kwargs)
 
     def search(self, query):
         return self.search_com.call("search". query)
