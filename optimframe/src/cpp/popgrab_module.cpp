@@ -283,7 +283,7 @@ static PyObject *PopGrab_run(PopGrab_Object *self, PyObject *args, PyObject *kwd
 }
 
 static PyMethodDef PopGrab_methods[] = {
-  {"read_reg", (PyCFunction) PopGrab_read_reg, METH_VARARGS, "Return region at coords."},
+  {"read_reg", (PyCFunction) PopGrab_read_reg, METH_VARARGS, "Return region id at coords."},
   {"set_pop",  (PyCFunction) PopGrab_set_pop, METH_VARARGS, one_docstring},
   {"read_pop",  (PyCFunction) PopGrab_read_pop, METH_VARARGS, one_docstring},
   {"put",  (PyCFunction) PopGrab_put, METH_VARARGS, one_docstring},
