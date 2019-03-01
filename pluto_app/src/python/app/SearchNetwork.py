@@ -1,11 +1,23 @@
 from typing import List
 import asyncio
-from api.src.python.Interfaces import HasMessageHandler
+from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer
 from pluto_app.src.python.app import PlutoApp
 from fake_oef.src.python.lib.FakeOef import SearchComInterface, FakeOef
 import gensim
 import time
 from concurrent.futures import ThreadPoolExecutor
+from api.src.proto import response_pb2
+from api.src.python.Serialization import serializer, deserializer
+
+
+class SearchResponseSerialization(HasProtoSerializer):
+    @serializer
+    def serialize(self, data: bytes) -> response_pb2.SearchResponse:
+        pass
+
+    @deserializer
+    def deserialize(self, proto_msg: response_pb2.SearchResponse) -> bytes:
+        pass
 
 
 class BroadcastFromNode(HasMessageHandler):
@@ -13,9 +25,29 @@ class BroadcastFromNode(HasMessageHandler):
         self._node = node_id
         self._network = network
         self._path = path
+        self._serializer = SearchResponseSerialization()
+
+    def __flatten_list(self, src):
+        if type(src) != list:
+            if src is None:
+                return []
+            return [src]
+        result = []
+        for e in src:
+            flatten = self.__flatten_list(e)
+            result.extend(flatten)
+        return result
 
     async def handle_message(self, msg):
-        return await self._network.broadcast_from_node(self._node, self._path, msg)
+        response = await self._network.broadcast_from_node(self._node, self._path, msg)
+        print("BROADCAST got response 1: ", response)
+        if type(response) != list:
+            response = [response]
+        response = self.__flatten_list(response)
+        print("BROADCAST got response 2: ", response)
+        r = await asyncio.gather(*[self._serializer.serialize(serialized) for serialized in response])
+        print("BROADCAST got response 3: ", r)
+        return r
 
 
 class LazyW2V:
@@ -68,20 +100,24 @@ class SearchNetwork:
         return self.cores[node]
 
     async def broadcast_from_node(self, node: int, path: str, data):
+        print("BROADCAST node {} path {} data {}".format(node, path, data))
         cos = []
         for i in self.connection_map[node]:
             if i == node:
                 continue
             proto = data.SerializeToString()
-            h = hash(path+":"+proto+":"+":"+str(i))
+            h = hash(path+":"+str(proto)+":"+":"+str(i))
             t = time.time()
-            c = self.cache.get(h, t)
-            if (c-t) < self.cache_lifetime:
+            c = self.cache.get(h, t-2*self.cache_lifetime)
+            if (t-c) < self.cache_lifetime:
                 continue
             self.cache[h] = t
+            print("BROADCAST TO NODE {} path {} from {}".format(i, path, node))
             cos.append(self.nodes[i].callMe(path, proto))
         self.executor.submit(SearchNetwork._cache_cleaner, self)
-        return await asyncio.gather(*cos)
+        if len(cos)>0:
+            return await asyncio.gather(*cos)
+        return []
 
     def call_node(self, node: int, path: str, data):
         return asyncio.run(self.nodes[node].callMe(path, data))
