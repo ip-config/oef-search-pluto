@@ -39,7 +39,7 @@ class SearchNetwork:
     def __init__(self, comms_handlers_to_inject_by_ident={}, search_nodes_to_create=[]):
         self.search_nodes = {}
         for search_node_id in search_nodes_to_create:
-            self.add_search_node(ident, comms_handlers_to_inject_by_ident.get(search_node_id, None))
+            self.add_search_node(search_node_id, comms_handlers_to_inject_by_ident.get(search_node_id, None))
 
         self.connection_map = {} # mapping of search_node_id -> [ search_node_id ] 
         self.cores = {}
