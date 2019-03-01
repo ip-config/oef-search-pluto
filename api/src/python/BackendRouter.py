@@ -36,7 +36,7 @@ class BackendRouter:
     async def route(self, path: str, data) ->bytes:
         if path in self.__routing_serializer:
             serializer = self.__routing_serializer[path]
-            msg = await serializer.serialize(data)
+            msg = await serializer.deserialize(data)
             if path in self.__routing_handler:
                 cos = []
                 for handler in self.__routing_handler[path]:
@@ -78,7 +78,7 @@ class BackendRouter:
                         response = self.__response_builder[path].build_responses(merged_list)
                 if isinstance(data, dict):
                     response = JsonResponse(response)
-                return await serializer.deserialize(response)
+                return await serializer.serialize(response)
             else:
                 self.log.error("Message handler not register for path: ", path)
                 return []

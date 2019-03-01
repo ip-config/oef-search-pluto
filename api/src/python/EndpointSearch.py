@@ -17,12 +17,12 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
         self._proto_wrapper = proto_wrapper
         self._address_registry = address_registry
 
-    @serializer
-    def serialize(self, data: bytes) -> query_pb2.Query:
+    @deserializer
+    def deserialize(self, data: bytes) -> query_pb2.Query:
         pass
 
-    @deserializer
-    def deserialize(self, proto_msg: response_pb2.SearchResponse) -> bytes:
+    @serializer
+    def serialize(self, proto_msg: response_pb2.SearchResponse) -> bytes:
         pass
 
     def get_response_type(self):

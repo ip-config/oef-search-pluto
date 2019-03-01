@@ -23,12 +23,12 @@ class RemoveEndpoint(HasProtoSerializer, HasMessageHandler):
         self.dap_manager = dap_manager
         self.proto_wrapper = proto_wrapper
 
-    @serializer
-    def serialize(self, data: bytes) -> remove_pb2.Remove:
+    @deserializer
+    def deserialize(self, data: bytes) -> remove_pb2.Remove:
         pass
 
-    @deserializer
-    def deserialize(self, proto_msg: response_pb2.RemoveResponse) -> bytes:
+    @serializer
+    def serialize(self, proto_msg: response_pb2.RemoveResponse) -> bytes:
         pass
 
     async def handle_message(self, msg: remove_pb2.Remove) -> response_pb2.UpdateResponse:

@@ -11,12 +11,12 @@ from api.src.python.Serialization import serializer, deserializer
 
 
 class SearchResponseSerialization(HasProtoSerializer):
-    @serializer
-    def serialize(self, data: bytes) -> response_pb2.SearchResponse:
+    @deserializer
+    def deserialize(self, data: bytes) -> response_pb2.SearchResponse:
         pass
 
-    @deserializer
-    def deserialize(self, proto_msg: response_pb2.SearchResponse) -> bytes:
+    @serializer
+    def serialize(self, proto_msg: response_pb2.SearchResponse) -> bytes:
         pass
 
 
@@ -43,7 +43,7 @@ class BroadcastFromNode(HasMessageHandler):
         if type(response) != list:
             response = [response]
         response = self.__flatten_list(response)
-        return await asyncio.gather(*[self._serializer.serialize(serialized) for serialized in response])
+        return await asyncio.gather(*[self._serializer.deserialize(serialized) for serialized in response])
 
 
 class LazyW2V:
