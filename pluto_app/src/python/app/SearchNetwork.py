@@ -70,7 +70,7 @@ class SearchNetwork:
         for search_node_id in search_nodes_to_create:
             self.add_search_node(search_node_id, comms_handlers_to_inject_by_ident.get(search_node_id, None))
 
-        self.connection_map = {} # mapping of search_node_id -> [ search_node_id ] 
+        self.connection_map = {} # mapping of search_node_id -> [ search_node_id ]
         self.cores = {}
         self.cache = {}
         self.cache_lifetime = 10
@@ -88,7 +88,7 @@ class SearchNetwork:
         return app
 
     def add_stack(self, oef_core_id, search_node_id, communication_handler=None, connection_factory=None):
-        r = self.stacks.setdefault(oef_ident, { 'oef_core': None, 'search_node': None })
+        r = self.stacks.setdefault(oef_core_id, { 'oef_core': None, 'search_node': None })
         r['search_node'] = self.add_search_node(search_node_id, communication_handler)
         r['oef_core'] = self.create_oef_core_for_node(search_node_id, oef_core_id, connection_factory)
         return r
