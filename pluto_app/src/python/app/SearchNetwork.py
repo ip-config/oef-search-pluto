@@ -1,8 +1,6 @@
 from typing import List
 from fake_oef.src.python.lib import FakeSearch
 from fake_oef.src.python.lib.FakeOef import SearchComInterface, FakeOef
-import gensim
-import time
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -37,3 +35,11 @@ class SearchNetwork:
         self.cores[oef_core_id] = FakeOef(id=oef_core_id, connection_factory=self.connection_factory)
         self.cores[oef_core_id].connect_to_search(search_node_id)
         return self.cores[oef_core_id]
+
+    def destroy(self):
+        for core in self.cores:
+            core.disconnect_search()
+            core.kill()
+        for node in self.search_nodes:
+            node.disconnect()
+            node.kill()

@@ -92,6 +92,10 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface):
     def connect_to_search_node(self, search_node_id):
         self._search_coms[search_node_id] = self._connection_factory.create(search_node_id, self._id)
 
+    def disconnect(self):
+        for com in self._search_coms:
+            com.disconnect()
+
     def _cache_cleaner(self):
         t = time.time()
         if (self._last_clean - t) < self._cache_lifetime:
