@@ -1,6 +1,7 @@
 from typing import List
 from fake_oef.src.python.lib import FakeSearch
-from fake_oef.src.python.lib.FakeOef import SearchComInterface, FakeOef
+from fake_oef.src.python.lib.FakeOef import FakeOef
+from fake_oef.src.python.lib.FakeDirector import FakeDirector
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -11,6 +12,7 @@ class SearchNetwork:
         self.cache_lifetime = 10
         self.executor = ThreadPoolExecutor(1)
         self.search_nodes = {}
+        self.director = FakeDirector()
         for search_node_id in search_nodes_to_create:
             self.search_nodes[search_node_id] = self.add_search_node(search_node_id, comms_handlers_to_inject_by_ident.get(search_node_id, None))
         self.cores = {}
@@ -19,6 +21,7 @@ class SearchNetwork:
     def add_search_node(self, search_node_id, communication_handler=None) -> FakeSearch.FakeSearch:
         app = FakeSearch.FakeSearch(search_node_id, self.connection_factory, self.executor, self.cache_lifetime)
         app.init(self.w2v, communication_handler)
+        self.director.add_node(app)
         return app
 
     def add_stack(self, oef_core_id, search_node_id, communication_handler=None):
