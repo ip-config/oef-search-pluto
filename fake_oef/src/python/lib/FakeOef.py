@@ -38,6 +38,7 @@ class FakeOef(FakeBase.FakeBase, SupportsConnectionInterface):
         if self.connection_factory:
             self.connection_factory.add_obj(self.id, self)
         self.search_com = None
+        self._bin_id = self.id.encode("utf-8")
         super().__init__(self.id, **kwargs)
 
     @property
@@ -56,7 +57,8 @@ class FakeOef(FakeBase.FakeBase, SupportsConnectionInterface):
         self.search_com.disconnect()
 
     def search(self, query):
-        return self.search_com.call("search". query)
+        query.source_key = self._bin_id
+        return self.search_com.call("search", query)
 
     def register_service(self, agent_id, service_update):
         print("OEF got service from agent {}".format(agent_id))

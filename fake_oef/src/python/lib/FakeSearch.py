@@ -2,6 +2,7 @@ from fake_oef.src.python.lib import FakeBase
 from pluto_app.src.python.app import PlutoApp
 from fake_oef.src.python.lib.ConnectionFactory import SupportsConnectionInterface
 from api.src.proto import response_pb2
+from api.src.proto import query_pb2
 from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer
 from api.src.python.Serialization import serializer, deserializer
 import asyncio
@@ -66,6 +67,7 @@ class LazyW2V:
 class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface):
     def __init__(self, search_node_id, connection_factory, cleaner_pool: ThreadPoolExecutor, cache_lifetime: int = 10):
         self._id = search_node_id
+        self._bin_id = self._id.encode("utf-8")
         self._connection_factory = connection_factory
         self._connection_factory.add_obj(search_node_id, self)
         self._connections = {}
@@ -109,16 +111,25 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface):
         return asyncio.run(self.callMe(path, data))
 
     async def broadcast(self, path: str, data):
+        source = None
+        if isinstance(data, query_pb2.Query):
+            data.ttl -= 1
+            if data.ttl <= 0:
+                return []
+            source = data.source_key
+            data.source_key = self._bin_id
         cos = []
+        proto = data.SerializeToString()
+        proto_model = data.model.SerializeToString()
         for target_search_node_id in self._search_coms:
-            proto = data.SerializeToString()
-            h = hash(path + ":" + str(proto) + ":" + str(target_search_node_id))
+            h = hash(path + ":" + str(proto_model) + ":" + str(target_search_node_id))
             t = time.time()
             c = self._cache.get(h, t - 2 * self._cache_lifetime)
             if (t - c) < self._cache_lifetime:
                 continue
             self._cache[h] = t
-            cos.append(self._search_coms[target_search_node_id].callMe(path, proto))
+            if source is None or source != target_search_node_id.encode("utf-8"):
+                cos.append(self._search_coms[target_search_node_id].callMe(path, proto))
         self._executor.submit(FakeSearch._cache_cleaner, self)
         if len(cos) > 0:
             return await asyncio.gather(*cos)

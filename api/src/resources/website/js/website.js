@@ -87,7 +87,7 @@ var website = function (_, Kotlin) {
     xmlHttp.v.setRequestHeader('Content-Type', 'application/json');
     xmlHttp.v.setRequestHeader('Accept', 'application/json');
     xmlHttp.v.onload = NetworkCom$onSearch$lambda(xmlHttp);
-    var body = '{' + '"model":' + '{' + '"' + 'description' + '"' + ': ' + '"' + text + '"' + '}' + '}';
+    var body = '{' + '"ttl":3,' + '"model":' + '{' + '"' + 'description' + '"' + ': ' + '"' + text + '"' + '}' + '}';
     xmlHttp.v.send(body);
   };
   NetworkCom.$metadata$ = {

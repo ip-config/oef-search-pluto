@@ -3,6 +3,7 @@ syntax = "proto3";
 import "fetch_teams/oef_core_protocol/query.proto";
 
 message Query {
-    bytes core_key = 1;
+    bytes source_key = 1;
     fetch.oef.pb.Query.Model model = 2;
+    uint32 ttl = 3;
 }
