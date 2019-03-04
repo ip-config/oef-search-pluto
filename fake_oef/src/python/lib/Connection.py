@@ -1,23 +1,25 @@
 import functools
+import abc
+
 
 class Connection(object):
-    def __init__(self, **kwargs):
-        for k in [ 'target', 'core', 'agent', 'agent_id', 'subject' ]:
-            setattr(self, k, kwargs.get(k, None))
-
-        self.core.agent_register(self.agent, self.agent_id, self.subject, self)
-        self.supported_ops = ["register_service"]
+    def __init__(self, source_endpoint, target_endpoint):
+        self._source = source_endpoint
+        self._target = target_endpoint
+        self._target.register_connection(source_endpoint)
+        self._connected = True
 
     def __getattr__(self, item):
-        if item in self.supported_ops:
-            func = getattr(self.core, item)
+        if not self._connected:
+            return None
+        if hasattr(self._target, item):
+            func = getattr(self._target, item)
             return func
         else:
             raise AttributeError("Attribute {} not found!".format(item))
 
-    def destroy(self):
-        self.agent.connection_dropped(self)
-        self.core.agent_unregister_connection(self)
-
-    def kill(self):
-        self.destroy()
+    def disconnect(self):
+        self._connected = False
+        self._target.unregister_connection(self._source)
+        self._source = None
+        self._target = None

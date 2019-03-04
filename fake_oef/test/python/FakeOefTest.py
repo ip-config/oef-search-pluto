@@ -7,8 +7,10 @@ from fake_oef.src.python.lib import ConnectionFactory
 from fake_oef.src.python.lib import FakeOef
 from fake_oef.src.python.lib import FakeAgent
 
+
 def subset(kv, klist):
     return dict([ (k,v) for k,v in kv.items() if k in klist ])
+
 
 class FakeOefTest(unittest.TestCase):
     AGENTS = [
@@ -30,6 +32,7 @@ class FakeOefTest(unittest.TestCase):
         random.shuffle(killables)
         for a in killables:
             a.kill()
+        self.connection_factory.clear("agent")
 
     def testRegistration(self):
 
@@ -40,11 +43,11 @@ class FakeOefTest(unittest.TestCase):
         ]
 
         _ = [
-            agent.connect(target=x['target'], subject=None)
+            agent.connect(target=x['target'])
             for agent, x
             in zip(self.agents, FakeOefTest.AGENTS)
         ]
-
+        print(self.oef1.connections)
         assert len(self.oef1.connections) == 3
         assert len(self.oef2.connections) == 1
 

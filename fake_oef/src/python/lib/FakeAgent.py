@@ -1,32 +1,33 @@
 from dap_api.src.protos import dap_update_pb2
+from fake_oef.src.python.lib.ConnectionFactory import SupportsConnectionInterface, Endpoint
+from fake_oef.src.python.lib.Connection import Connection
 
 
-class FakeAgent(object):
+class FakeAgent(SupportsConnectionInterface):
     def __init__(self, **kwargs):
-        for k in [ 'connection_factory', 'id' ]:
+        for k in ['connection_factory', 'id']:
             setattr(self, k, kwargs.get(k, None))
-
+        if self.connection_factory:
+            self.connection_factory.add_obj(self.id, self)
         self.connections = {}
 
-    def connect(self, target, subject):
-        self.connections[target] = self.connection_factory.create(agent=self, agent_id=id, target=target, subject=subject)
+    @property
+    def connection(self):
+        return self.connections
+
+    @connection.setter
+    def connection(self, value):
+        self.connections = value
+
+    def connect(self, target):
+        self.connections[target] = self.connection_factory.create(target, self.id)
         return self.connections[target]
 
     def disconnect(self, target):
-        if target in self.connections:
-            c = self.connections[target]
+        c = self.connections.get(target, None)
+        if isinstance(c, Connection):
             self.connections.pop(target)
-            c.destroy()
-
-    def connection_dropped(self, conn):
-        keys = [ k for k,v in self.connections.items() if v == conn ]
-        for k in keys:
-            self.connections.pop(k)
-
-    def kill(self):
-        keys = list(self.connections.keys())
-        for k in keys:
-            self.connections.pop(k)
+            c.disconnect()
 
     def register_service(self, service_upd):
         for key, con in self.connections.items():
