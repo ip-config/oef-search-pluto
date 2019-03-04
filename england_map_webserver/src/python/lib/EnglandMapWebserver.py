@@ -23,8 +23,7 @@ class EnglandMapWebserver(object):
             self.search_network.add_stack(
                 "oef-{}".format(i),
                 "search-{}".format(i),
-                communication_handler=None,
-                connection_factory=self.connection_factory,
+                communication_handler=None
             )
 
     def run(self, *args, **kwargs):

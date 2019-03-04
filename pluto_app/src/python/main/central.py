@@ -50,34 +50,31 @@ if __name__ == "__main__":
     parser.add_argument("--html_dir", required=False, type=str, help="where ", default="api/src/resources/website")
     args = parser.parse_args()
 
+    connection_factory = ConnectionFactory.ConnectionFactory()
+
     com = CommunicationHandler(1)
     com.add(http_server, "0.0.0.0", args.http_port, args.ssl_certificate, args.html_dir)
 
     search_network = SearchNetwork.SearchNetwork({'search-0': com}, [
         'search-0', 'search-1', 'search-2', 'search-3', 'search-4'
-        ])
+        ], connection_factory)
 
     # Search connectivity
     search_network.set_connection('search-0', ['search-1', 'search-4'])
     search_network.set_connection('search-1', ['search-2', 'search-3'])
     search_network.set_connection('search-2', ['search-3', 'search-4'])
     search_network.set_connection('search-3', ['search-4', 'search-0'])
-    search_network.set_connection('search-4', ['search-1', 'search-2'])
+    search_network.set_connection('search-4', ['srch-1', 'search-2'])
 
-    connection_factory = ConnectionFactory.ConnectionFactory()
-
-    oef1 = search_network.create_oef_core_for_node("search-3", "oef3", connection_factory)
-    oef2 = search_network.create_oef_core_for_node("search-1", "oef1", connection_factory)
-
-    oef1.register_oef_address(3)
-    oef2.register_oef_address(1)
+    oef1 = search_network.create_oef_core_for_node("search-3", "oef3")
+    oef2 = search_network.create_oef_core_for_node("search-1", "oef1")
 
     agent1 = FakeAgent.FakeAgent(connection_factory=connection_factory, id='a0')
-    agent1.connect(target="oef3", subject=None)
+    agent1.connect(target="oef3")
     agent1.register_service(create_weather_dm_update("oef3"))
 
     agent2 = FakeAgent.FakeAgent(connection_factory=connection_factory, id='a1')
-    agent2.connect(target="oef1", subject=None)
+    agent2.connect(target="oef1")
     agent2.register_service(create_weather_dm_update("oef1"))
 
     com.wait()

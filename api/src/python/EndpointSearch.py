@@ -30,8 +30,15 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
 
     def merge_response(self, resps: List[response_pb2.SearchResponse]) -> response_pb2.SearchResponse:
         resp = response_pb2.SearchResponse()
+        keys = []
         for r in resps:
-            resp.result.extend(r.result)
+            result = []
+            for rr in r.result:
+                if rr.key in keys:
+                    continue
+                keys.append(rr.key)
+                result.append(rr)
+            resp.result.extend(result)
         return resp
 
     async def handle_message(self, msg: query_pb2.Query) -> response_pb2.SearchResponse:
