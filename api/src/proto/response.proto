@@ -19,6 +19,7 @@ message SearchResponse {
         uint32 port = 3;
         double score = 4;
         string info = 5;
+        double distance = 6;
     }
 
     repeated Item result = 1;

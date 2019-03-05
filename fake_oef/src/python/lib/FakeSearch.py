@@ -209,6 +209,15 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
         result = await self.callMe(path, data)
         if path == "update":
             self.notify_update()
+        elif path == "search":
+            #TODO(AB): HACK. do this in a nice way
+            core_id = self._id.replace("-search", "-core").encode("UTF-8")
+            res = response_pb2.SearchResponse()
+            res.ParseFromString(result)
+            for r in res.result:
+                if r.key == core_id:
+                    r.distance = self.location.distance(query.directed_search.target.geo)
+            result = res.SerializeToString()
         return result
 
     def _am_i_closer_and_update_query(self, query):
