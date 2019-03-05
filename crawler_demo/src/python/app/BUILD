@@ -10,6 +10,7 @@ py_binary(
          "//utils/src/python:py_utils",
     ],
     data = [
+         "//crawler_demo/resources:resources",
          "//england_grid/resources/images:pop-images",
     ]
 )

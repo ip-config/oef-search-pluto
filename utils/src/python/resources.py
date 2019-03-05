@@ -11,17 +11,16 @@ def initialise(package):
     main_package = package
     assert main_package != None
 
-def textfile(resourceName, as_string=False):
-    return resource(main_package, resourceName).decode("utf-8")
+def textfile(resourceName, as_string=False, as_file=False):
+    return resource(main_package, resourceName, as_string=as_string, as_file=as_file).decode("utf-8")
 
 
-def textlines(resourceName, as_string=False):
-    return resource(main_package, resourceName).decode("utf-8").rstrip("\n").split("\n")
+def textlines(resourceName, as_string=False, as_file=False):
+    return resource(main_package, resourceName, as_string=as_string, as_file=as_file).decode("utf-8").rstrip("\n").split("\n")
 
 
-def binaryfile(package, resourceName, as_string=False):
-    return resource(main_package, resourceName)
-
+def binaryfile(resourceName, as_string=False, as_file=False):
+    return resource(main_package, resourceName, as_string=as_string, as_file=as_file)
 
 def resource_list(package):
     loader = get_loader(package)
@@ -35,9 +34,8 @@ def _find__main__(path):
         if tail == "__main__":
             return path
         path = head
-    
 
-def resource(package, resourceName, as_string=False):
+def resource(package, resourceName, as_string=False, as_file=True):
     #print("R",package, resourceName)
     loader = get_loader(package)
     mod = sys.modules.get(package) or loader.load_module(package)
@@ -57,12 +55,16 @@ def resource(package, resourceName, as_string=False):
             return resourceName
         else:
             try:
+                if as_file:
+                    return io.BytesIO(loader.get_data(full_resource_name))
                 return loader.get_data(full_resource_name)
             except OSError as ex:
                 if ex.errno != 2:
                     raise
 
             if os.path.exists(resourceName):
+                if as_file:
+                    return open(resourceName, "rb")
                 with open(resourceName, "rb") as binary_file:
                     return binary_file.read()
 
@@ -73,6 +75,8 @@ def resource(package, resourceName, as_string=False):
             if inside_bazel:
                 poss_path = os.path.join(inside_bazel, resourceName)
                 if os.path.exists(poss_path):
+                    if as_file:
+                        return open(resourceName, "rb")
                     with open(poss_path, "rb") as binary_file:
                         return binary_file.read()
             raise ValueError("Can't load resource {}::{}".format(package, resourceName))
