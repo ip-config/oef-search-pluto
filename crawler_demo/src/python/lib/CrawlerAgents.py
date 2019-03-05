@@ -66,8 +66,9 @@ class CrawlerAgents(object):
         targetlines =  [
             SvgElements.SvgLine( x1=x, y1=y, x2=tx, y2=ty,  style = crawler_targetline_style)
             for x,y,_,tx,ty
-            in linedata
+            in locations
             if tx != None and ty != None
         ]
+        g.add(*targetlines)
 
         return g
