@@ -1,9 +1,17 @@
 import logging
 import functools
+import colorlog
 
 
 def configure(level=logging.INFO):
-    logging.basicConfig(format='%(asctime)s, %(levelname)s:  - %(name)s ] %(message)s', level=level)
+    log_format = '%(asctime)s, %(levelname)s:  - %(name)s ] %(message)s'
+    bold_seq = '\033[1m'  #f'{bold_seq} '
+    colorlog_format = (
+        '%(log_color)s '
+        f'{log_format}'
+    )
+    colorlog.basicConfig(format=colorlog_format, level=level)
+    logging.basicConfig(format=log_format, level=level)
 
 
 def has_logger(func):
@@ -19,4 +27,4 @@ def has_logger(func):
 
 
 def get_logger(name):
-    return logging.getLogger(name)
+    return colorlog.getLogger(name)

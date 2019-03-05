@@ -203,7 +203,7 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
 
     def _am_i_closer_and_update_query(self, query: query_pb2.Query):
         if self.location is None:
-            self.log.warn("Ignoring query because no location is set for the search node!")
+            self.log.error("Ignoring query because no location is set for the search node!")
             return False
         my_distance = self.location.distance(query.directed_search.target.geo)
         source_distance = query.directed_search.distance.geo
@@ -213,7 +213,7 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
                           query.ttl, query.source_key.decode("UTF-8"), source_distance, my_distance)
             return True
         else:
-            self.log.info("Ignoring query with TTL %d, because source (%s) distance was smaller (%.3f) then my distance (%.3f)",
+            self.log.warn("Ignoring query with TTL %d, because source (%s) distance was smaller (%.3f) then my distance (%.3f)",
                           query.ttl, query.source_key.decode("UTF-8"), source_distance, my_distance)
             return False
 
@@ -222,7 +222,7 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
         if isinstance(data, query_pb2.Query):
             data.ttl -= 1
             if data.ttl <= 0:
-                self.log.info("Stop broadcasting query because TTL is 0")
+                self.log.warn("Stop broadcasting query because TTL is 0")
                 return []
             source = data.source_key
             data.source_key = self._bin_id
