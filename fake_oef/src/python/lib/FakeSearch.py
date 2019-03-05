@@ -11,6 +11,8 @@ from typing import List
 import time
 import gensim
 import abc
+from utils.src.python.Logging import has_logger
+
 
 class SearchResponseSerialization(HasProtoSerializer):
     @deserializer
@@ -66,7 +68,36 @@ class LazyW2V:
 
 class Observer(abc.ABC):
     @abc.abstractmethod
-    def on_change(self, node_id):
+    def on_change(self, node_id, value=None):
+        pass
+
+
+class ObserverNotifier(Observer):
+    def __init__(self):
+        self._store = []
+
+    def register_observer(self, observer: Observer):
+        self._store.append(observer)
+
+    def on_change(self, node_id, value=None):
+        for observer in self._store:
+            observer.on_change(node_id, value)
+
+
+class MultiFieldObserver(abc.ABC):
+    class FieldObserver(Observer):
+        def __init__(self, field, multifield_observer):
+            self._field = field
+            self._multifield_observer = multifield_observer
+
+        def on_change(self, node_id, value=None):
+            return self._multifield_observer.on_change(self._field, node_id, value)
+
+    def get_field_observer(self, field_name):
+        return MultiFieldObserver.FieldObserver(field_name, self)
+
+    @abc.abstractmethod
+    def on_change(self, field, node_id, value):
         pass
 
 
@@ -75,18 +106,24 @@ class NodeAttributeInterface:
         self._attributes = {
             "location": None
         }
-        self._observers = []
+        self._update_observer = ObserverNotifier()
+        self._activity_observer = ObserverNotifier()
 
     def _setup(self, dapManager):
         self._geo_store = dapManager.getInstance("geo_search")
         self._location_table = "locations"
 
-    def register_observer(self, observer: Observer):
-        self._observers.append(observer)
+    def register_update_observer(self, observer: Observer):
+        self._update_observer.register_observer(observer)
 
-    def notify(self):
-        for observer in self._observers:
-            observer.on_change(self._id)
+    def register_activity_observer(self, activity_observer: Observer):
+        self._activity_observer.register_observer(activity_observer)
+
+    def notify_update(self):
+        self._update_observer.on_change(self._id)
+
+    def notify_activity(self, t):
+        self._activity_observer.on_change(self._id, t)
 
     @property
     def identity(self):
@@ -106,11 +143,12 @@ class NodeAttributeInterface:
 
 
 class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeInterface):
-    def __init__(self, search_node_id, connection_factory, cleaner_pool: ThreadPoolExecutor, cache_lifetime: int = 10):
-        self._id = search_node_id
+    @has_logger
+    def __init__(self, connection_factory, cleaner_pool: ThreadPoolExecutor, cache_lifetime: int, id: str):
+        self._id = id
         self._bin_id = self._id.encode("utf-8")
         self._connection_factory = connection_factory
-        self._connection_factory.add_obj(search_node_id, self)
+        self._connection_factory.add_obj(id, self)
         self._connections = {}
         self._cache = {}
         self._cache_lifetime = cache_lifetime
@@ -155,44 +193,71 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
                 self._cache.pop(k)
 
     def call(self, path: str, data):
-        if path == "query" and not self._am_i_closer_and_update_query(data):
-            return []
-        result = asyncio.run(self.callMe(path, data))
+        if path == "get":
+            if data == "location":
+                return self.location
+        return asyncio.run(self.call_node(path, data.SerializeToString()))
+
+    async def call_node(self, path: str, data):
+        self.log.info("Got request for path %s", path)
+        if path == "search":
+            query = query_pb2.Query()
+            query.ParseFromString(data)
+            if not self._am_i_closer_and_update_query(query):
+                return []
+            data = query.SerializeToString()
+        result = await self.callMe(path, data)
         if path == "update":
-            self.notify()
+            self.notify_update()
+        elif path == "search":
+            #TODO(AB): HACK. do this in a nice way
+            core_id = self._id.replace("-search", "-core").encode("UTF-8")
+            res = response_pb2.SearchResponse()
+            res.ParseFromString(result)
+            for r in res.result:
+                if r.key == core_id:
+                    r.distance = self.location.distance(query.directed_search.target.geo)
+            result = res.SerializeToString()
         return result
 
-    def _am_i_closer_and_update_query(self, query: query_pb2.Query):
+    def _am_i_closer_and_update_query(self, query):
         if self.location is None:
+            self.log.error("Ignoring query because no location is set for the search node!")
             return False
         my_distance = self.location.distance(query.directed_search.target.geo)
         source_distance = query.directed_search.distance.geo
         if my_distance <= source_distance:
             query.directed_search.distance.geo = my_distance
+            self.log.info("Handling query with TTL %d, because source (%s) distance was greater (%.3f) then my distance (%.3f)",
+                          query.ttl, query.source_key.decode("UTF-8"), source_distance, my_distance)
             return True
         else:
+            self.log.warn("Ignoring query with TTL %d, because source (%s) distance was smaller (%.3f) then my distance (%.3f)",
+                          query.ttl, query.source_key.decode("UTF-8"), source_distance, my_distance)
             return False
 
     async def broadcast(self, path: str, data):
         source = None
         if isinstance(data, query_pb2.Query):
-            data.ttl -= 1
             if data.ttl <= 0:
+                self.log.warn("Stop broadcasting query because TTL is 0")
                 return []
+            data.ttl -= 1
             source = data.source_key
             data.source_key = self._bin_id
         cos = []
-        proto = data.SerializeToString()
+        #proto = data.SerializeToString()
         proto_model = data.model.SerializeToString()
+        t = time.time()
+        self.notify_activity(t)
         for target_search_node_id in self._search_coms:
             h = hash(path + ":" + str(proto_model) + ":" + str(target_search_node_id))
-            t = time.time()
             c = self._cache.get(h, t - 2 * self._cache_lifetime)
             if (t - c) < self._cache_lifetime:
                 continue
             self._cache[h] = t
             if source is None or source != target_search_node_id.encode("utf-8"):
-                cos.append(self._search_coms[target_search_node_id].callMe(path, proto))
+                cos.append(self._search_coms[target_search_node_id].call_node(path, data.SerializeToString()))
         self._executor.submit(FakeSearch._cache_cleaner, self)
         if len(cos) > 0:
             return await asyncio.gather(*cos)
