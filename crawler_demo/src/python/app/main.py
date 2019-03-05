@@ -25,7 +25,7 @@ class App(object):
         self.app = bottle.Bottle()
 
     def getRoot(self):
-        return bottle.redirect("/svg")
+        return bottle.redirect("/static/html/crawl.html")
 
     def getPop(self):
         return bottle.static_file("england_grid/resources/images/pop.png", root=os.getcwd())
