@@ -13,6 +13,11 @@ py_library(
          "//optimframe/src/python/lib:lib",
          "//svg_output/src/python/lib:lib",
          "//toby_loader/data/csv:cities",
+         "//fake_oef/src/python/lib:lib",
+         "//utils/src/python:py_utils",
+         "//api/src/python:utils",
+         "//api/src/python:communication_handler",
+         "//api/src/proto:py_api_pb",
     ],
 )
 
