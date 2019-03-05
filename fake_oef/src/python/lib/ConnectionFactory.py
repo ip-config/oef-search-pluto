@@ -61,6 +61,9 @@ class ConnectionFactory(object):
         for key in keys:
             self._obj_store.pop(key)
 
+    def remove(self, obj_id):
+        self._obj_store.pop(obj_id, None)
+
     def create(self, target, source):
         if target in self._obj_store:
             target_endpoint = Endpoint(self._obj_store[target], target, source)

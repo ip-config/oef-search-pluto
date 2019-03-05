@@ -35,11 +35,29 @@ def build_query(target=(200, 200)):
     q.directed_search.distance.geo = 1e9
     return q
 
+
+def best_oef_core(nodes):
+    distance = 1e16
+    result = None
+    for node in nodes:
+        for res in node.result:
+            if res.distance < distance:
+                distance = res.distance
+                result = res
+    return result
+
+
 class App(object):
     def __init__(self):
         #self.world = World.World()
         self.grid = EnglandGrid.EnglandGrid()
-        self.agents = CrawlerAgents.CrawlerAgents()
+        self.grid.load()
+
+        connection_factory = ConnectionFactory()
+        search_network = SearchNetwork(connection_factory, self.grid.entities)
+        search_network.build_from_entities(self.grid.entities)
+
+        self.agents = CrawlerAgents.CrawlerAgents(connection_factory)
         self.app = bottle.Bottle()
 
     def getRoot(self):
@@ -62,25 +80,29 @@ class App(object):
         )
 
     def start(self, args):
-        self.grid = EnglandGrid.EnglandGrid()
-        self.grid.load()
+        #self.grid = EnglandGrid.EnglandGrid()
+        #self.grid.load()
 
-        connection_factory = ConnectionFactory()
-        search_network = SearchNetwork(connection_factory, self.grid.entities)
-        search_network.build_from_entities(self.grid.entities)
+        #connection_factory = ConnectionFactory()
+        #search_network = SearchNetwork(connection_factory, self.grid.entities)
+        #search_network.build_from_entities(self.grid.entities)
 
-        activity_observer = ActivityObserver()
+        #activity_observer = ActivityObserver()
 
-        search_network.register_activity_observer(activity_observer)
+        #search_network.register_activity_observer(activity_observer)
 
-        target = "Leeds"
-        source = "Southampton"
+        #target = "Leeds"
+        #source = "Southampton"
 
-        agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id="car")
-        agent.connect(target=source+"-core")
-        query = build_query((200, 200))
-        result = agent.search(query)
-        print(result)
+        #agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id="car")
+        #agent.connect(target=source+"-core")
+        #query = build_query((200, 200))
+        #result = best_oef_core(agent.search(query))
+        #loc = agent.get_from_core("location")
+        #print("CURRENT AGENT LOC: ", loc.lon, loc.lon)
+        #agent.swap_core(result)
+        #loc = agent.get_from_core("location")
+        #print("NEW AGENT LOC: ", loc.lon, loc.lon)
 
         self.app.route('/', method='GET', callback=functools.partial(self.getRoot))
         self.app.route('/svg', method='GET', callback=functools.partial(self.getSVG))

@@ -30,6 +30,10 @@ class FakeAgent(SupportsConnectionInterface):
         if isinstance(c, Connection):
             self.connections.pop(target)
             c.disconnect()
+        if target is None:
+            for con in self.connections:
+                self.connections[con].disconnect()
+                self.connections.pop(con)
 
     def register_service(self, service_upd):
         for key, con in self.connections.items():
