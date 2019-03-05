@@ -6,9 +6,18 @@ import math
 import os
 import numpy as np
 from PIL import Image, ImageOps
+from england_grid.src.python.lib import EnglandGrid
+from crawler_demo.src.python.lib.SearchNetwork import SearchNetwork, ConnectionFactory
+from fake_oef.src.python.lib.FakeDirector import Observer
 
 from england_grid.src.python.lib import World
 from fetch_teams.bottle import bottle
+
+
+class ActivityObserver(Observer):
+    def on_change(self, node_id, value=None):
+        pass
+
 
 class App(object):
     def __init__(self):
@@ -28,6 +37,14 @@ class App(object):
     def run(self, args):
         self.grid = EnglandGrid.EnglandGrid()
         self.grid.load()
+
+        connection_factory = ConnectionFactory()
+        search_network = SearchNetwork(connection_factory, self.grid.entities)
+        search_network.build_from_entities(self.grid.entities)
+
+        activity_observer = ActivityObserver()
+
+        search_network.register_activity_observer(activity_observer)
 
         self.server = bottle.Bottle()
         self.server.route('/', method='GET', callback=functools.partial(self.getRoot))
