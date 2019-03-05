@@ -251,7 +251,7 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
         t = time.time()
         self.notify_activity(t)
         for target_search_node_id in self._search_coms:
-            h = hash(path + ":" + str(proto_model) + ":" + str(target_search_node_id))
+            h = hash(path + ":" + str(proto_model) + ":" + str(data.directed_search.target.geo)  + ":" + str(target_search_node_id))
             c = self._cache.get(h, t - 2 * self._cache_lifetime)
             if (t - c) < self._cache_lifetime:
                 continue
