@@ -35,6 +35,12 @@ class BehaveTreeExecution(object):
                 self.stack.append(r)
                 #print("Working..")
 
+    def has(self, something):
+        return something in self.context
+
+    def absent(self, something):
+        return something not in self.context
+
     def set(self, something, value):
         self.context[something] = value
 

@@ -25,7 +25,7 @@ class BehaveTreeBaseNode(object):
             #print("    RUN:", self.name)
             r = self.tick(context=context, prev=prev)
         except Exception as ex:
-            #print("     EX:", self.name, ex)
+            print("     EX:", self.name, ex)
             r = False
         if r == True:
             #print("SUCCESS:", self.name)
