@@ -1,4 +1,5 @@
 from typing import Callable
+import json
 
 from behaviour_tree.src.python.lib import BehaveTree
 from behaviour_tree.src.python.lib import BehaveTreeBaseNode
@@ -10,6 +11,19 @@ class BehaveTreeLoader(object):
         self.names_to_builders = {
             None: BehaveTreeLoader._noClassname,
         }
+        self.addBuilder(
+            'all', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('all',x)
+        ).addBuilder(
+            'each', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('each',x)
+        ).addBuilder(
+            'first', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('first',x)
+        ).addBuilder(
+            'loop', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('loop',x)
+        ).addBuilder(
+            'loop-until-success', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('loop-until-success',x)
+        ).addBuilder(
+            'forever', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('forever',x)
+        )
 
     def addBuilder(self, name: str, builder: 'Callable[[BehaveTreeLoader, dict], BehaveTreeBaseNode.BehaveTreeBaseNode]'):
         self.names_to_builders[name] = builder

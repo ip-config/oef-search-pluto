@@ -7,6 +7,7 @@ from optimframe.src.python.lib import popgrab
 
 from svg_output.src.python.lib import SvgElements
 from svg_output.src.python.lib import SvgStyle
+from svg_output.src.python.lib import SvgGraph
 
 class EnglandGrid(object):
 
@@ -44,14 +45,10 @@ class EnglandGrid(object):
         city_line_style     = SvgStyle.SvgStyle({"stroke": " red", " stroke-width": 1})
         transfer_line_style = SvgStyle.SvgStyle({"stroke": " orange", " stroke-width": 1})
 
-        r = """
-        <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 700 700">
-            <g style="fill-opacity:0.7; stroke:black; stroke-width:0.05;">
-            <image href="pop" x="0" y="0" height="700" width="700"/>
-        """
+        r = SvgGraph.SvgGraph()
 
-        for entity in self.entities.values():
-            r += SvgElements.SvgCircle(
+        r.add(*[
+            SvgElements.SvgCircle(
                 cx=entity.coords[0],
                 cy=entity.coords[1],
                 r=3,
@@ -59,13 +56,15 @@ class EnglandGrid(object):
                     "AIRPORT": airport_dot_style,
                     "CITY": city_dot_style,
                 }[entity.kind]
-            ).render()
+            )
+            for entity in self.entities.values()
+        ])
 
         for entity in self.entities.values():
             for link in entity.links:
                 target = link[0]
                 kind = link[1]
-                r += SvgElements.SvgLine(
+                r.add(SvgElements.SvgLine(
                     x1 =entity.coords[0],
                     y1 =entity.coords[1],
                     x2 =target.coords[0],
@@ -75,8 +74,7 @@ class EnglandGrid(object):
                         "AIR": airport_line_style,
                         "TXF": transfer_line_style,
                     }[kind]
-                ).render()
-        r += """</g></svg>"""
+                ))
         return r
 
     def print(self):
