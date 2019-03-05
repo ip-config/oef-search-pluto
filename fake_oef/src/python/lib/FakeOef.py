@@ -63,7 +63,10 @@ class FakeOef(FakeBase.FakeBase, SupportsConnectionInterface):
 
     def search(self, query):
         self.log.info("Got search query with TTL %d", query.ttl)
+        my_location = self.search_com.call("get", "location")
+        my_distance = my_location.distance(query.directed_search.target.geo)
         query.source_key = self._bin_id
+        query.directed_search.distance.geo = my_distance+1.
         result = self.search_com.call("search", query)
         res = response_pb2.SearchResponse()
         res.ParseFromString(result)

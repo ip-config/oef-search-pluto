@@ -193,18 +193,25 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
                 self._cache.pop(k)
 
     def call(self, path: str, data):
-        self.log.info("Got request for path %s", path)
-        if path == "search" and not self._am_i_closer_and_update_query(data):
-            return []
-        result = asyncio.run(self.callMe(path, data.SerializeToString()))
-        if path == "update":
-            self.notify_update()
         if path == "get":
             if data == "location":
                 return self.location
+        return asyncio.run(self.call_node(path, data.SerializeToString()))
+
+    async def call_node(self, path: str, data):
+        self.log.info("Got request for path %s", path)
+        if path == "search":
+            query = query_pb2.Query()
+            query.ParseFromString(data)
+            if not self._am_i_closer_and_update_query(query):
+                return []
+            data = query.SerializeToString()
+        result = await self.callMe(path, data)
+        if path == "update":
+            self.notify_update()
         return result
 
-    def _am_i_closer_and_update_query(self, query: query_pb2.Query):
+    def _am_i_closer_and_update_query(self, query):
         if self.location is None:
             self.log.error("Ignoring query because no location is set for the search node!")
             return False
@@ -230,7 +237,7 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
             source = data.source_key
             data.source_key = self._bin_id
         cos = []
-        proto = data.SerializeToString()
+        #proto = data.SerializeToString()
         proto_model = data.model.SerializeToString()
         t = time.time()
         self.notify_activity(t)
@@ -241,7 +248,7 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
                 continue
             self._cache[h] = t
             if source is None or source != target_search_node_id.encode("utf-8"):
-                cos.append(self._search_coms[target_search_node_id].callMe(path, proto))
+                cos.append(self._search_coms[target_search_node_id].call_node(path, data.SerializeToString()))
         self._executor.submit(FakeSearch._cache_cleaner, self)
         if len(cos) > 0:
             return await asyncio.gather(*cos)
