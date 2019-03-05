@@ -43,15 +43,15 @@ class Reset(BehaveTreeTaskNode.BehaveTreeTaskNode):
         target = (np.random.randint(50, 650), np.random.randint(50, 650)) #"Leeds"
         print("NEW TARGET: ", target)
         context.set("target", target)
-        context.set('target-x', target[1])
-        context.set('target-y', target[0])
+        context.set('target-x', target[0])
+        context.set('target-y', target[1])
 
         connection_factory = context.get("connection_factory")
         agent = context.get("agent")
 
         if agent is None:
             source = "Southampton"
-            agent_id = "car-1"
+            agent_id = "car-"+str(np.random.randint(1, 100))
             agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id=agent_id)
             agent.connect(target=source + "-core")
             context.setIfAbsent("connection", source)
