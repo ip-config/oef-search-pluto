@@ -21,7 +21,8 @@ class App(object):
     def __init__(self):
         #self.world = World.World()
         self.grid = EnglandGrid.EnglandGrid()
-        self.agents = CrawlerAgents.CrawlerAgents()
+        self.grid.load()
+        self.agents = CrawlerAgents.CrawlerAgents(self.grid)
         self.app = bottle.Bottle()
 
     def getRoot(self):
@@ -34,7 +35,6 @@ class App(object):
         try:
             return resources.textfile(os.path.join("crawler_demo/resources",filepath))
         except Exception as ex:
-            print(ex)
             bottle.abort(404, "No such file.")
 
     def getSVG(self):
@@ -49,9 +49,6 @@ class App(object):
         )
 
     def start(self, args):
-        self.grid = EnglandGrid.EnglandGrid()
-        self.grid.load()
-
         self.app.route('/', method='GET', callback=functools.partial(self.getRoot))
         self.app.route('/static/<filepath:path>', method='GET', callback=functools.partial(self.getStatic))
         self.app.route('/svg', method='GET', callback=functools.partial(self.getSVG))

@@ -37,6 +37,11 @@ class EnglandGrid(object):
         self.connectAirports()
         self.connectAirportsAndCities()
 
+    def getPositionOf(self, name):
+        if name not in self.entities:
+            return None
+        return self.entities[name].coords
+
     def getSVG(self):
 
         airport_dot_style   = SvgStyle.SvgStyle({"fill-opacity": 1, " fill": "yellow", " stroke-width": 0.1})
