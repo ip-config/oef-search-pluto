@@ -194,11 +194,14 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
 
     def call(self, path: str, data):
         self.log.info("Got request for path %s", path)
-        if path == "query" and not self._am_i_closer_and_update_query(data):
+        if path == "search" and not self._am_i_closer_and_update_query(data):
             return []
-        result = asyncio.run(self.callMe(path, data))
+        result = asyncio.run(self.callMe(path, data.SerializeToString()))
         if path == "update":
             self.notify_update()
+        if path == "get":
+            if data == "location":
+                return self.location
         return result
 
     def _am_i_closer_and_update_query(self, query: query_pb2.Query):
@@ -220,10 +223,10 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
     async def broadcast(self, path: str, data):
         source = None
         if isinstance(data, query_pb2.Query):
-            data.ttl -= 1
             if data.ttl <= 0:
                 self.log.warn("Stop broadcasting query because TTL is 0")
                 return []
+            data.ttl -= 1
             source = data.source_key
             data.source_key = self._bin_id
         cos = []

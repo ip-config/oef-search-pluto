@@ -17,12 +17,23 @@ from fetch_teams.bottle import bottle
 from england_grid.src.python.lib import EnglandGrid
 from crawler_demo.src.python.lib import CrawlerAgents
 from utils.src.python import ThreadedWebserver
+from fake_oef.src.python.lib import FakeAgent
+from api.src.proto import query_pb2, response_pb2
 
 
 class ActivityObserver(Observer):
     def on_change(self, node_id, value=None):
         pass
 
+
+def build_query(target=(200, 200)):
+    q = query_pb2.Query()
+    q.model.description = "weather data"
+    q.ttl = 1
+    q.directed_search.target.geo.lat = target[0]
+    q.directed_search.target.geo.lon = target[1]
+    q.directed_search.distance.geo = 1e9
+    return q
 
 class App(object):
     def __init__(self):
@@ -61,6 +72,15 @@ class App(object):
         activity_observer = ActivityObserver()
 
         search_network.register_activity_observer(activity_observer)
+
+        target = "Leeds"
+        source = "Southampton"
+
+        agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id="car")
+        agent.connect(target=source+"-core")
+        query = build_query((200, 200))
+        result = agent.search(query)
+        print(result)
 
         self.app.route('/', method='GET', callback=functools.partial(self.getRoot))
         self.app.route('/svg', method='GET', callback=functools.partial(self.getSVG))

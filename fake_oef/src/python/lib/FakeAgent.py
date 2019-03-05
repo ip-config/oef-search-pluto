@@ -39,5 +39,5 @@ class FakeAgent(SupportsConnectionInterface):
     def search(self, query):
         res = []
         for key, con in self.connections.items():
-            res.append(con.search(query.SerializeToString()))
+            res.append(con.search(query))
         return res
