@@ -54,12 +54,11 @@ class App(object):
         #self.world = World.World()
         self.grid = EnglandGrid.EnglandGrid()
         self.grid.load()
-
         connection_factory = ConnectionFactory()
         search_network = SearchNetwork(connection_factory, self.grid.entities)
         search_network.build_from_entities(self.grid.entities)
 
-        self.agents = CrawlerAgents.CrawlerAgents(connection_factory)
+        self.agents = CrawlerAgents.CrawlerAgents(connection_factory, self.grid)
         self.app = bottle.Bottle()
 
     def getRoot(self):
@@ -72,7 +71,6 @@ class App(object):
         try:
             return resources.textfile(os.path.join("crawler_demo/resources",filepath))
         except Exception as ex:
-            print(ex)
             bottle.abort(404, "No such file.")
 
     def getSVG(self):

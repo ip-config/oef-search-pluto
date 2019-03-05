@@ -8,8 +8,9 @@ from crawler_demo.src.python.lib.SearchNetwork import SearchNetwork, ConnectionF
 
 
 class CrawlerAgents(object):
-    def __init__(self, connection_factory):
+    def __init__(self, connection_factory, grid):
         self.tree = CrawlerAgentBehaviour.CrawlerAgentBehaviour()
+        self.grid = grid
         self.agents = [
             BehaveTreeExecution.BehaveTreeExecution(self.tree),
         ]
@@ -20,8 +21,11 @@ class CrawlerAgents(object):
         _ = [ x.tick() for x in self.agents ]
 
     def getSVG(self):
-        locations = [ ( agent.get('x'), agent.get('y'), ) for agent in self.agents ]
+        locations = [ ( agent.get('x'), agent.get('y'), agent.get('connection') ) for agent in self.agents ]
+
         crawler_dot_style = SvgStyle.SvgStyle({"fill-opacity": 1, " fill": "black", " stroke-width": 0.1})
+        crawler_line_style = SvgStyle.SvgStyle({"stroke": "black", "stroke-width": 1})
+
         dots =  [
             SvgElements.SvgCircle(
                 cx=x,
@@ -29,8 +33,25 @@ class CrawlerAgents(object):
                 r=3,
                 style = crawler_dot_style
             )
-            for x,y
+            for x,y,_
             in locations
         ]
-        return SvgGraph.SvgGraph(*dots)
 
+        g = SvgGraph.SvgGraph(*dots)
+
+        linedata = [
+            ( x, y, self.grid.getPositionOf(conn) )
+            for x, y, conn
+            in locations
+        ]
+
+        lines =  [
+            SvgElements.SvgLine( x1=x, y1=y, x2=pos[0], y2=pos[1],  style = crawler_line_style)
+            for x,y,pos
+            in linedata
+            if pos != None
+        ]
+
+        g.add(*lines)
+
+        return g
