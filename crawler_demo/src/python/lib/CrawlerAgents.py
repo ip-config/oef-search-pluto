@@ -19,10 +19,21 @@ class CrawlerAgents(object):
         _ = [ x.tick() for x in self.agents ]
 
     def getSVG(self):
-        locations = [ ( agent.get('x'), agent.get('y'), agent.get('connection') ) for agent in self.agents ]
+        locations = [
+            (
+                agent.get('x'),
+                agent.get('y'),
+                agent.get('connection'),
+                agent.get('target-x'),
+                agent.get('target-y')
+            )
+            for agent
+            in self.agents
+        ]
 
         crawler_dot_style = SvgStyle.SvgStyle({"fill-opacity": 1, " fill": "black", " stroke-width": 0.1})
         crawler_line_style = SvgStyle.SvgStyle({"stroke": "black", "stroke-width": 1})
+        crawler_targetline_style = SvgStyle.SvgStyle({"stroke": "black", "stroke-width": 1, "stroke-dasharray":"3 1" })
 
         dots =  [
             SvgElements.SvgCircle(
@@ -31,7 +42,7 @@ class CrawlerAgents(object):
                 r=3,
                 style = crawler_dot_style
             )
-            for x,y,_
+            for x,y,_,_,_
             in locations
         ]
 
@@ -39,7 +50,7 @@ class CrawlerAgents(object):
 
         linedata = [
             ( x, y, self.grid.getPositionOf(conn) )
-            for x, y, conn
+            for x, y, conn, _, _
             in locations
         ]
 
@@ -51,5 +62,12 @@ class CrawlerAgents(object):
         ]
 
         g.add(*lines)
+
+        targetlines =  [
+            SvgElements.SvgLine( x1=x, y1=y, x2=tx, y2=ty,  style = crawler_targetline_style)
+            for x,y,_,tx,ty
+            in linedata
+            if tx != None and ty != None
+        ]
 
         return g
