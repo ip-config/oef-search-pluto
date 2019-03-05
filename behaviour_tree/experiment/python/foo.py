@@ -40,7 +40,40 @@ class Tock(BehaveTreeTaskNode.BehaveTreeTaskNode):
         super().configure(definition=definition)
         self.count = definition.get("tocks", 1)
 
-TREE = """
+class Inc(BehaveTreeTaskNode.BehaveTreeTaskNode):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
+        context.setIfAbsent("count", 0)
+        context.set("count", context.get("count") + 1)
+        return False
+
+    def configure(self, definition: dict=None):
+        super().configure(definition=definition)
+
+class Sufficient(BehaveTreeTaskNode.BehaveTreeTaskNode):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
+        if context.get("count") > 20:
+            print("YES")
+            return True
+
+        if context.absent("flag"):
+            context.set('flag', 1)
+            print("SNOOZE")
+            return self
+
+        context.delete('flag')
+        print("NO")
+        return False
+
+    def configure(self, definition: dict=None):
+        super().configure(definition=definition)
+
+TREE1 = """
 {
   "node": "all",
   "name": "nodeALL",
@@ -68,31 +101,58 @@ TREE = """
 }
 """
 
+TREE2 = """
+{
+  "node": "all",
+  "name": "nodeALL",
+  "children":
+  [
+    {
+      "node": "loop-until-success",
+      "name": "loop",
+       "children":
+       [
+         {
+           "node": "inc"
+         },
+         {
+           "node": "sufficient"
+         }
+       ]
+    },
+    {
+      "node": "forever",
+      "name": "forever"
+    }
+  ]
+}
+"""
+
+
 def main():
     loader = BehaveTreeLoader.BehaveTreeLoader()
 
     loader.addBuilder(
-        'all', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('all',x)
-    ).addBuilder(
-        'each', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('each',x)
-    ).addBuilder(
-        'first', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('first',x)
-    ).addBuilder(
-        'loop', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('loop',x)
-    ).addBuilder(
         'tick', lambda x: Tick(x)
     ).addBuilder(
         'tocks', lambda x: Tock(x)
+    ).addBuilder(
+        'inc', lambda x: Inc(x)
+    ).addBuilder(
+        'sufficient', lambda x: Sufficient(x)
     )
 
-    tree = BehaveTree.BehaveTree(loader.build(json.loads(TREE)))
+#    tree1 = BehaveTree.BehaveTree(loader.build(json.loads(TREE1)))
+#    exe1 = BehaveTreeExecution.BehaveTreeExecution(tree1)
+#    for i in range(0, 500):
+#        exe1.tick()
+#        time.sleep(0.5)
 
-    exe1 = BehaveTreeExecution.BehaveTreeExecution(tree)
-    exe2 = BehaveTreeExecution.BehaveTreeExecution(tree)
-
+    tree2 = BehaveTree.BehaveTree(loader.build(json.loads(TREE2)))
+    exe2 = BehaveTreeExecution.BehaveTreeExecution(tree2)
     for i in range(0, 500):
-        exe1.tick()
-        time.sleep(0.99)
+        exe2.tick()
+        time.sleep(0.20)
 
 if __name__ == '__main__':
     main()

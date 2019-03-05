@@ -41,13 +41,15 @@ class ThreadedWebserver(object):
         self.http_port = http_port
         self.app = app
 
-        self.server = MyServer(host="0.0.0.0", port=7500)
+        self.server = MyServer(host="0.0.0.0", port=self.http_port)
         self.thread = ThreadedWebserver.ServingThread(self.server, self.app)
 
     def run(self):
+        print("WEB THREAD START")
         self.thread.start()
 
     def stop(self):
+        print("WEB THREAD STOP")
         self.server.shutdown()
         self.thread.join()
 
@@ -58,4 +60,6 @@ class ThreadedWebserver(object):
             self.server = server
 
         def run(self):
+            print("WEB SERVER START")
             self.server.run(self.app)
+            print("WEB SERVER STOP")

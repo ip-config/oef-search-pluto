@@ -1,10 +1,13 @@
 py_binary(
-    name = "england_grid",
+    name = "crawler_demo",
     srcs = ["main.py"],
     main = "main.py",
     visibility = ["//visibility:public"],
     deps = [
          "//england_grid/src/python/lib:lib",
+         "//crawler_demo/src/python/lib:lib",
+         "//behaviour_tree/src/python/lib:lib",
+         "//utils/src/python:py_utils",
     ],
     data = [
          "//england_grid/resources/images:pop-images",

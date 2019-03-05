@@ -54,7 +54,12 @@ class App(object):
 
     def getSVG(self):
         bottle.response.content_type = "image/svg+xml;charset=utf-8"
-        return self.grid.getSVG()
+        return """
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 700 700">
+<g><image href="pop" x="0" y="0" height="700" width="700"/></g>
+{}
+</svg>
+""".format(self.grid.getSVG().render())
 
     def run(self, args):
         self.grid = EnglandGrid.EnglandGrid()
