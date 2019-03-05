@@ -54,15 +54,13 @@ class Reset(BehaveTreeTaskNode.BehaveTreeTaskNode):
             agent_id = "car-1"
             agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id=agent_id)
             agent.connect(target=source + "-core")
+            context.setIfAbsent("connection", source)
+            context.setIfAbsent("agent", agent)
+            loc = agent.get_from_core("location")
+            context.setIfAbsent('x', loc.lat)
+            context.setIfAbsent('y', loc.lon)
         #else:
         #    agent.disconnect(None)
-        context.setIfAbsent("agent", agent)
-        context.setIfAbsent("connection", source+'-core')
-
-        loc = agent.get_from_core("location")
-
-        context.setIfAbsent('x', loc.lat)
-        context.setIfAbsent('y', loc.lon)
 
         return True
 
@@ -148,7 +146,7 @@ class QueryNodes(BehaveTreeTaskNode.BehaveTreeTaskNode):
         if result is not None:
             print(result)
             agent.swap_core(result)
-            context.set("connection", result.key.decode("UTF-8"))
+            context.set("connection", result.key.decode("UTF-8").replace("-core", ""))
         else:
             return True
         loc = agent.get_from_core("location")
