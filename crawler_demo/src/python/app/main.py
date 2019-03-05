@@ -15,6 +15,8 @@ from england_grid.src.python.lib import EnglandGrid
 from crawler_demo.src.python.lib import CrawlerAgents
 from utils.src.python import ThreadedWebserver
 
+import utils.src.python.resources as resources
+
 class App(object):
     def __init__(self):
         #self.world = World.World()
@@ -28,14 +30,19 @@ class App(object):
     def getPop(self):
         return bottle.static_file("england_grid/resources/images/pop.png", root=os.getcwd())
 
+    def getStatic(self, filepath):
+        try:
+            return resources.textfile(os.path.join("crawler_demo/resources",filepath))
+        except Exception as ex:
+            print(ex)
+            bottle.abort(404, "No such file.")
+
     def getSVG(self):
         bottle.response.content_type = "image/svg+xml;charset=utf-8"
         return """
-<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 700 700">
 <g><image href="pop" x="0" y="0" height="700" width="700"/></g>
 {}
 {}
-</svg>
 """.format(
         self.grid.getSVG().render(),
         self.agents.getSVG().render()
@@ -46,19 +53,18 @@ class App(object):
         self.grid.load()
 
         self.app.route('/', method='GET', callback=functools.partial(self.getRoot))
+        self.app.route('/static/<filepath:path>', method='GET', callback=functools.partial(self.getStatic))
         self.app.route('/svg', method='GET', callback=functools.partial(self.getSVG))
         self.app.route('/pop', method='GET', callback=functools.partial(self.getPop))
 
         self.server = ThreadedWebserver.ThreadedWebserver(args.http_port, self.app)
 
     def run(self):
-        print("run!!!!!")
         self.server.run()
 
-        print("run!!")
         while True:
             self.agents.tick()
-            time.sleep(0.5)
+            time.sleep(0.1)
 
 
 def main():
