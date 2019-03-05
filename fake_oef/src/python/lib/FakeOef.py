@@ -4,6 +4,8 @@ import abc
 from fake_oef.src.python.lib.ConnectionFactory import SupportsConnectionInterface
 from fake_oef.src.python.lib import FakeBase
 from fake_oef.src.python.lib.Connection import Connection
+from api.src.proto import update_pb2
+from fetch_teams.oef_core_protocol import query_pb2
 import re
 
 
@@ -62,8 +64,15 @@ class FakeOef(FakeBase.FakeBase, SupportsConnectionInterface):
 
     def register_service(self, agent_id, service_update):
         print("OEF got service from agent {}".format(agent_id))
-        self.search_com.call("update", service_update)
-        self.service_directory[agent_id] = service_update
+        upd = service_update
+        if not isinstance(service_update, update_pb2.Update):
+            upd = update_pb2.Update()
+            upd.key = self._bin_id
+            dm = query_pb2.Query.DataModel()
+            dm.ParseFromString(service_update)
+            upd.data_models.extend([dm])
+        self.search_com.call("update", upd.SerializeToString())
+        self.service_directory[agent_id] = upd
 
     def unregister_service(self, agent_id):
         self.search_com.call("remove", self.service_directory[agent_id])

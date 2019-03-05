@@ -12,6 +12,7 @@ import time
 import gensim
 import abc
 
+
 class SearchResponseSerialization(HasProtoSerializer):
     @deserializer
     def deserialize(self, data: bytes) -> response_pb2.SearchResponse:
@@ -66,7 +67,36 @@ class LazyW2V:
 
 class Observer(abc.ABC):
     @abc.abstractmethod
-    def on_change(self, node_id):
+    def on_change(self, node_id, value=None):
+        pass
+
+
+class ObserverNotifier(Observer):
+    def __init__(self):
+        self._store = []
+
+    def register_observer(self, observer: Observer):
+        self._store.append(observer)
+
+    def on_change(self, node_id, value=None):
+        for observer in self._store:
+            observer.on_change(node_id, value)
+
+
+class MultiFieldObserver(abc.ABC):
+    class FieldObserver(Observer):
+        def __init__(self, field, multifield_observer):
+            self._field = field
+            self._multifield_observer = multifield_observer
+
+        def on_change(self, node_id, value=None):
+            return self._multifield_observer.on_change(self._field, node_id, value)
+
+    def get_field_observer(self, field_name):
+        return MultiFieldObserver.FieldObserver(field_name)
+
+    @abc.abstractmethod
+    def on_change(self, field, node_id, value):
         pass
 
 
@@ -75,18 +105,24 @@ class NodeAttributeInterface:
         self._attributes = {
             "location": None
         }
-        self._observers = []
+        self._update_observer = ObserverNotifier()
+        self._activity_observer = ObserverNotifier()
 
     def _setup(self, dapManager):
         self._geo_store = dapManager.getInstance("geo_search")
         self._location_table = "locations"
 
-    def register_observer(self, observer: Observer):
-        self._observers.append(observer)
+    def register_update_observer(self, observer: Observer):
+        self._update_observer.register_observer(observer)
 
-    def notify(self):
-        for observer in self._observers:
-            observer.on_change(self._id)
+    def register_activity_observer(self, activity_observer: Observer):
+        self._activity_observer.register_observer(activity_observer)
+
+    def notify_update(self):
+        self._update_observer.on_change(self._id)
+
+    def notify_activity(self, t):
+        self._activity_observer.on_change(self._id, t)
 
     @property
     def identity(self):
@@ -159,7 +195,7 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
             return []
         result = asyncio.run(self.callMe(path, data))
         if path == "update":
-            self.notify()
+            self.notify_update()
         return result
 
     def _am_i_closer_and_update_query(self, query: query_pb2.Query):
@@ -184,9 +220,10 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
         cos = []
         proto = data.SerializeToString()
         proto_model = data.model.SerializeToString()
+        t = time.time()
+        self.notify_activity(t)
         for target_search_node_id in self._search_coms:
             h = hash(path + ":" + str(proto_model) + ":" + str(target_search_node_id))
-            t = time.time()
             c = self._cache.get(h, t - 2 * self._cache_lifetime)
             if (t - c) < self._cache_lifetime:
                 continue
