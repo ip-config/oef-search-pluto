@@ -93,7 +93,7 @@ class MultiFieldObserver(abc.ABC):
             return self._multifield_observer.on_change(self._field, node_id, value)
 
     def get_field_observer(self, field_name):
-        return MultiFieldObserver.FieldObserver(field_name)
+        return MultiFieldObserver.FieldObserver(field_name, self)
 
     @abc.abstractmethod
     def on_change(self, field, node_id, value):

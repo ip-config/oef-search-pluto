@@ -4,6 +4,7 @@ from fake_oef.src.python.lib.FakeOef import FakeOef
 from concurrent.futures import ThreadPoolExecutor
 from fake_oef.src.python.lib import FakeAgent
 from fetch_teams.oef_core_protocol import query_pb2
+from api.src.proto import update_pb2
 from fake_oef.src.python.lib.FakeSearch import MultiFieldObserver, NodeAttributeInterface, Observer, ObserverNotifier
 from fake_oef.src.python.lib.FakeDirector import Location
 from fake_oef.src.python.lib.ConnectionFactory import ConnectionFactory
@@ -40,7 +41,7 @@ class FakeDirector(MultiFieldObserver):
     def __init__(self, entities):
         self.location_store = {}
         self.nodes = {}
-        for entity in entities:
+        for key, entity in entities.items():
             self.location_store[entity.name + "-search"] = Location(*entity.coords)
         self.node_activity = {}
         self._activity_observer = ObserverNotifier()
@@ -78,7 +79,6 @@ class SearchNetwork:
         self.w2v = FakeSearch.LazyW2V()
         self.cache_lifetime = 10
         self.executor = ThreadPoolExecutor(1)
-        self.search_nodes = {}
         self.director = FakeDirector(entities)
         self.stacks = {}  # mapping of name -> { 'search_node', 'eof_core' }
 
@@ -91,8 +91,8 @@ class SearchNetwork:
         self.director.add_node(app)
         return app
 
-    def create_oef_core_for_node(self, search_node_id: str, oef_core_id: str):
-        core = FakeOef(id=oef_core_id, connection_factory=self.connection_factory)
+    def create_oef_core_for_node(self, search_node_id: str, oef_core_id: str, port: int):
+        core = FakeOef(id=oef_core_id, connection_factory=self.connection_factory, port=port)
         core.connect_to_search(search_node_id)
         return core
 
@@ -102,27 +102,29 @@ class SearchNetwork:
         agent.register_service(create_weather_dm_update(agent_id))
         return agent
 
-    def add_stack(self, node_id: str, communication_handler=None):
+    def add_stack(self, node_id: str, oef_port: int, communication_handler=None):
         r = self.stacks.setdefault(node_id, {'oef_core': None, 'search_node': None})
         search_node_id = node_id + "-search"
         oef_core_id = node_id + "-core"
         agent_id = node_id + "-agent"
         r['search_node'] = self.add_search_node(search_node_id, communication_handler)
-        r['oef_core'] = self.create_oef_core_for_node(search_node_id, oef_core_id)
+        r['oef_core'] = self.create_oef_core_for_node(search_node_id, oef_core_id, oef_port)
         r['agent'] = self.create_weather_agent_for_core(oef_core_id, agent_id)
         return r
 
     def build_from_entities(self, entities):
         connections = {}
-        for entity in entities:
-            self.add_stack(entity.name)
-            connections[entity.name+"-search"] = [link[0].name + "-search" for link in entity.links]
+        port = 1
+        for key, entity in entities.items():
+            self.add_stack(entity.name, port)
+            port += 1
+            connections[entity.name] = [link[0].name for link in entity.links]
         for key in connections:
             self.set_connection(key, connections[key])
 
     def set_connection(self, search_node_id: str, connections: List[str]):
         for target_search_id in connections:
-            self.search_nodes[search_node_id].connect_to_search_node(target_search_id)
+            self.stacks[search_node_id]["search_node"].connect_to_search_node(target_search_id+"-search")
 
     def destroy(self):
         for core in self.cores:

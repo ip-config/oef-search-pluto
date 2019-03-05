@@ -10,7 +10,7 @@ from england_grid.src.python.lib import EnglandGrid
 from crawler_demo.src.python.lib.SearchNetwork import SearchNetwork, ConnectionFactory
 from fake_oef.src.python.lib.FakeDirector import Observer
 
-from england_grid.src.python.lib import World
+#from england_grid.src.python.lib import World
 from fetch_teams.bottle import bottle
 
 
@@ -21,7 +21,7 @@ class ActivityObserver(Observer):
 
 class App(object):
     def __init__(self):
-        self.world = World.World()
+        #self.world = World.World()
         self.grid = EnglandGrid.EnglandGrid()
 
     def getRoot(self):
@@ -32,7 +32,7 @@ class App(object):
 
     def getSVG(self):
         bottle.response.content_type = "image/svg+xml;charset=utf-8"
-        return self.world.getSVG()
+        #return self.world.getSVG()
 
     def run(self, args):
         self.grid = EnglandGrid.EnglandGrid()
@@ -50,7 +50,7 @@ class App(object):
         self.server.route('/', method='GET', callback=functools.partial(self.getRoot))
         self.server.route('/svg', method='GET', callback=functools.partial(self.getSVG))
         self.server.route('/pop', method='GET', callback=functools.partial(self.getPop))
-        self.server.route('/genpop', method='GET', callback=functools.partial(self.genPop))
+        # self.server.route('/genpop', method='GET', callback=functools.partial(self.genPop))
         self.server.run(host="0.0.0.0", port=args.http_port)
 
 

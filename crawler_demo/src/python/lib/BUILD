@@ -18,6 +18,8 @@ py_library(
          "//api/src/python:utils",
          "//api/src/python:communication_handler",
          "//api/src/proto:py_api_pb",
+         "//pluto_app/src/python/app:app",
+         "//fetch_teams/oef_core_protocol:py_oef_protocol",
     ],
 )
 
