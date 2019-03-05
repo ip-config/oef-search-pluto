@@ -11,6 +11,7 @@ py_binary(
          "//api/src/proto:py_api_pb",
     ],
     data = [
+         "//crawler_demo/resources:resources",
          "//england_grid/resources/images:pop-images",
     ]
 )
