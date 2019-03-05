@@ -9,8 +9,11 @@ def configure(level=logging.INFO):
 def has_logger(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        name = args[0].__class__.__name__
-        args[0].log = logging.getLogger(name)
+        self = args[0]
+        name = self.__class__.__name__
+        if "id" in kwargs:
+            name += ": {}".format(kwargs["id"])
+        self.log = logging.getLogger(name)
         return func(*args, **kwargs)
     return wrapper
 

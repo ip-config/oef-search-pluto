@@ -9,6 +9,8 @@ from PIL import Image, ImageOps
 from england_grid.src.python.lib import EnglandGrid
 from crawler_demo.src.python.lib.SearchNetwork import SearchNetwork, ConnectionFactory
 from fake_oef.src.python.lib.FakeDirector import Observer
+from utils.src.python.Logging import configure as configure_logging
+
 
 #from england_grid.src.python.lib import World
 from fetch_teams.bottle import bottle
@@ -58,6 +60,7 @@ class App(object):
 
 
 def main():
+    configure_logging()
     app = App()
 
     parser = argparse.ArgumentParser(description='Test application for PLUTO.')

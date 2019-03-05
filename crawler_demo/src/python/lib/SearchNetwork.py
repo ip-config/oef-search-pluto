@@ -86,7 +86,7 @@ class SearchNetwork:
         self.director.register_activity_observer(observer)
 
     def add_search_node(self, search_node_id, communication_handler=None) -> FakeSearch.FakeSearch:
-        app = FakeSearch.FakeSearch(search_node_id, self.connection_factory, self.executor, self.cache_lifetime)
+        app = FakeSearch.FakeSearch(self.connection_factory, self.executor, self.cache_lifetime, id=search_node_id)
         app.init(self.w2v, communication_handler)
         self.director.add_node(app)
         return app

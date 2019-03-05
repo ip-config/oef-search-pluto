@@ -11,6 +11,7 @@ from typing import List
 import time
 import gensim
 import abc
+from utils.src.python.Logging import has_logger
 
 
 class SearchResponseSerialization(HasProtoSerializer):
@@ -142,11 +143,12 @@ class NodeAttributeInterface:
 
 
 class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeInterface):
-    def __init__(self, search_node_id, connection_factory, cleaner_pool: ThreadPoolExecutor, cache_lifetime: int = 10):
-        self._id = search_node_id
+    @has_logger
+    def __init__(self, connection_factory, cleaner_pool: ThreadPoolExecutor, cache_lifetime: int, id: str):
+        self._id = id
         self._bin_id = self._id.encode("utf-8")
         self._connection_factory = connection_factory
-        self._connection_factory.add_obj(search_node_id, self)
+        self._connection_factory.add_obj(id, self)
         self._connections = {}
         self._cache = {}
         self._cache_lifetime = cache_lifetime
@@ -191,6 +193,7 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
                 self._cache.pop(k)
 
     def call(self, path: str, data):
+        self.log.info("Got request for path %s", path)
         if path == "query" and not self._am_i_closer_and_update_query(data):
             return []
         result = asyncio.run(self.callMe(path, data))
@@ -200,13 +203,18 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
 
     def _am_i_closer_and_update_query(self, query: query_pb2.Query):
         if self.location is None:
+            self.log.warn("Ignoring query because no location is set for the search node!")
             return False
         my_distance = self.location.distance(query.directed_search.target.geo)
         source_distance = query.directed_search.distance.geo
         if my_distance <= source_distance:
             query.directed_search.distance.geo = my_distance
+            self.log.info("Handling query with TTL %d, because source (%s) distance was greater (%.3f) then my distance (%.3f)",
+                          query.ttl, query.source_key.decode("UTF-8"), source_distance, my_distance)
             return True
         else:
+            self.log.info("Ignoring query with TTL %d, because source (%s) distance was smaller (%.3f) then my distance (%.3f)",
+                          query.ttl, query.source_key.decode("UTF-8"), source_distance, my_distance)
             return False
 
     async def broadcast(self, path: str, data):
@@ -214,6 +222,7 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
         if isinstance(data, query_pb2.Query):
             data.ttl -= 1
             if data.ttl <= 0:
+                self.log.info("Stop broadcasting query because TTL is 0")
                 return []
             source = data.source_key
             data.source_key = self._bin_id
