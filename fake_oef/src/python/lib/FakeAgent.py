@@ -41,3 +41,20 @@ class FakeAgent(SupportsConnectionInterface):
         for key, con in self.connections.items():
             res.append(con.search(query))
         return res
+
+    def get_from_core(self, what):
+        if len(self.connections) == 0:
+            return None
+        elif len(self.connections) > 1:
+            raise Exception("To many connection")
+        key = list(self.connections.keys())[0]
+        return self.connections[key].get(what)
+
+    def swap_core(self, new_core):
+        if len(self.connections) == 0:
+            return None
+        elif len(self.connections) > 1:
+            raise Exception("To many connection")
+        key = list(self.connections.keys())[0]
+        self.disconnect(key)
+        self.connect(new_core.key.decode("UTF-8"))
