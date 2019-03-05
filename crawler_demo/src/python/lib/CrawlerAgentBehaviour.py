@@ -2,7 +2,7 @@ import json
 import time
 import random
 import math
-
+import numpy as np
 from behaviour_tree.src.python.lib import BehaveTree
 from behaviour_tree.src.python.lib import BehaveTreeTaskNode
 from behaviour_tree.src.python.lib import BehaveTreeLoader
@@ -40,32 +40,29 @@ class Reset(BehaveTreeTaskNode.BehaveTreeTaskNode):
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
         print("RESET")
 
-        target = (200, 200) #"Leeds"
-        source = "Southampton"
-        agent_id = "car-1"
+        target = (np.random.randint(50, 650), np.random.randint(50, 650)) #"Leeds"
+        print("NEW TARGET: ", target)
+        context.set("target", target)
+        context.set('target-x', target[1])
+        context.set('target-y', target[0])
 
         connection_factory = context.get("connection_factory")
         agent = context.get("agent")
 
         if agent is None:
+            source = "Southampton"
+            agent_id = "car-1"
             agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id=agent_id)
-        else:
-            agent.disconnect(None)
-
-        agent.connect(target=source + "-core")
+            agent.connect(target=source + "-core")
+        #else:
+        #    agent.disconnect(None)
+        context.setIfAbsent("agent", agent)
+        context.setIfAbsent("connection", source+'-core')
 
         loc = agent.get_from_core("location")
 
-        context.setIfAbsent('moveto-x', loc.lon)
-        context.setIfAbsent('moveto-y', loc.lat)
-        context.setIfAbsent('target-x', target[0])
-        context.setIfAbsent('target-y', target[1])
-
-        context.setIfAbsent('x', loc.lon)
-        context.setIfAbsent('y', loc.lat)
-
-        context.setIfAbsent("agent", agent)
-        context.setIfAbsent("target", target)
+        context.setIfAbsent('x', loc.lat)
+        context.setIfAbsent('y', loc.lon)
 
         return True
 
@@ -130,14 +127,16 @@ class QueryNodes(BehaveTreeTaskNode.BehaveTreeTaskNode):
 
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
 
-        waypoints = context.get('waypoints')
-        if waypoints == None or waypoints == []:
-            print("GOAL!!!!")
-            return True
+        #waypoints = context.get('waypoints')
+        #if waypoints == None or waypoints == []:
+        #    print("GOAL!!!!")
+        #    return True
 
         #waypoint = waypoints.pop(0)
         #context.set('waypoints', waypoints)
 
+
+        print("tick")
         agent = context.get("agent")
         target = context.get("target")
 
@@ -146,14 +145,25 @@ class QueryNodes(BehaveTreeTaskNode.BehaveTreeTaskNode):
         query = build_query(target)
 
         result = best_oef_core(agent.search(query))
-        agent.swap_core(result)
+        if result is not None:
+            print(result)
+            agent.swap_core(result)
+            context.set("connection", result.key.decode("UTF-8"))
+        else:
+            return True
         loc = agent.get_from_core("location")
 
-        dx = loc.lon - context.get('x')
-        dy = loc.lat - context.get('y')
+        if loc is None:
+            print(result)
+            print(agent.connections)
+            print("NOOO")
+            return True
 
-        context.set('moveto-x', loc.lon)
-        context.set('moveto-y', loc.lat)
+        dx = loc.lat - context.get('x')
+        dy = loc.lon - context.get('y')
+
+        context.set('moveto-x', loc.lat)
+        context.set('moveto-y', loc.lon)
 
         print("NEW INTERMEDIATE GOAL:", context.get('moveto-x') , context.get('moveto-y') )
         dist = math.sqrt(dx*dx + dy*dy)
