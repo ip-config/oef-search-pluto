@@ -4,7 +4,10 @@ import abc
 from fake_oef.src.python.lib.ConnectionFactory import SupportsConnectionInterface
 from fake_oef.src.python.lib import FakeBase
 from fake_oef.src.python.lib.Connection import Connection
+from api.src.proto import update_pb2, response_pb2
+from fetch_teams.oef_core_protocol import query_pb2
 import re
+from utils.src.python.Logging import has_logger
 
 
 class SearchComInterface(abc.ABC):
@@ -28,6 +31,7 @@ def create_address_attribute_update(key: str, ip: str, port: int):
 
 
 class FakeOef(FakeBase.FakeBase, SupportsConnectionInterface):
+    @has_logger
     def __init__(self, **kwargs):
         for k in ['id', 'port', 'connection_factory']:
             setattr(self, k, kwargs.get(k, None))
@@ -50,20 +54,42 @@ class FakeOef(FakeBase.FakeBase, SupportsConnectionInterface):
         self.connections = value
 
     def connect_to_search(self, search_id):
+        self.log.info("Create connection to search node %s, and registering localhost:%d", search_id, self.port)
         self.search_com = self.connection_factory.create(search_id, self.id)
-        self.search_com.call("update", create_address_attribute_update(self.id, "127.0.0.1", self.port).SerializeToString())
+        self.search_com.call("update", create_address_attribute_update(self.id, "127.0.0.1", self.port))
 
     def disconnect_search(self):
         self.search_com.disconnect()
 
     def search(self, query):
+        self.log.info("Got search query with TTL %d", query.ttl)
+        my_location = self.search_com.call("get", "location")
+        my_distance = my_location.distance(query.directed_search.target.geo)
         query.source_key = self._bin_id
-        return self.search_com.call("search", query)
+        query.directed_search.distance.geo = my_distance+1.
+        result = self.search_com.call("search", query)
+        res = response_pb2.SearchResponse()
+        res.ParseFromString(result)
+        for r in res.result:
+            if r.key == self._bin_id:
+                res.result.remove(r)
+        return res
+
+    def get(self, what):
+        if what == "location":
+            return self.search_com.call("get", "location")
 
     def register_service(self, agent_id, service_update):
-        print("OEF got service from agent {}".format(agent_id))
-        self.search_com.call("update", service_update)
-        self.service_directory[agent_id] = service_update
+        self.log.info("OEF got service from agent {}".format(agent_id))
+        upd = service_update
+        if not isinstance(service_update, update_pb2.Update):
+            upd = update_pb2.Update()
+            upd.key = self._bin_id
+            dm = query_pb2.Query.DataModel()
+            dm.ParseFromString(service_update)
+            upd.data_models.extend([dm])
+        self.search_com.call("update", upd)
+        self.service_directory[agent_id] = upd
 
     def unregister_service(self, agent_id):
         self.search_com.call("remove", self.service_directory[agent_id])

@@ -1,4 +1,4 @@
-from fake_oef.src.python.lib.FakeSearch import NodeAttributeInterface, Observer
+from fake_oef.src.python.lib.FakeSearch import NodeAttributeInterface, MultiFieldObserver, Observer
 import numpy as np
 
 
@@ -16,7 +16,7 @@ class FakeDirector(Observer):
         self.location_store = {}
         self.nodes = {}
 
-    def on_change(self, node_id):
+    def on_change(self, node_id, value):
         self.update_local_locations(node_id)
         self.update_node(node_id)
 
@@ -39,7 +39,7 @@ class FakeDirector(Observer):
         self.nodes[node.identity] = node
         self.update_local_locations(node.identity)
         self.update_node(node.identity)
-        node.register_observer(self)
+        node.register_update_observer(self)
 
     def update_node(self, node_id):
         self.nodes[node_id].location = self.location_store[node_id]
