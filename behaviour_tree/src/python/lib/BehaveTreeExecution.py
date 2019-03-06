@@ -23,7 +23,7 @@ class BehaveTreeExecution(object):
             if r == True:
                 #print("(done, go round)")
                 continue
-            elif r == False:
+            elif r == False or r == None:
                 #print("(done, go round)")
                 continue
             elif r == foo:
@@ -34,6 +34,17 @@ class BehaveTreeExecution(object):
                 self.stack.append(foo)
                 self.stack.append(r)
                 #print("Working..")
+
+    def printable(self):
+        r = ""
+        for k,v in self.context.items():
+            vv = "??"
+            try:
+                vv = str(v)
+            except:
+                pass
+            r += "{}={}\n".format(k,v)
+        return r
 
     def has(self, something):
         return something in self.context
