@@ -11,8 +11,8 @@ class BehaveTreeExecution(object):
         #print("START---------------",  [ x.name for x in self.stack])
         prev=None
         while True:
-            foo = self.stack.pop()
             #print("STACK---------------", [ x.name for x in self.stack])
+            foo = self.stack.pop()
             #print("CURRENT-------------", foo.name)
             #print("PREV----------------", prev, prev[0].name if prev else "")
             r = foo._execute(context=self, prev=prev)
@@ -34,6 +34,17 @@ class BehaveTreeExecution(object):
                 self.stack.append(foo)
                 self.stack.append(r)
                 #print("Working..")
+
+    def printable(self):
+        r = ""
+        for k, v in self.context.items():
+            vv = "??"
+            try:
+                vv = str(v)
+            except:
+                pass
+            r += "{}={}\n".format(k, v)
+        return r
 
     def has(self, something):
         return something in self.context

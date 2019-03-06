@@ -16,9 +16,20 @@ class CrawlerAgents(object):
             BehaveTreeExecution.BehaveTreeExecution(self.tree),
             BehaveTreeExecution.BehaveTreeExecution(self.tree),
             BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
         ]
+        locations = {}
+        for key, entity in grid.entities.items():
+            locations[entity.name] = entity.coords
+        idx = 1
         for agent in self.agents:
             agent.set("connection_factory", connection_factory)
+            agent.set("locations", locations)
+            agent.set("index", idx)
+            if idx % 2 == 0:
+                agent.set("movement_type", CrawlerAgentBehaviour.MovementType.FOLLOW_PATH)
+            idx += 1
 
     def tick(self):
         _ = [ x.tick() for x in self.agents ]

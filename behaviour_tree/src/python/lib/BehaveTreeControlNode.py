@@ -1,9 +1,10 @@
 from abc import ABC
 from abc import abstractmethod
-
+from utils.src.python.Logging import has_logger
 from behaviour_tree.src.python.lib import BehaveTreeTaskNode
 
 class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
+    @has_logger
     def __init__(self, kind=None, definition: dict=None, *args, **kwargs):
         super().__init__(definition, args, kwargs)
         self.kind = kind
@@ -57,7 +58,7 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
     def tickFirst(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
         at = 0
 
-        if prev and prev[1] == True:
+        if prev and prev[1] == True and prev[0] in self.children:
             return True
 
         if prev and prev[0] in self.children:
@@ -92,7 +93,7 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         at = 0
 
         if prev and prev[1] and prev[0] in self.children:
-            print("CHILD SUCCESS")
+            self.info("CHILD SUCCESS")
             return True
 
         if prev and prev[0] in self.children:

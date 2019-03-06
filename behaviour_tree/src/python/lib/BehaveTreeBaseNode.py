@@ -1,7 +1,10 @@
 from abc import ABC
 from abc import abstractmethod
+from utils.src.python.Logging import has_logger
+
 
 class BehaveTreeBaseNode(object):
+    @has_logger
     def __init__(self, definition: dict=None, *args, **kwargs):
         self.children = []
         self.name = "--"
@@ -11,6 +14,7 @@ class BehaveTreeBaseNode(object):
     # Override me to handle setup.
     def configure(self, definition: dict=None):
         self.name = definition.get("name", "??")
+        self.log.update_local_name(self.name)
 
     @abstractmethod
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
@@ -25,7 +29,8 @@ class BehaveTreeBaseNode(object):
             #print("    RUN:", self.name)
             r = self.tick(context=context, prev=prev)
         except Exception as ex:
-            print("     EX:", self.name, ex)
+            self.exception("Exception @ {}: {}".format(self.name, str(ex)))
+            exit(1)
             r = False
         if r == True:
             #print("SUCCESS:", self.name)

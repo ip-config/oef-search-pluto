@@ -46,8 +46,12 @@ class Logger:
 
             @functools.wraps(func)
             def inner_wrapper(*args, **kwargs):
-                if args[0].find("%") == -1 and len(args) > 1:
-                    return func(("{} "*len(args)).format(*args), **kwargs)
+                if len(args) > 1:
+                    if isinstance(args[0], str):
+                        if args[0].find("%") == -1:
+                            return func(("{} "*len(args)).format(*args), **kwargs)
+                    else:
+                        return func(("{} " * len(args)).format(*args), **kwargs)
                 return func(*args, **kwargs)
             return inner_wrapper
         for func_name in ["debug", "info", "warning", "error", "critical", "exception"]:
