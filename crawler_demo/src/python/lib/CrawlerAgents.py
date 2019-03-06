@@ -16,6 +16,18 @@ class CrawlerAgents(object):
             BehaveTreeExecution.BehaveTreeExecution(self.tree),
             BehaveTreeExecution.BehaveTreeExecution(self.tree),
             BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
         ]
         for agent in self.agents:
             agent.set("connection_factory", connection_factory)

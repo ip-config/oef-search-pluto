@@ -14,6 +14,7 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
             'first': BehaveTreeControlNode.tickFirst,
             'loop': BehaveTreeControlNode.tickLoop,
             'forever': BehaveTreeControlNode.tickForever,
+            'yield': BehaveTreeControlNode.tickield,
             'loop-until-success': BehaveTreeControlNode.tickLoopUntilSuccess,
         }[kind]
 
@@ -70,6 +71,11 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         context.pushTask(self)
         context.pushTask(self.children[at])
         return True
+
+    def tickYield(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
+        if prev == None:
+            return True
+        return self
 
     def tickLoop(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
         at = 0
