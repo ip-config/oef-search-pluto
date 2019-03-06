@@ -52,30 +52,6 @@ class Reset(BehaveTreeTaskNode.BehaveTreeTaskNode):
         super().configure(definition=definition)
 
 
-class Snooze(BehaveTreeTaskNode.BehaveTreeTaskNode):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
-        print("RESET")
-
-        context.setIfAbsent('ticks', 0)
-        ticks = context.get('ticks')
-        print("TICKS=", ticks, self.ticks)
-
-        if self.ticks < ticks:
-            return True
-
-        context.set('ticks', ticks + 1)
-        print("TICKS=", ticks, self.ticks)
-
-        return self
-
-    def configure(self, definition: dict=None):
-        super().configure(definition=definition)
-        self.ticks = definition.get('ticks', 10)
-
-
 class PickLocation(BehaveTreeTaskNode.BehaveTreeTaskNode):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -199,17 +175,25 @@ class Snooze(BehaveTreeTaskNode.BehaveTreeTaskNode):
         super().__init__(*args, **kwargs)
 
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
-        context.setIfAbsent("count", 0)
+        print("SNOOZE")
 
-        if context.get("count") > random.randint(0, self.duration):
-            context.delete("count")
-            return True
+        context.setIfAbsent('ticks', 0)
+        ticks = context.get('ticks')
+        print("TICKS=", ticks, self.ticks)
+
+        if self.ticks < ticks:
+            return self.result
+
+        context.set('ticks', ticks + 1)
+        print("TICKS=", ticks, self.ticks)
 
         return self
 
     def configure(self, definition: dict=None):
         super().configure(definition=definition)
-        self.duration=definition.get('duration')
+        self.ticks = definition.get('ticks', 10)
+        self.result = definition.get('result', True)
+
 
 TREE = """
 {
@@ -224,7 +208,8 @@ TREE = """
     {
       "node": "Snooze",
       "name": "Snooze",
-      "ticks": 100
+      "ticks": 10,
+      "result": 0
     },
     {
       "node": "PickLocation",
@@ -242,6 +227,10 @@ TREE = """
         {
           "node": "QueryNodes",
           "name": "QueryNodes"
+        },
+        {
+          "node": "yield",
+          "result": 0
         },
         {
           "node": "DoMovement",
