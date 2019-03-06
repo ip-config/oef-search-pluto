@@ -40,27 +40,11 @@ class Reset(BehaveTreeTaskNode.BehaveTreeTaskNode):
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
         print("RESET")
 
-        target = (np.random.randint(50, 650), np.random.randint(50, 650)) #"Leeds"
-        print("NEW TARGET: ", target)
-        context.set("target", target)
-        context.set('target-x', target[0])
-        context.set('target-y', target[1])
+        context.setIfAbsent('x', np.random.randint(50, 650))
+        context.setIfAbsent('y', np.random.randint(50, 650))
 
-        connection_factory = context.get("connection_factory")
-        agent = context.get("agent")
-
-        if agent is None:
-            source = "Southampton"
-            agent_id = "car-"+str(np.random.randint(1, 100))
-            agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id=agent_id)
-            agent.connect(target=source + "-core")
-            context.setIfAbsent("connection", source)
-            context.setIfAbsent("agent", agent)
-            loc = agent.get_from_core("location")
-            context.setIfAbsent('x', loc.lat)
-            context.setIfAbsent('y', loc.lon)
-        #else:
-        #    agent.disconnect(None)
+        context.set('target-x', context.get('x'))
+        context.set('target-y', context.get('y'))
 
         return True
 
@@ -74,39 +58,25 @@ class PickLocation(BehaveTreeTaskNode.BehaveTreeTaskNode):
 
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
 
-        # x = context.get('x')
-        # y = context.get('y')
-        #
-        # print("PickLocation from {},{}".format(x,y))
-        #
-        # targetx = random.randint(self.range[0][0], self.range[1][0])
-        # targety = random.randint(self.range[0][1], self.range[1][1])
-        #
-        #
-        # dx = targetx - x
-        # dy = targety - y
-        #
-        # waypoints = []
-        #
-        # dist = math.sqrt(dx*dx+dy*dy)
-        # for waypoint in range(1, int(dist/100)):
-        #     wayx = dx/dist * 100 * waypoint
-        #     wayy = dy/dist * 100 * waypoint
-        #
-        #     wayx += random.randint(-10, 10)
-        #     wayy += random.randint(-10, 10)
-        #
-        #     waypoints.append( (wayx, wayy) )
-        # waypoints.append( (targetx, targety) )
-        #
-        # context.set('waypoints', waypoints)
-        #
-        # print("NEW TARGET {},{}".format(
-        #     targetx, targety
-        #     ))
-        # print("WAYPOINTS {}".format(
-        #     waypoints
-        #     ))
+        target = (np.random.randint(50, 650), np.random.randint(50, 650)) #"Leeds"
+        print("NEW TARGET: ", target)
+        context.set("target", target)
+        context.set('target-x', target[0])
+        context.set('target-y', target[1])
+
+        connection_factory = context.get("connection_factory")
+
+        if not context.has("agent"):
+            source = "Southampton"
+            agent_id = "car-"+str(np.random.randint(1, 100))
+            agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id=agent_id)
+            agent.connect(target=source + "-core")
+            context.set("connection", source)
+            context.set("agent", agent)
+            loc = agent.get_from_core("location")
+            context.setIfAbsent('x', loc.lat)
+            context.setIfAbsent('y', loc.lon)
+
         return True
 
     def configure(self, definition: dict=None):
@@ -205,17 +175,25 @@ class Snooze(BehaveTreeTaskNode.BehaveTreeTaskNode):
         super().__init__(*args, **kwargs)
 
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
-        context.setIfAbsent("count", 0)
+        print("SNOOZE")
 
-        if context.get("count") > random.randint(0, self.duration):
-            context.delete("count")
-            return True
+        context.setIfAbsent('ticks', 0)
+        ticks = context.get('ticks')
+        print("TICKS=", ticks, self.ticks)
+
+        if self.ticks < ticks:
+            return self.result
+
+        context.set('ticks', ticks + 1)
+        print("TICKS=", ticks, self.ticks)
 
         return self
 
     def configure(self, definition: dict=None):
         super().configure(definition=definition)
-        self.duration=definition.get('duration')
+        self.ticks = definition.get('ticks', 10)
+        self.result = definition.get('result', True)
+
 
 TREE = """
 {
@@ -226,6 +204,12 @@ TREE = """
     {
       "node": "Reset",
       "name": "Reset"
+    },
+    {
+      "node": "Snooze",
+      "name": "Snooze",
+      "ticks": 10,
+      "result": 0
     },
     {
       "node": "PickLocation",
@@ -243,6 +227,10 @@ TREE = """
         {
           "node": "QueryNodes",
           "name": "QueryNodes"
+        },
+        {
+          "node": "yield",
+          "result": 0
         },
         {
           "node": "DoMovement",
@@ -265,5 +253,7 @@ class CrawlerAgentBehaviour(BehaveTree.BehaveTree):
             'QueryNodes', lambda x: QueryNodes(x)
         ).addBuilder(
             'DoMovement', lambda x: DoMovement(x)
+        ).addBuilder(
+            'Snooze', lambda x: Snooze(x)
         )
         super().__init__(loader.build(json.loads(TREE)))

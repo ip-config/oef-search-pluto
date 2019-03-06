@@ -5,8 +5,8 @@ from behaviour_tree.src.python.lib import BehaveTreeTaskNode
 
 class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
     def __init__(self, kind=None, definition: dict=None, *args, **kwargs):
-        super().__init__(definition, args, kwargs)
         self.kind = kind
+        super().__init__(definition, args, kwargs)
         self.tickfunc = {
             None: None,
             'all': BehaveTreeControlNode.tickAll,
@@ -14,8 +14,16 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
             'first': BehaveTreeControlNode.tickFirst,
             'loop': BehaveTreeControlNode.tickLoop,
             'forever': BehaveTreeControlNode.tickForever,
+            'yield': BehaveTreeControlNode.tickYield,
             'loop-until-success': BehaveTreeControlNode.tickLoopUntilSuccess,
-        }[kind]
+        }[self.kind]
+
+    def configure(self, definition: dict=None):
+         super().configure(definition)
+         for k in {
+             "yield": [ "result" ],
+         }.get(self.kind, []):
+             self.k = definition.get(k, None)
 
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
         #print("SELF=", self, " kind=", self.kind)
@@ -70,6 +78,11 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         context.pushTask(self)
         context.pushTask(self.children[at])
         return True
+
+    def tickYield(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
+        if prev == None:
+            return True if self.result == None else self.result
+        return self
 
     def tickLoop(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
         at = 0

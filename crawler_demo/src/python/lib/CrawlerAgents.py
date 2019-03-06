@@ -16,6 +16,18 @@ class CrawlerAgents(object):
             BehaveTreeExecution.BehaveTreeExecution(self.tree),
             BehaveTreeExecution.BehaveTreeExecution(self.tree),
             BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
         ]
         for agent in self.agents:
             agent.set("connection_factory", connection_factory)
@@ -36,9 +48,11 @@ class CrawlerAgents(object):
             in self.agents
         ]
 
-        crawler_dot_style = SvgStyle.SvgStyle({"fill-opacity": 1, " fill": "black", " stroke-width": 0.1})
-        crawler_line_style = SvgStyle.SvgStyle({"stroke": "black", "stroke-width": 1})
-        crawler_targetline_style = SvgStyle.SvgStyle({"stroke": "black", "stroke-width": 1, "stroke-dasharray":"3 1" })
+        colour = "white"
+
+        crawler_dot_style = SvgStyle.SvgStyle({"fill-opacity": 1, " fill": colour, " stroke-width": 0.1})
+        crawler_line_style = SvgStyle.SvgStyle({"stroke": colour, "stroke-width": 1})
+        crawler_targetline_style = SvgStyle.SvgStyle({"stroke": colour, "stroke-width": 1, "stroke-dasharray":"3 1" })
 
         dots =  [
             SvgElements.SvgCircle(
