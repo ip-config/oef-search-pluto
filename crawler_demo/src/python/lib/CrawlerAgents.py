@@ -18,6 +18,12 @@ class CrawlerAgents(object):
             BehaveTreeExecution.BehaveTreeExecution(self.tree),
             BehaveTreeExecution.BehaveTreeExecution(self.tree),
             BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree),
         ]
         locations = {}
         for key, entity in grid.entities.items():
@@ -29,6 +35,8 @@ class CrawlerAgents(object):
             agent.set("index", idx)
             if idx % 2 == 0:
                 agent.set("movement_type", CrawlerAgentBehaviour.MovementType.FOLLOW_PATH)
+            else:
+                agent.set("movement_type", CrawlerAgentBehaviour.MovementType.CRAWL_ON_NODES)
             idx += 1
 
     def tick(self):
@@ -37,6 +45,7 @@ class CrawlerAgents(object):
     def getSVG(self):
         locations = [
             (
+                agent.get('movement_type'),
                 agent.get('x'),
                 agent.get('y'),
                 agent.get('connection'),
@@ -47,32 +56,44 @@ class CrawlerAgents(object):
             in self.agents
         ]
 
-        crawler_dot_style = SvgStyle.SvgStyle({"fill-opacity": 1, " fill": "black", " stroke-width": 0.1})
-        crawler_line_style = SvgStyle.SvgStyle({"stroke": "black", "stroke-width": 1})
-        crawler_targetline_style = SvgStyle.SvgStyle({"stroke": "black", "stroke-width": 1, "stroke-dasharray":"3 1" })
+        colour1 = "white"
+        colour2 = "black"
+
+        crawler_styles = {
+            CrawlerAgentBehaviour.MovementType.CRAWL_ON_NODES: {
+                'dot': SvgStyle.SvgStyle({"fill-opacity": 1, " fill": colour1, " stroke-width": 0.1}),
+                'line': SvgStyle.SvgStyle({"stroke": colour1, "stroke-width": 1}),
+                'dashes': SvgStyle.SvgStyle({"stroke": colour1, "stroke-width": 1, "stroke-dasharray":"3 1" }),
+            },
+            CrawlerAgentBehaviour.MovementType.FOLLOW_PATH:{
+                'dot': SvgStyle.SvgStyle({"fill-opacity": 1, " fill": colour2, " stroke-width": 0.1}),
+                'line': SvgStyle.SvgStyle({"stroke": colour2, "stroke-width": 1}),
+                'dashes': SvgStyle.SvgStyle({"stroke": colour2, "stroke-width": 1, "stroke-dasharray":"3 1" }),
+            }
+        }
 
         dots =  [
             SvgElements.SvgCircle(
                 cx=x,
                 cy=y,
                 r=3,
-                style = crawler_dot_style
+                style = crawler_styles[movement_type]['dot']
             )
-            for x,y,_,_,_
+            for movement_type, x,y,_,_,_
             in locations
         ]
 
         g = SvgGraph.SvgGraph(*dots)
 
         linedata = [
-            ( x, y, self.grid.getPositionOf(conn) )
-            for x, y, conn, _, _
+            ( movement_type, x, y, self.grid.getPositionOf(conn) )
+            for movement_type, x, y, conn, _, _
             in locations
         ]
 
         lines =  [
-            SvgElements.SvgLine( x1=x, y1=y, x2=pos[0], y2=pos[1],  style = crawler_line_style)
-            for x,y,pos
+            SvgElements.SvgLine( x1=x, y1=y, x2=pos[0], y2=pos[1],  style = crawler_styles[movement_type]['line'])
+            for movement_type,x,y,pos
             in linedata
             if pos != None
         ]
@@ -80,8 +101,8 @@ class CrawlerAgents(object):
         g.add(*lines)
 
         targetlines =  [
-            SvgElements.SvgLine( x1=x, y1=y, x2=tx, y2=ty,  style = crawler_targetline_style)
-            for x,y,_,tx,ty
+            SvgElements.SvgLine( x1=x, y1=y, x2=tx, y2=ty,  style = crawler_styles[movement_type]['dashes'])
+            for movement_type,x,y,_,tx,ty
             in locations
             if tx != None and ty != None
         ]

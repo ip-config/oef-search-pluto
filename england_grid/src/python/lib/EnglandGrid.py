@@ -46,24 +46,11 @@ class EnglandGrid(object):
 
         airport_dot_style   = SvgStyle.SvgStyle({"fill-opacity": 1, " fill": "yellow", " stroke-width": 0.1})
         city_dot_style      = SvgStyle.SvgStyle({"fill-opacity": 1, " fill": "red", " stroke-width": 0.1})
-        airport_line_style  = SvgStyle.SvgStyle({"stroke": " yellow", " stroke-width": 1})
-        city_line_style     = SvgStyle.SvgStyle({"stroke": " red", " stroke-width": 1})
+        airport_line_style  = SvgStyle.SvgStyle({"stroke": " #CC0", " stroke-width": 1})
+        city_line_style     = SvgStyle.SvgStyle({"stroke": " #D00", " stroke-width": 1})
         transfer_line_style = SvgStyle.SvgStyle({"stroke": " orange", " stroke-width": 1})
 
         r = SvgGraph.SvgGraph()
-
-        r.add(*[
-            SvgElements.SvgCircle(
-                cx=entity.coords[0],
-                cy=entity.coords[1],
-                r=3,
-                style = {
-                    "AIRPORT": airport_dot_style,
-                    "CITY": city_dot_style,
-                }[entity.kind]
-            )
-            for entity in self.entities.values()
-        ])
 
         for entity in self.entities.values():
             for link in entity.links:
@@ -80,6 +67,20 @@ class EnglandGrid(object):
                         "TXF": transfer_line_style,
                     }[kind]
                 ))
+
+        r.add(*[
+            SvgElements.SvgCircle(
+                cx=entity.coords[0],
+                cy=entity.coords[1],
+                r=3,
+                style={
+                    "AIRPORT": airport_dot_style,
+                    "CITY": city_dot_style,
+                }[entity.kind]
+            )
+            for entity in self.entities.values()
+        ])
+
         return r
 
     def print(self):

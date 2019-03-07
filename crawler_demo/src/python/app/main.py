@@ -75,11 +75,7 @@ class App(object):
 
     def getSVG(self):
         bottle.response.content_type = "image/svg+xml;charset=utf-8"
-        return """
-<g><image href="pop" x="0" y="0" height="700" width="700"/></g>
-{}
-{}
-""".format(
+        return """<g><image href="pop" x="0" y="0" height="700" width="700" preserveAspectRatio="1"/></g>{}{}""".format(
         self.grid.getSVG().render(),
         self.agents.getSVG().render()
         )

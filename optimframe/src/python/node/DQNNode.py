@@ -42,7 +42,7 @@ class DQNGeoOrgNode:
         self._h_prev = 0
         self.update_step = True
         self._channels = 3
-        self.agent = DQN(32, 256, (stateAdaptor.state_dim[0], stateAdaptor.state_dim[1], self._channels, 4), name)
+        self.agent = DQN(32, 256, (stateAdaptor.state_dim[0], stateAdaptor.state_dim[1], self._channels, 5), name)
         self.current_action = None
         self.prev_state = None
         self.jump = 1
