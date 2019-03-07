@@ -1,9 +1,10 @@
 from abc import ABC
 from abc import abstractmethod
-
+from utils.src.python.Logging import has_logger
 from behaviour_tree.src.python.lib import BehaveTreeTaskNode
 
 class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
+    @has_logger
     def __init__(self, kind=None, definition: dict=None, *args, **kwargs):
         self.kind = kind
         super().__init__(definition, args, kwargs)
@@ -23,7 +24,7 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
          for k in {
              "yield": [ "result" ],
          }.get(self.kind, []):
-             self.k = definition.get(k, None)
+             setattr(self, k, definition.get(k, None))
 
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
         #print("SELF=", self, " kind=", self.kind)
@@ -65,7 +66,7 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
     def tickFirst(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
         at = 0
 
-        if prev and prev[1] == True:
+        if prev and prev[1] == True and prev[0] in self.children:
             return True
 
         if prev and prev[0] in self.children:
@@ -80,6 +81,9 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         return True
 
     def tickYield(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
+        if not hasattr(self, "result"):
+            self.warning("Exiting", dir(self), self)
+            exit(1)
         if prev == None:
             return True if self.result == None else self.result
         return self
@@ -105,7 +109,7 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         at = 0
 
         if prev and prev[1] and prev[0] in self.children:
-            print("CHILD SUCCESS")
+            self.info("CHILD SUCCESS")
             return True
 
         if prev and prev[0] in self.children:

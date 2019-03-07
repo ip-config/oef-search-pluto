@@ -11,12 +11,14 @@ from behaviour_tree.src.python.lib import BehaveTreeExecution
 from fake_oef.src.python.lib import FakeAgent
 from crawler_demo.src.python.lib.SearchNetwork import SearchNetwork, ConnectionFactory
 from api.src.proto import query_pb2, response_pb2
+from utils.src.python.Logging import has_logger
+from enum import Enum
 
 
-def build_query(target=(200, 200)):
+def build_query(target=(200, 200), ttl=1):
     q = query_pb2.Query()
     q.model.description = "weather data"
-    q.ttl = 1
+    q.ttl = ttl
     q.directed_search.target.geo.lat = target[0]
     q.directed_search.target.geo.lon = target[1]
     return q
@@ -33,18 +35,52 @@ def best_oef_core(nodes):
     return result
 
 
+class MovementType(Enum):
+    CRAWL_ON_NODES = 1
+    FOLLOW_PATH = 2
+
+
 class Reset(BehaveTreeTaskNode.BehaveTreeTaskNode):
+    @has_logger
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
-        print("RESET")
+        self.log.update_local_name(context.get("index"))
+        self.info("RESET")
+        context.setIfAbsent("movement_type", MovementType.CRAWL_ON_NODES)
 
-        context.setIfAbsent('x', np.random.randint(50, 650))
-        context.setIfAbsent('y', np.random.randint(50, 650))
+        node_locations = context.get("locations")
+        locs = []
+        keys = []
+        for i in range(2):
+            key = np.random.choice(list(node_locations.keys()), 1)[0]
+            loc = (node_locations[key][0] + np.random.randint(-10, 10),
+                   node_locations[key][1] + np.random.randint(-10, 10))
+            keys.append(key)
+            locs.append(loc)
+        target_id, source_id = keys
+        target_loc, source_loc = locs
 
-        context.set('target-x', context.get('x'))
-        context.set('target-y', context.get('y'))
+        self.warning("NEW TARGET: ", target_loc)
+        context.set("target", target_loc)
+        context.set('target-x', target_loc[0])
+        context.set('target-y', target_loc[1])
+
+        connection_factory = context.get("connection_factory")
+        agent = context.get("agent")
+        if agent is None:
+            agent_id = "car-"+str(context.get("index"))
+            agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id=agent_id)
+            agent.connect(target=source_id + "-core")
+            context.setIfAbsent("connection", source_id)
+            context.setIfAbsent("agent", agent)
+            context.setIfAbsent('x', source_loc[0])
+            context.setIfAbsent('y', source_loc[1])
+
+        if context.get("movement_type") == MovementType.FOLLOW_PATH:
+            context.set('moveto-x', target_loc[0])
+            context.set('moveto-y', target_loc[1])
 
         return True
 
@@ -57,26 +93,6 @@ class PickLocation(BehaveTreeTaskNode.BehaveTreeTaskNode):
         super().__init__(*args, **kwargs)
 
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
-
-        target = (np.random.randint(50, 650), np.random.randint(50, 650)) #"Leeds"
-        print("NEW TARGET: ", target)
-        context.set("target", target)
-        context.set('target-x', target[0])
-        context.set('target-y', target[1])
-
-        connection_factory = context.get("connection_factory")
-
-        if not context.has("agent"):
-            source = "Southampton"
-            agent_id = "car-"+str(np.random.randint(1, 100))
-            agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id=agent_id)
-            agent.connect(target=source + "-core")
-            context.set("connection", source)
-            context.set("agent", agent)
-            loc = agent.get_from_core("location")
-            context.setIfAbsent('x', loc.lat)
-            context.setIfAbsent('y', loc.lon)
-
         return True
 
     def configure(self, definition: dict=None):
@@ -89,51 +105,86 @@ class PickLocation(BehaveTreeTaskNode.BehaveTreeTaskNode):
             )
         )
 
-class QueryNodes(BehaveTreeTaskNode.BehaveTreeTaskNode):
+
+class IsThisANetworkCrawler(BehaveTreeTaskNode.BehaveTreeTaskNode):
+    @has_logger
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution' = None,
+             prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode' = None):
+        self.log.update_local_name(context.get("index"))
+
+        if prev and prev[0] in self.children:
+            return True
+
+        mode = context.get("movement_type")
+        if mode != MovementType.CRAWL_ON_NODES:
+            return False
+
+        return self.children[0]
+
+    def configure(self, definition: dict = None):
+        super().configure(definition=definition)
+
+
+class IsThisAPathFollower(BehaveTreeTaskNode.BehaveTreeTaskNode):
+    @has_logger
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution' = None,
+             prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode' = None):
+        self.log.update_local_name(context.get("index"))
+
+        if prev and prev[0] in self.children:
+            return True
+
+        mode = context.get("movement_type")
+        if mode != MovementType.FOLLOW_PATH:
+            return False
+
+        return self.children[0]
+
+    def configure(self, definition: dict = None):
+        super().configure(definition=definition)
+
+
+class QueryNodesToMoveTo(BehaveTreeTaskNode.BehaveTreeTaskNode):
+    @has_logger
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
+        self.log.update_local_name(context.get("index"))
 
-        #waypoints = context.get('waypoints')
-        #if waypoints == None or waypoints == []:
-        #    print("GOAL!!!!")
-        #    return True
-
-        #waypoint = waypoints.pop(0)
-        #context.set('waypoints', waypoints)
-
-
-        print("tick")
         agent = context.get("agent")
         target = context.get("target")
 
-        print(target)
-        print(agent)
         query = build_query(target)
 
         result = best_oef_core(agent.search(query))
         if result is not None:
-            print(result)
+            self.info(result)
             agent.swap_core(result)
             context.set("connection", result.key.decode("UTF-8").replace("-core", ""))
         else:
             return True
+
         loc = agent.get_from_core("location")
-
         if loc is None:
-            print(result)
-            print(agent.connections)
-            print("NOOO")
+            self.info("Agent at target location!")
             return True
+        x = loc.lat
+        y = loc.lon
 
-        dx = loc.lat - context.get('x')
-        dy = loc.lon - context.get('y')
+        context.set('moveto-x', x)
+        context.set('moveto-y', y)
 
-        context.set('moveto-x', loc.lat)
-        context.set('moveto-y', loc.lon)
+        dx = x - context.get('x')
+        dy = y - context.get('y')
 
-        print("NEW INTERMEDIATE GOAL:", context.get('moveto-x') , context.get('moveto-y') )
+        self.info("NEW INTERMEDIATE GOAL:", context.get('moveto-x'), context.get('moveto-y'), " dx dy", dx, dy)
         dist = math.sqrt(dx*dx + dy*dy)
         if dist != 0.0:
             context.set('delta-x', (dx/dist) * 5 )
@@ -145,29 +196,79 @@ class QueryNodes(BehaveTreeTaskNode.BehaveTreeTaskNode):
         super().configure(definition=definition)
 
 
-class DoMovement(BehaveTreeTaskNode.BehaveTreeTaskNode):
+class QueryNearestNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
+    @has_logger
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution' = None,
+             prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode' = None):
+        self.log.update_local_name(context.get("index"))
+
+        agent = context.get("agent")
+
+        x = context.get("x")
+        y = context.get("y")
+
+        target_loc = context.get("target")
+
+        query = build_query([x, y], ttl=3)
+        result = best_oef_core(agent.search(query))
+        if result is not None:
+            self.info(result)
+            agent.swap_core(result)
+            context.set("connection", result.key.decode("UTF-8").replace("-core", ""))
+
+        dx = target_loc[0] - x
+        dy = target_loc[1] - y
+
+        context.set('moveto-x', target_loc[0])
+        context.set('moveto-y', target_loc[1])
+
+        dist = math.sqrt(dx*dx + dy*dy)
+
+        if dist < 10:
+            return True
+
+        if dist != 0.0:
+            context.set('delta-x', (dx/dist) * np.random.randint(2, 5)*np.random.choice([-2, -1, 1], p=[0.08, 0.12, 0.8]) )
+            context.set('delta-y', (dy/dist) * np.random.randint(2, 5)*np.random.choice([-2, -1, 1], p=[0.08, 0.12, 0.8]) )
+
+        return False
+
+    def configure(self, definition: dict = None):
+        super().configure(definition=definition)
+
+
+class DoMovement(BehaveTreeTaskNode.BehaveTreeTaskNode):
+    @has_logger
+    def __init__(self, *args, **kwargs):
+        self.one_step = False
+        super().__init__(*args, **kwargs)
+
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
+        self.log.update_local_name(context.get("index"))
 
         # are we at our next location?
 
         dx = context.get('moveto-x') - context.get('x')
         dy = context.get('moveto-y') - context.get('y')
-
-        if math.sqrt(dx*dx + dy*dy) < 20:
-            print("AT WAYPOINT/TARGET")
+        if math.sqrt(dx*dx + dy*dy) < 10:
+            self.info("AT WAYPOINT/TARGET")
             return False # go back to QueryNodes
 
         # do some more movement.
 
         context.set('x', context.get('x') + context.get('delta-x'))
         context.set('y', context.get('y') + context.get('delta-y'))
+        if self.one_step == 1:
+            return False
+
         return self
 
     def configure(self, definition: dict=None):
         super().configure(definition=definition)
+        self.one_step = definition.get("one_step", False)
 
 
 class Snooze(BehaveTreeTaskNode.BehaveTreeTaskNode):
@@ -220,23 +321,56 @@ TREE = """
       "y-hi": 699
     },
     {
-      "node": "loop-until-success",
-      "name": "moving loop",
-      "children":
-      [
-        {
-          "node": "QueryNodes",
-          "name": "QueryNodes"
-        },
-        {
-          "node": "yield",
-          "result": 0
-        },
-        {
-          "node": "DoMovement",
-          "name": "DoMovement"
-        }
-      ]
+        "node": "first",
+        "name": "AgentMovementTypeSelector",
+        "children": [
+            {
+                "node": "IsThisANetworkCrawler",
+                "name": "IsThisANetworkCrawler",
+                "children": [{
+                    "node": "loop-until-success",
+                    "name": "network crawler moving loop",
+                    "children": [
+                        {
+                            "node": "QueryNodesToMoveTo",
+                            "name": "QueryNodesToMoveTo"
+                        },
+                        {
+                            "node": "yield",
+                            "result": 0
+                        },
+                        {
+                            "node": "DoMovement",
+                            "name": "DoMovement",
+                            "one_step": 0
+                        }
+                    ]
+                }]
+            },
+            {
+                "node": "IsThisAPathFollower",
+                "name": "IsThisAPathFollower",
+                "children": [{
+                    "node": "loop-until-success",
+                    "name": "path follower moving loop",
+                    "children": [
+                        {
+                            "node": "QueryNearestNode",
+                            "name": "QueryNearestNode"
+                        },
+                        {
+                            "node": "yield",
+                            "result": 0
+                        },
+                        {
+                            "node": "DoMovement",
+                            "name": "DoMovement2",
+                            "one_step": 1
+                        }
+                    ]
+                }]
+            }
+        ]
     }
   ]
 }
@@ -250,7 +384,13 @@ class CrawlerAgentBehaviour(BehaveTree.BehaveTree):
         ).addBuilder(
             'PickLocation', lambda x: PickLocation(x)
         ).addBuilder(
-            'QueryNodes', lambda x: QueryNodes(x)
+            'QueryNodesToMoveTo', lambda x: QueryNodesToMoveTo(x)
+        ).addBuilder(
+            'QueryNearestNode', lambda x: QueryNearestNode(x)
+        ).addBuilder(
+            'IsThisANetworkCrawler', lambda x: IsThisANetworkCrawler(x)
+        ).addBuilder(
+            'IsThisAPathFollower', lambda x: IsThisAPathFollower(x)
         ).addBuilder(
             'DoMovement', lambda x: DoMovement(x)
         ).addBuilder(
