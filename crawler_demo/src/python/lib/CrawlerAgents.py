@@ -5,9 +5,11 @@ from svg_output.src.python.lib import SvgGraph
 from svg_output.src.python.lib import SvgElements
 from behaviour_tree.src.python.lib import BehaveTreeExecution
 from crawler_demo.src.python.lib.SearchNetwork import SearchNetwork, ConnectionFactory
+from utils.src.python.Logging import has_logger
 
 
 class CrawlerAgents(object):
+    @has_logger
     def __init__(self, connection_factory, grid):
         self.tree = CrawlerAgentBehaviour.CrawlerAgentBehaviour()
         self.grid = grid
@@ -55,6 +57,8 @@ class CrawlerAgents(object):
             for agent
             in self.agents
         ]
+
+        self.info(locations)
 
         colour1 = "white"
         colour2 = "black"

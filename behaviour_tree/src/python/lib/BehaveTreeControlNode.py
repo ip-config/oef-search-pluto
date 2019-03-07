@@ -20,14 +20,11 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         }[self.kind]
 
     def configure(self, definition: dict=None):
-         self.exception("CONFIGURE")
-         self.smth = "fdfdfg"
          super().configure(definition)
          for k in {
              "yield": [ "result" ],
          }.get(self.kind, []):
              setattr(self, k, definition.get(k, None))
-         self.warning(self, dir(self))
 
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
         #print("SELF=", self, " kind=", self.kind)

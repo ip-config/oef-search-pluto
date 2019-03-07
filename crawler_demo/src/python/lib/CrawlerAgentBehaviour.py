@@ -15,10 +15,10 @@ from utils.src.python.Logging import has_logger
 from enum import Enum
 
 
-def build_query(target=(200, 200)):
+def build_query(target=(200, 200), ttl=1):
     q = query_pb2.Query()
     q.model.description = "weather data"
-    q.ttl = 1
+    q.ttl = ttl
     q.directed_search.target.geo.lat = target[0]
     q.directed_search.target.geo.lon = target[1]
     return q
@@ -114,7 +114,6 @@ class IsThisANetworkCrawler(BehaveTreeTaskNode.BehaveTreeTaskNode):
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution' = None,
              prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode' = None):
         self.log.update_local_name(context.get("index"))
-        self.info("tick")
 
         if prev and prev[0] in self.children:
             return True
@@ -137,7 +136,7 @@ class IsThisAPathFollower(BehaveTreeTaskNode.BehaveTreeTaskNode):
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution' = None,
              prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode' = None):
         self.log.update_local_name(context.get("index"))
-        self.info("tick")
+
         if prev and prev[0] in self.children:
             return True
 
@@ -158,13 +157,6 @@ class QueryNodesToMoveTo(BehaveTreeTaskNode.BehaveTreeTaskNode):
 
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
         self.log.update_local_name(context.get("index"))
-        #waypoints = context.get('waypoints')
-        #if waypoints == None or waypoints == []:
-        #    print("GOAL!!!!")
-        #    return True
-
-        #waypoint = waypoints.pop(0)
-        #context.set('waypoints', waypoints)
 
         agent = context.get("agent")
         target = context.get("target")
@@ -220,7 +212,7 @@ class QueryNearestNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
 
         target_loc = context.get("target")
 
-        query = build_query([x, y])
+        query = build_query([x, y], ttl=3)
         result = best_oef_core(agent.search(query))
         if result is not None:
             self.info(result)
@@ -261,7 +253,6 @@ class DoMovement(BehaveTreeTaskNode.BehaveTreeTaskNode):
 
         dx = context.get('moveto-x') - context.get('x')
         dy = context.get('moveto-y') - context.get('y')
-        self.info("MOVE")
         if math.sqrt(dx*dx + dy*dy) < 10:
             self.info("AT WAYPOINT/TARGET")
             return False # go back to QueryNodes
@@ -270,12 +261,7 @@ class DoMovement(BehaveTreeTaskNode.BehaveTreeTaskNode):
 
         context.set('x', context.get('x') + context.get('delta-x'))
         context.set('y', context.get('y') + context.get('delta-y'))
-
-        print(self.name, self.one_step, context.get("x"))
-        print(self.name, context.get("delta-x"))
-
         if self.one_step == 1:
-            print("Return false")
             return False
 
         return self
