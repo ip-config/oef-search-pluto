@@ -204,8 +204,8 @@ class UpdateData:
                 raise InvalidAttribute("Key", "OEFCorePublicKey", "bytes", "Required key field not set!")
             if origin.HasField("data_model"):
                 upd_list.append(self.updFromDataModel(key, origin.data_model))
-            for dm in origin.data_models:
-                upd_list.append(self.updFromDataModel(key, dm))
+            for dm_instance in origin.data_models:
+                upd_list.append(self.updFromDataModel(key, dm_instance.model))
             for attr in origin.attributes:
                 upd_list.append(self.updFromAttribute(key, attr))
         upd = dap_update_pb2.DapUpdate()

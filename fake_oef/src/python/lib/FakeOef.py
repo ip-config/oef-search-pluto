@@ -94,7 +94,9 @@ class FakeOef(FakeBase.FakeBase, SupportsConnectionInterface):
             else:
                 dm = query_pb2.Query.DataModel()
                 dm.ParseFromString(service_update)
-            upd.data_models.extend([dm])
+            dm_instance = update_pb2.Update.DataModelInstance()
+            dm_instance.model.CopyFrom(dm)
+            upd.data_models.extend([dm_instance])
         self.service_directory[agent_id] = service_update
         await self.search_com.call_node("update", upd)
 
