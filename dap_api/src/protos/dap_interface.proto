@@ -1,0 +1,86 @@
+syntax = "proto2";
+
+message DescribeResponse
+{
+}
+
+message UpdateRequest
+{
+}
+
+message UpdateResponse
+{
+        message Failed
+        {
+                optional string message    = 1;
+                optional string table_name = 2;
+                optional string core_key   = 3;
+                optional string field_name = 4;
+                optional string value_type = 5;
+                optional string field_type = 6;
+                optional string value      = 7;
+        }
+        optional Failed failure = 1;
+}
+
+message RemoveRequest
+{
+        repeated Identifier key = 1;
+}
+
+message RemoveAll
+{
+}
+
+message ConstructQueryObjectRequest
+{
+}
+
+message ValueMessage
+{
+        required string typecode    = 1;
+
+// LOCATION is encoded into the doubles
+// EMBEDDING is encoded into the doubles
+
+        optional string s  = 2;
+        optional float f   = 3;
+        optional double d  = 4;
+        optional int32 i32 = 5;
+        optional int64 i64 = 6;
+        optional bool b    = 7;
+
+        repeated string v_s  = 102;
+        repeated float v_f   = 103;
+        repeated double v_d  = 104;
+        repeated int32 v_i32 = 105;
+        repeated int64 v_i64 = 106;
+        repeated bool v_b    = 107;
+}
+
+message ConstructQueryConstraintObjectRequest
+{
+        required string operator = 1;
+        required ValueMessage query_field_value = 2;
+        required string query_field_type = 3;
+        required string target_field_name = 4;
+        required string target_field_type = 5;
+        required string target_table_name = 6;
+        required string dap_name = 7;
+}
+
+message ConstructQueryMementoResponse
+{
+        optional bytes memento = 1;
+}
+
+message Identifier
+{
+        required string core = 1;
+}
+
+message IdentifierSequence
+{
+        required bool originator = 1;
+        repeated Identifier identifiers = 2;
+}
