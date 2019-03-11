@@ -207,7 +207,6 @@ class SearchEngine(DapInterface):
             #        leaf.target_field_type
             #        )
             #    );
-            print("ok")
             self.enc_query = np.zeros((searchSystem._encoding_dim,))
             if leaf.query_field_type == "string":
                 self.enc_query = np.add(self.enc_query, searchSystem._string_to_vec(leaf.query_field_value))

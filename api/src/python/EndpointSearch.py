@@ -45,22 +45,29 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
         resp = response_pb2.SearchResponse()
         query = self._proto_wrapper.get_instance(msg.model)
         result = self._dap_manager.execute(query.toDapQuery())
-        items = []
+        items = {}
         for element in result:
-            item = response_pb2.SearchResponse.Item()
-            addresses = self._address_registry.resolve(element())
-            if len(addresses) > 0:
-                address = addresses[0]
-                item.ip = address.ip
-                item.port = address.port
-                item.key = element()
+            core, agent_id = element(True)
+            print(core)
+            print(agent_id)
+            if core not in items:
+                item = response_pb2.SearchResponse.Item()
+                addresses = self._address_registry.resolve(core)
+                if len(addresses) > 0:
+                    address = addresses[0]
+                    item.ip = address.ip
+                    item.port = address.port
+                    item.key = core
                 #item.info = data model names registered with this oef
-            else:
-                self.log.warning("Ignoring result because no address found!")
-                print("Query: ", msg)
-                print("Result: ", element)
-                continue
-            item.score = element.score
-            items.append(item)
-        resp.result.extend(items)
+                else:
+                    self.log.warning("Ignoring result because no address found!")
+                    print("Query: ", msg)
+                    print("Result: ", element)
+                    continue
+                item.score = element.score
+                items[core] = item
+            agent = items[core].agents.add()
+            agent.key = agent_id
+        print(items)
+        resp.result.extend(items.values())
         return resp

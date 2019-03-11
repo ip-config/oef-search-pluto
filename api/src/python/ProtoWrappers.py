@@ -103,7 +103,8 @@ class ValueTransformer(object):
         7: (7, "i32", "i32", identity_transformer.__get__(object)),
         8: (8, "b", "b", identity_transformer.__get__(object)),
         9: (9, "l", "l", identity_transformer.__get__(object)),
-        10: (10, "a", "a", address_transformer.__get__(object))
+        10: (10, "a", "a", address_transformer.__get__(object)),
+        11: (11, "kv", "kv", address_transformer.__get__(object))
     }
 
     @classmethod
@@ -160,11 +161,13 @@ class UpdateData:
         upd.dm.description = origin.data_model.description
         upd.dm.attributes.extend(origin.data_model.attributes)
 
-    def updFromDataModel(self, key, data_model):
+    def updFromDataModel(self, key, data_model, agent_id=None):
         upd = dap_update_pb2.DapUpdate.TableFieldValue()
         upd.tablename = self.db_structure["data_model"]["table"]
         upd.fieldname = self.db_structure["data_model"]["field"]
         upd.key.core = key
+        if not agent_id is None:
+            upd.key.agent = agent_id
         upd.value.type = 6
 
         upd.value.dm.name = data_model.name
@@ -205,7 +208,7 @@ class UpdateData:
             if origin.HasField("data_model"):
                 upd_list.append(self.updFromDataModel(key, origin.data_model))
             for dm_instance in origin.data_models:
-                upd_list.append(self.updFromDataModel(key, dm_instance.model))
+                upd_list.append(self.updFromDataModel(key, dm_instance.model, dm_instance.key))
             for attr in origin.attributes:
                 upd_list.append(self.updFromAttribute(key, attr))
         upd = dap_update_pb2.DapUpdate()
