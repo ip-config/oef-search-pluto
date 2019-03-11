@@ -56,7 +56,7 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
                 item.key = element()
                 #item.info = data model names registered with this oef
             else:
-                self.log.warn("Ignoring result because no address found!")
+                self.log.warning("Ignoring result because no address found!")
                 print("Query: ", msg)
                 print("Result: ", element)
                 continue

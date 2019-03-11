@@ -68,16 +68,16 @@ class AddressRegistry(DapInterface.DapInterface):
                 k, v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
 
                 if upd.fieldname not in self.fields:
-                    raise DapBadUpdateRow("No such field", None, upd.key, upd.fieldname, k)
+                    raise DapBadUpdateRow("No such field", None, upd.key.core, upd.fieldname, k)
                 else:
                     tbname = self.fields[upd.fieldname]["tablename"]
                     ftype = self.fields[upd.fieldname]["type"]
 
                 if ftype != k:
-                    raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, k)
+                    raise DapBadUpdateRow("Bad type", tbname, upd.key.core, upd.fieldname, k)
 
                 if commit:
-                    self.store.setdefault(tbname, {}).setdefault(upd.key, {})[upd.fieldname] = v
+                    self.store.setdefault(tbname, {}).setdefault(upd.key.core, {})[upd.fieldname] = v
 
     def resolve(self, key):
         address = []
@@ -100,16 +100,16 @@ class AddressRegistry(DapInterface.DapInterface):
                 k, v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
 
                 if upd.fieldname not in self.fields:
-                    raise DapBadUpdateRow("No such field", None, upd.key, upd.fieldname, k)
+                    raise DapBadUpdateRow("No such field", None, upd.key.core, upd.fieldname, k)
                 else:
                     tbname = self.fields[upd.fieldname]["tablename"]
                     ftype = self.fields[upd.fieldname]["type"]
 
                 if ftype != k:
-                    raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, k)
+                    raise DapBadUpdateRow("Bad type", tbname, upd.key.core, upd.fieldname, k)
 
                 if commit:
-                    success |= self.store[tbname][upd.key].pop(upd.fieldname, None) is not None
+                    success |= self.store[tbname][upd.key.core].pop(upd.fieldname, None) is not None
         return success
 
     def removeAll(self, key):

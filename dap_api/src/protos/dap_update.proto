@@ -5,29 +5,34 @@ import "fetch_teams/oef_core_protocol/query.proto";
 message DapUpdate {
 
    message Address {
-        string ip = 1;
-        uint32 port = 2;
+     string ip = 1;
+     uint32 port = 2;
+   }
+   message DapValue {
+     int32 type = 1;
+     // type 1 == NONE, all others match fieldname below.
+     string s = 2;
+     int64 i = 3;
+     float f = 4;
+     double d = 5;
+
+     fetch.oef.pb.Query.DataModel dm = 6;
+
+     int32 i32 = 7;
+     bool b = 8;
+     fetch.oef.pb.Query.Location l = 9;
+     Address a = 10;
+     fetch.oef.pb.Query.KeyValue kv = 11;
    }
 
-  message DapValue {
-    int32 type = 1;
-    // type 1 == NONE, all others match fieldname below.
-    string s = 2;
-    int64 i = 3;
-    float f = 4;
-    double d = 5;
-
-    fetch.oef.pb.Query.DataModel dm = 6;
-
-    int32 i32 = 7;
-    bool b = 8;
-    fetch.oef.pb.Query.Location l = 9;
-    Address a = 10;
-  }
+   message KeyType {
+     bytes core = 1;
+     bytes agent = 2;
+   }
 
   message TableFieldValue {
     string tablename = 1;
-    bytes key = 2;
+    KeyType key = 2;
     string fieldname = 3;
     DapValue value = 4;
   }

@@ -210,6 +210,7 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
                 return []
             data = query.SerializeToString()
         elif path == "update":
+            self.error("GOT update", data)
             if isinstance(data, update_pb2.Update):
                 data = data.SerializeToString()
         result = await self.callMe(path, data)

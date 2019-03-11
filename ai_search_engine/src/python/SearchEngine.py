@@ -134,12 +134,12 @@ class SearchEngine(DapInterface):
             k, v = "dm", upd.value.dm
             tbname = self.tablenames[0]
             if upd.fieldname not in self.structure[tbname]:
-                raise DapBadUpdateRow("No such field", tbname, upd.key, upd.fieldname, k)
+                raise DapBadUpdateRow("No such field", tbname, upd.key.core, upd.fieldname, k)
 
             field_type = self.structure[tbname][upd.fieldname]['type']
             if field_type != 'embedding':
-                raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, field_type, k)
-            row = self.store.setdefault(tbname, {}).setdefault(upd.key, {})
+                raise DapBadUpdateRow("Bad type", tbname, upd.key.core, upd.fieldname, field_type, k)
+            row = self.store.setdefault(tbname, {}).setdefault(upd.key.core, {}).setdefault(upd.key.agent, {})
             row[v.name] = v
             row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)
 
@@ -154,17 +154,17 @@ class SearchEngine(DapInterface):
             k, v = "dm", upd.value.dm
             tbname = self.tablenames[0]
             if upd.fieldname not in self.structure[tbname]:
-                raise DapBadUpdateRow("No such field", tbname, upd.key, upd.fieldname, k)
+                raise DapBadUpdateRow("No such field", tbname, upd.key.core, upd.fieldname, k)
 
             field_type = self.structure[tbname][upd.fieldname]['type']
             if field_type != 'embedding':
-                raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, field_type, k)
+                raise DapBadUpdateRow("Bad type", tbname, upd.key.core, upd.fieldname, field_type, k)
             try:
-                row = self.store[tbname][upd.key]
+                row = self.store[tbname][upd.key.core][upd.key.agent]
                 success |= row.pop(v.name, None) is not None
                 row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)
                 if np.sum(row[upd.fieldname]) == 0:
-                    self.store[tbname].pop(upd.key)
+                    self.store[tbname][upd.key.core].pop(upd.key.agent, None)
             except KeyError:
                 pass
         return success
@@ -207,7 +207,7 @@ class SearchEngine(DapInterface):
             #        leaf.target_field_type
             #        )
             #    );
-
+            print("ok")
             self.enc_query = np.zeros((searchSystem._encoding_dim,))
             if leaf.query_field_type == "string":
                 self.enc_query = np.add(self.enc_query, searchSystem._string_to_vec(leaf.query_field_value))
@@ -222,30 +222,37 @@ class SearchEngine(DapInterface):
 
             self._ss = searchSystem
 
-        def execute(self, oef_cores: List[DapQueryResult] = None):
-            if oef_cores == []:
+        def execute(self, key_selector: List[DapQueryResult] = None):
+            if key_selector == []:
                 return []
 
             key_list = []
-            if oef_cores is None:
-                key_list = self._ss.store[self.target_table_name].keys()
+            if key_selector is None:
+                key_list = []
+                for core in self._ss.store[self.target_table_name].keys():
+                    agents = self._ss.store[self.target_table_name][core].keys()
+                    if len(agents) > 0:
+                        for agent in agents:
+                            key_list.append((core, agent))
+                    else:
+                        key_list.append(core)
             else:
-                for key in oef_cores:
-                    key_list.append(key())
+                for key in key_selector:
+                    key_list.append(key(True))
 
             result = []
             for key in key_list:
-                data = self._ss.store[self.target_table_name][key]
+                data = self._ss.store[self.target_table_name][key[0]][key[1]]
                 dist = distance.cosine(data[self.target_field_name], self.enc_query)
-                result.append((key, dist))
-            ordered = sorted(result, key=lambda x: x[1])
-            res = DapQueryResult(ordered[0][0])
-            res.score = ordered[0][1]
+                result.append((*key, dist))
+            ordered = sorted(result, key=lambda x: x[2])
+            res = DapQueryResult(ordered[0][0], ordered[0][1])
+            res.score = ordered[0][2]
             yield res
             for i in range(1, len(ordered)):
-                if ordered[i][1] < 0.2:
-                    res = DapQueryResult(ordered[i][0])
-                    res.score = ordered[i][1]
+                if ordered[i][2] < 0.2:
+                    res = DapQueryResult(ordered[i][0], ordered[i][1])
+                    res.score = ordered[i][2]
                     yield res
 
     def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.Leaf) -> SubQueryInterface:

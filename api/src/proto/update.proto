@@ -56,11 +56,12 @@ message Update {
             string key = 1;
             Attribute.ValueType value = 2;
         }
-
-        fetch.oef.pb.Query.DataModel model = 1;
-        repeated KeyValue values = 2;
+        bytes key = 1;
+        fetch.oef.pb.Query.DataModel model = 2;
+        repeated fetch.oef.pb.Query.KeyValue values = 3;
     }
 
+    //todo remove
     message BulkUpdate {
         repeated Update list = 1;
     }

@@ -164,7 +164,7 @@ class UpdateData:
         upd = dap_update_pb2.DapUpdate.TableFieldValue()
         upd.tablename = self.db_structure["data_model"]["table"]
         upd.fieldname = self.db_structure["data_model"]["field"]
-        upd.key = key
+        upd.key.core = key
         upd.value.type = 6
 
         upd.value.dm.name = data_model.name
@@ -187,7 +187,7 @@ class UpdateData:
                 db_name = "default"
         upd.tablename = sdb[db_name]["table"]
         upd.fieldname = sdb[db_name]["field"]
-        upd.key = key
+        upd.key.core = key
         upd.value.CopyFrom(ValueTransformer.transform(attribute.value))
         return upd
 

@@ -88,13 +88,15 @@ class FakeOef(FakeBase.FakeBase, SupportsConnectionInterface):
         if not isinstance(service_update, update_pb2.Update):
             upd = update_pb2.Update()
             upd.key = self._bin_id
+            dm_instance = update_pb2.Update.DataModelInstance()
+            dm_instance.key = agent_id.encode("UTF-8")
             if isinstance(service_update, query_pb2.Query.Instance):
                 dm = service_update.model
+                dm_instance.values.extend(service_update.values)
                 #TODO service_update.values
             else:
                 dm = query_pb2.Query.DataModel()
                 dm.ParseFromString(service_update)
-            dm_instance = update_pb2.Update.DataModelInstance()
             dm_instance.model.CopyFrom(dm)
             upd.data_models.extend([dm_instance])
         self.service_directory[agent_id] = service_update
