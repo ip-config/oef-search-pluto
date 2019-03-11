@@ -1,9 +1,12 @@
 from abc import ABC
 from abc import abstractmethod
+import json
 
 from fetch_teams.oef_core_protocol import query_pb2
 
 from dap_api.src.python import DapQueryRepnFromProtoBuf
+from dap_api.src.protos import dap_interface_pb2
+from dap_api.src.python import DapInterface
 
 class DapQueryRepn(object):
 
@@ -18,6 +21,7 @@ class DapQueryRepn(object):
             self.common_target_table_name = None
             self.common_dap_name = None
             self.name = "?"
+            self.query = None
 
         def Clear(self):
             self.leaves = []
@@ -81,9 +85,27 @@ class DapQueryRepn(object):
 
             self.dap_name          = dap_name
             self.name = "?"
+            self.query = None
+            self.memento = None
+
+        def toProto(self):
+                pb = dap_interface_pb2.ConstructQueryConstraintObjectRequest()
+
+                v = DapInterface.encodeConstraintValue(self.query_field_value, self.query_field_type)
+
+                pb.query_field_value.CopyFrom(v)
+
+                pb.operator          = self.operator
+                pb.query_field_type  = self.query_field_type 
+                pb.target_field_name = self.target_field_name
+                pb.target_field_type = self.target_field_type
+                pb.target_table_name = self.target_table_name
+                pb.dap_name          = self.dap_name
+
+                return pb
 
         def printable(self):
-            return "Leaf {} -- {}.{}.{} ({}) {} {} ({}) ==> {}".format(
+            return "Leaf {} -- {}.{}.{} ({}) {} {} ({}) ==> {}  {} {}".format(
                 self.name,
                 self.dap_name,
                 self.target_table_name,
@@ -93,6 +115,8 @@ class DapQueryRepn(object):
                 self.query_field_value,
                 self.query_field_type,
                 getattr(self, "row_processor", "None"),
+                "QUERY" if self.query else "NO_QUERY",
+                "MEM" if self.memento else "NO_MEM",
                 )
 
     class Visitor(ABC):

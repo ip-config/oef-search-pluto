@@ -1,10 +1,16 @@
 import sys
 import inspect
+import json
 
 from dap_api.src.python import DapOperatorFactory
 from dap_api.src.python import DapQuery
+from dap_api.src.python import DapQueryResult
+from dap_api.src.python import DapInterface
 from dap_api.src.python import DapQueryRepn
 from dap_api.src.protos import dap_update_pb2
+from dap_api.src.python import SubQueryInterface
+from dap_api.src.protos import dap_interface_pb2
+
 
 class DapManager(object):
     class PopulateFieldInformationVisitor(DapQueryRepn.DapQueryRepn.Visitor):
@@ -53,7 +59,9 @@ class DapManager(object):
 
         def visitLeaf(self, node, depth):
             #print("Hello " + node.dap_name + ". Would you like to make a constraint from " + node.printable())
-            node.query = self.dapmanager.getInstance(node.dap_name).constructQueryConstraintObject(node)
+            pb = node.toProto()
+            node.memento = self.dapmanager.getInstance(node.dap_name).prepareConstraint(pb)
+            print("MEMENTO ===> ",node.memento)
 
     # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
     class EmbeddingInfo(object):
@@ -198,41 +206,58 @@ class DapManager(object):
         return list(self._execute(dapQueryRepn.root))
 
     def _execute(self, node, cores=None):
-        if node.query:
-            yield from node.query.execute(cores)
-        elif node.combiner == "any":
+        if node.combiner == "any":
             yield from self._executeOr(node, cores)
         elif node.combiner == "all":
             yield from self._executeAnd(node, cores)
         else:
             raise Exception("Node combiner '{}' not handled.".format(node.combiner))
 
+    def _executeLeaf(self, node, cores=None):
+        print("_executeLeaf")
+        if node.query:
+            yield from node.query.execute(cores)
+        elif node.memento:
+            results = self.getInstance(node.dap_name).execute(node.memento, DapInterface.coresToIdentifierSequence(cores))
+            for identifier in results.identifiers:
+                yield DapQueryResult.DapQueryResult(identifier.core)
+        else:
+            print(node.printable())
+            raise Exception("Node didn't compile")
+
     def _executeOr(self, node, cores=None):
+        print("_executeOr")
         for n in node.subnodes:
             yield from self._execute(n, cores)
         for n in node.leaves:
-            yield from n.query.execute()
+            yield from self._executeLeaf(n, cores)
 
     # This is naive -- there's a functional way of making this more efficient.
     def _executeAnd(self, node, cores=None):
+        print("_executeAnd")
+        leafstart = 0
+        nodestart = 0
+
         if cores is None:
             if len(node.leaves) > 0:
-                cores = list(node.leaves[0].query.execute())
+                cores = list(self._executeLeaf(node.leaves[0]))
+                leafstart = 1
 
         if cores is None:
             if len(node.subnodes) > 0:
                 cores = self._execute(node.subnodes[0])
+                nodestart = 1
 
         if cores is None or cores == []:
             return []
 
         cores = list(cores)
-        for n in node.leaves:
-            cores = list(n.query.execute(cores))
+        for n in node.leaves[leafstart:]:
+            cores = list(self._executeLeaf(n, cores))
             if len(cores) == 0:
                 return []
 
-        for n in node.subnodes:
+        for n in node.subnodes[nodestart:]:
             cores = list(self._execute(n, cores))
             if len(cores) == 0:
                 return []
