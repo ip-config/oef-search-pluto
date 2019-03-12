@@ -63,6 +63,21 @@ class DapQueryRepn(object):
             else:
                 self.leaves.append(new_child)
 
+        def toProto(self):
+            pb = dap_interface_pb2.ConstructQueryObjectRequest()
+            pb.operator = self.combiner
+
+            for leaf in self.leaves:
+                new_leaf = pb.constraints.add()
+                new_leaf.CopyFrom(leaf.toProto())
+
+            for child in self.subnodes:
+                new_child = pb.children.add()
+                new_child.CopyFrom(child.toProto())
+
+            return pb
+
+
     class Leaf(object):
         def __init__(self,
                 operator=None,
