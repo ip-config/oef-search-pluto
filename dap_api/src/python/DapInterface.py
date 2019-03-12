@@ -5,6 +5,8 @@ from typing import Callable
 from dap_api.src.python import DapQueryRepn
 from dap_api.src.python import SubQueryInterface
 from dap_api.src.protos import dap_interface_pb2
+from dap_api.src.protos import dap_description_pb2
+from dap_api.src.protos import dap_update_pb2
 
 class DapInterface(abc.ABC):
     def __init__():
@@ -18,50 +20,49 @@ class DapInterface(abc.ABC):
        DapDescription
     """
     @abstractmethod
-    def describe(self):
+    def describe(self) -> dap_description_pb2.DapDescription():
         pass
 
     """This function will be called with any update to this DAP.
 
     Args:
-      update (DapUpdate): The update for this DAP.
+      update (dap_update_pb2.DapUpdate): The update for this DAP.
 
     Returns:
       None
     """
     @abstractmethod
-    def update(self, update_data):
+    def update(self, update_data: dap_update_pb2.DapUpdate) -> dap_interface_pb2.Successfulness:
         pass
 
     """This function will be called when the core wants to remove data from search
-    
+
     Args:
-        update (DapUpdate): The data which needs to be removed
-        
+        remove_data (dap_update_pb2.DapUpdate): The data which needs to be removed
+
     Returns:
       None
     """
-    def remove(self, remove_data):
+    def remove(self, remove_data: dap_update_pb2.DapUpdate) -> dap_interface_pb2.Successfulness:
         pass
 
-    """This function will be called when the core wants to remove all of it's data from search
+    """Remove all the keys in the update[].key fields from the store.
 
         Args:
-            key (string): the core key
+          remove_data(dap_update_pb2.DapUpdate): The update containing removal keys
 
         Returns:
-          None
+          bool success indicator
         """
-
-    def removeAll(self, key):
-        pass
 
     @abstractmethod
     def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
         pass
 
-    def prepare(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> dap_interface_pb2.ConstructQueryMementoResponse:
-        return None
+    def prepare(self, proto: dap_interface_pb2.ConstructQueryObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
+        reply = dap_interface_pb2.ConstructQueryMementoResponse()
+        reply.success = False;
+        return reply
 
     @abstractmethod
     def execute(self, proto: dap_interface_pb2.ConstructQueryMementoResponse, input_idents: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:

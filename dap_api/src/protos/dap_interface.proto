@@ -11,9 +11,6 @@ message DescribeResponse
 {
 }
 
-message UpdateRequest
-{
-}
 
 message UpdateResponse
 {
@@ -28,19 +25,6 @@ message UpdateResponse
                 optional string value      = 7;
         }
         optional Failed failure = 1;
-}
-
-message RemoveRequest
-{
-        repeated Identifier key = 1;
-}
-
-message RemoveAll
-{
-}
-
-message ConstructQueryObjectRequest
-{
 }
 
 message ValueMessage
@@ -76,9 +60,17 @@ message ConstructQueryConstraintObjectRequest
         required string dap_name = 7;
 }
 
+message ConstructQueryObjectRequest
+{
+        optional string operator = 1;
+        repeated ConstructQueryConstraintObjectRequest constraints = 2;
+        repeated ConstructQueryObjectRequest children = 3;
+}
+
 message ConstructQueryMementoResponse
 {
-        optional bytes memento = 1;
+        optional bool success = 1;
+        optional bytes memento = 2;
 }
 
 message Identifier
@@ -90,4 +82,11 @@ message IdentifierSequence
 {
         required bool originator = 1;
         repeated Identifier identifiers = 2;
+}
+
+message Successfulness
+{
+        required bool success = 1;
+        optional int32 errorcode = 2;
+        repeated string narrative = 3;
 }

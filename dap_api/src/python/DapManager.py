@@ -2,6 +2,7 @@ import sys
 import inspect
 import json
 
+from utils.src.python.Logging import has_logger
 from dap_api.src.python import DapOperatorFactory
 from dap_api.src.python import DapQuery
 from dap_api.src.python import DapQueryResult
@@ -49,19 +50,17 @@ class DapManager(object):
         def visitNode(self, node, depth):
             if node.common_dap_name:
                 #print("Hello " + node.common_dap_name + ". Would you like to consume " + node.printable())
-                queryObject = self.dapmanager.getInstance(node.common_dap_name).constructQueryObject(node)
-                if queryObject:
-                    #print("Awesome, ta very.")
-                    node.query = queryObject
+
+                queryObject_pb = self.dapmanager.getInstance(node.common_dap_name).prepare(node.toProto())
+                if queryObject_pb.HasField('success') and queryObject_pb.success:
+                    node.memento = queryObject_pb.memento
                     return False
             #print("Okes, we'll recurse.")
             return True
 
         def visitLeaf(self, node, depth):
-            #print("Hello " + node.dap_name + ". Would you like to make a constraint from " + node.printable())
             pb = node.toProto()
             node.memento = self.dapmanager.getInstance(node.dap_name).prepareConstraint(pb)
-            print("MEMENTO ===> ",node.memento)
 
     # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
     class EmbeddingInfo(object):
@@ -71,6 +70,7 @@ class DapManager(object):
             self.FieldName = None
             self.TableName = None
 
+    @has_logger
     def __init__(self):
         self.instances = {}
         self.operator_factory = DapOperatorFactory.DapOperatorFactory()
@@ -136,19 +136,34 @@ class DapManager(object):
     def update(self, update: dap_update_pb2.DapUpdate):
         for upd in update.update:
             cls = self.getField(upd.fieldname)["dap"]
-            self.getInstance(cls).update(upd)
+            r = self.getInstance(cls).update(upd)
+            if r.success == False:
+                for m in r.narrative:
+                    self.log.error(m)
+            success &= r.success
+        return success
 
     def remove(self, remove: dap_update_pb2.DapUpdate):
-        success = False
+        success = True
         for upd in remove.update:
             cls = self.getField(upd.fieldname)["dap"]
-            success |= self.getInstance(cls).remove(upd)
+            r = self.getInstance(cls).remove(upd)
+            if r.success == False:
+                for m in r.narrative:
+                    self.log.error(m)
+            success &= r.success
         return success
 
     def removeAll(self, key):
-        success = False
+        success = True
+        update = dap_update_pb2.DapUpdate()
+        update.update.add().key = key
         for instance in self.instances:
-            success |= instance.removeAll(key)
+            r = instance.remove(update)
+            if r.success == False:
+                for m in r.narrative:
+                    self.log.error(m)
+            success &= r.success
         return success
 
     def _listClasses(self, module):
@@ -214,7 +229,6 @@ class DapManager(object):
             raise Exception("Node combiner '{}' not handled.".format(node.combiner))
 
     def _executeLeaf(self, node, cores=None):
-        print("_executeLeaf")
         if node.query:
             yield from node.query.execute(cores)
         elif node.memento:
@@ -222,11 +236,9 @@ class DapManager(object):
             for identifier in results.identifiers:
                 yield DapQueryResult.DapQueryResult(identifier.core)
         else:
-            print(node.printable())
             raise Exception("Node didn't compile")
 
     def _executeOr(self, node, cores=None):
-        print("_executeOr")
         for n in node.subnodes:
             yield from self._execute(n, cores)
         for n in node.leaves:
@@ -234,7 +246,6 @@ class DapManager(object):
 
     # This is naive -- there's a functional way of making this more efficient.
     def _executeAnd(self, node, cores=None):
-        print("_executeAnd")
         leafstart = 0
         nodestart = 0
 

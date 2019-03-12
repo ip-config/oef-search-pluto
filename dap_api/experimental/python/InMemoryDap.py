@@ -12,7 +12,8 @@ from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_api.src.python.DapInterface import decodeConstraintValue
 from dap_api.src.python.DapInterface import encodeConstraintValue
 from dap_api.src.protos import dap_update_pb2
-from dap_api.src.protos import dap_interface_pb2 as dap_interface
+from dap_api.src.protos import dap_interface_pb2
+from dap_api.src.protos import dap_update_pb2
 from dap_api.src.python.DapQueryResult import DapQueryResult
 from typing import List
 from dap_api.src.python.network.DapNetwork import network_support
@@ -80,38 +81,7 @@ class InMemoryDap(DapInterface.DapInterface):
     def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
         return None
 
-    # class ConstraintProcessor(SubQueryInterface.SubQueryInterface):
-    #     NAMES = [
-    #         "target_field_type",
-    #         "operator",
-    #         "query_field_type",
-    #         "query_field_value",
-    #     ]
-        
-    #     def __init__(self):
-    #         pass
-
-    #     def fromLeaf(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf):
-    #         self.values = {}
-    #         for k in ConstraintProcessor.NAMES:
-    #             values[k] = getattr(dapQueryRepnLeaf, k)
-
-    #     def toProto(self):
-    #         self.
-
-    #     def execute(self, agents=None):
-    #         rowProcessor = self.operatorFactory.createAttrMatcherProcessor(
-    #             self.values['target_field_type'],
-    #             self.values['operator'],
-    #             self.values['query_field_type'],
-    #             self.values['query_field_value'])
-    #         self.func = lambda row: rowProcessor(row.get(self.values['target_field_name'], None))
-
-    #     InMemoryDap.ConstraintProcessor(self, rowProcessor, dapQueryRepnLeaf.target_field_name)
-    #         yield from self.inMemoryDap.processRows(func, agents)
-
-
-    def execute(self, proto: dap_interface.ConstructQueryMementoResponse, input_idents: dap_interface.IdentifierSequence) -> dap_interface.IdentifierSequence:
+    def execute(self, proto: dap_interface_pb2.ConstructQueryMementoResponse, input_idents: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
         print("EXECUTE---------------")
         j = json.loads(proto.memento.decode("utf-8"))
         rowProcessor = self.operatorFactory.createAttrMatcherProcessor(
@@ -126,14 +96,14 @@ class InMemoryDap(DapInterface.DapInterface):
         else:
             idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
 
-        reply = dap_interface.IdentifierSequence()
+        reply = dap_interface_pb2.IdentifierSequence()
         reply.originator = False;
         for core in self.processRows(func, idents):
             c = reply.identifiers.add()
             c.core = core()
         return reply
 
-    def prepareConstraint(self, proto: dap_interface.ConstructQueryConstraintObjectRequest) -> dap_interface.ConstructQueryMementoResponse:
+    def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
         j = {}
         j['target_field_name'] = proto.target_field_name
         j['target_field_type'] = proto.target_field_type
@@ -141,7 +111,7 @@ class InMemoryDap(DapInterface.DapInterface):
         j['query_field_type'] = proto.query_field_type
         j['query_field_value'] = DapInterface.decodeConstraintValue(proto.query_field_value)
 
-        r = dap_interface.ConstructQueryMementoResponse()
+        r = dap_interface_pb2.ConstructQueryMementoResponse()
         r.memento = json.dumps(j).encode('utf8')
         return r
 
@@ -156,7 +126,10 @@ class InMemoryDap(DapInterface.DapInterface):
     Returns:
       None
     """
-    def update(self, update_data: dap_update_pb2.DapUpdate.TableFieldValue):
+    def update(self, update_data: dap_update_pb2.DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
+        r = dap_interface_pb2.Successfulness()
+        r.success = True
+
         for commit in [ False, True ]:
             upd = update_data
             if upd:
@@ -164,40 +137,34 @@ class InMemoryDap(DapInterface.DapInterface):
                 k, v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
 
                 if upd.fieldname not in self.fields:
-                    raise DapBadUpdateRow("No such field", None, upd.key.core, upd.fieldname, k)
+                    r.narrative.append("No such field  key={} fname={}".format(upd.key, upd.fieldname))
+                    r.success = False
                 else:
                     tbname = self.fields[upd.fieldname]["tablename"]
                     ftype = self.fields[upd.fieldname]["type"]
 
                 if ftype != k:
-                    raise DapBadUpdateRow("Bad type", tbname, upd.key.core, upd.fieldname, k)
+                    r.narrative.append("Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, upd.key, upd.fieldname, ftype, k))
+                    r.success = False
 
                 if commit:
-                    self.store.setdefault(tbname, {}).setdefault(upd.key.core, {})[upd.fieldname] = v
+                    self.store.setdefault(tbname, {}).setdefault(upd.key, {})[upd.fieldname] = v
+            if not r.success:
+                break
 
-    def remove(self, remove_data):
+        return r
+
+    def remove(self, remove_data) -> dap_interface_pb2.Successfulness:
+
+        r = dap_interface_pb2.Successfulness()
+        r.success = True
+
         success = False
         for commit in [ False, True ]:
             upd = remove_data
-            if upd:
-
-                k, v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
-
-                if upd.fieldname not in self.fields:
-                    raise DapBadUpdateRow("No such field", None, upd.key.core, upd.fieldname, k)
-                else:
-                    tbname = self.fields[upd.fieldname]["tablename"]
-                    ftype = self.fields[upd.fieldname]["type"]
-
-                if ftype != k:
-                    raise DapBadUpdateRow("Bad type", tbname, upd.key.core, upd.fieldname, k)
-
+            for tbname in self.store.keys():
                 if commit:
-                    success |= self.store[tbname][upd.key.core].pop(upd.fieldname, None) is not None
-        return success
-
-    def removeAll(self, key):
-        success = False
-        for tbname in self.store:
-            success |= self.store[tbname].pop(key, None) is not None
-        return success
+                    self.store[tbname].pop(upd.key)
+            if not r.success:
+                break
+        return r
