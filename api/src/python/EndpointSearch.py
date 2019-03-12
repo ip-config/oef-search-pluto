@@ -48,8 +48,6 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
         items = {}
         for element in result:
             core, agent_id = element(True)
-            print(core)
-            print(agent_id)
             if core not in items:
                 item = response_pb2.SearchResponse.Item()
                 addresses = self._address_registry.resolve(core)
@@ -68,6 +66,5 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
                 items[core] = item
             agent = items[core].agents.add()
             agent.key = agent_id
-        print(items)
         resp.result.extend(items.values())
         return resp

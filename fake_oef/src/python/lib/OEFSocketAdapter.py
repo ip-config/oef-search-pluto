@@ -107,6 +107,8 @@ class OEFSocketAdapter(SupportsConnectionInterface):
             self.error(qresp)
             for agent in qresp.result:
                 resp.agents.agents.append(agent.key.decode("UTF-8"))
+            self.error(resp)
+            no_answer = False
         elif case == "search_agents":
             self.error("Case %s not yet supported", case)
         if no_answer:

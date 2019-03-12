@@ -4,6 +4,7 @@ from dap_api.src.python import DapManager
 from ai_search_engine.src.python import SearchEngine
 from dap_api.experimental.python import InMemoryDap
 from dap_api.experimental.python import AddressRegistry
+from dap_api.experimental.python import DataModelInstanceStore
 import api.src.python.ProtoWrappers as ProtoWrappers
 from api.src.python.EndpointSearch import SearchQuery
 from api.src.python.EndpointUpdate import UpdateEndpoint, BlkUpdateEndpoint
@@ -72,6 +73,17 @@ class PlutoApp:
                             },
                         },
                     },
+                },
+                "data_model_store": {
+                    "class": "DataModelInstanceStore",
+                    "config": {
+                        "structure": {
+                            "local_dm_table": {
+                                "data_model_2": "dm",
+                                "dm_values": "keyvalue"
+                            },
+                        },
+                    },
                 }
             }
 
@@ -94,6 +106,8 @@ class PlutoApp:
             .attribute(AttrName.Value("CITY"), "location_table", "city")\
             .attribute(AttrName.Value("NETWORK_ADDRESS"), "address_registry_table", "address_field")\
             .default("default_table", "default_field")\
+            .data_model_2("local_dm_table", "data_model_2")\
+            .dm_values("local_dm_table", "dm_values")\
             .build()
 
         address_registry = self.dapManager.getInstance("address_registry")

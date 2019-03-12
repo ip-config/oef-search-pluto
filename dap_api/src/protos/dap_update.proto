@@ -22,7 +22,7 @@ message DapUpdate {
      bool b = 8;
      fetch.oef.pb.Query.Location l = 9;
      Address a = 10;
-     fetch.oef.pb.Query.KeyValue kv = 11;
+     repeated fetch.oef.pb.Query.KeyValue kv = 11;
    }
 
    message KeyType {

@@ -16,7 +16,8 @@ py_library(
         visibility = ["//visibility:public"],
         srcs=[
                 "InMemoryDap.py",
-                "AddressRegistry.py"
+                "AddressRegistry.py",
+                "DataModelInstanceStore.py"
         ],
         deps=[
                 "//dap_api/src/protos:py_dap_api_pb",

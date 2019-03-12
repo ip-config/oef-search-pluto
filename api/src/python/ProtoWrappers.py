@@ -121,7 +121,9 @@ class UpdateData:
     data_store = {
         "default": lambda table, field: {"default": UpdateData._table_entry(table, field)},
         "data_model": lambda table, field: {"data_model": UpdateData._table_entry(table,field)},
-        "attribute": lambda attrname, table, field: {"attributes": {attrname: UpdateData._table_entry(table, field)}}
+        "attribute": lambda attrname, table, field: {"attributes": {attrname: UpdateData._table_entry(table, field)}},
+        "data_model_2": lambda table, field: {"dm_instance_model": UpdateData._table_entry(table, field)},
+        "dm_values": lambda table, field: {"dm_instance_values": UpdateData._table_entry(table, field)}
     }
 
     def __init__(self, origin: update_pb2.Update, db_structure: dict, address_resolver):
@@ -161,10 +163,10 @@ class UpdateData:
         upd.dm.description = origin.data_model.description
         upd.dm.attributes.extend(origin.data_model.attributes)
 
-    def updFromDataModel(self, key, data_model, agent_id=None):
+    def updFromDataModel(self, key, data_model, agent_id=None, db_key="data_model"):
         upd = dap_update_pb2.DapUpdate.TableFieldValue()
-        upd.tablename = self.db_structure["data_model"]["table"]
-        upd.fieldname = self.db_structure["data_model"]["field"]
+        upd.tablename = self.db_structure[db_key]["table"]
+        upd.fieldname = self.db_structure[db_key]["field"]
         upd.key.core = key
         if not agent_id is None:
             upd.key.agent = agent_id
@@ -173,6 +175,18 @@ class UpdateData:
         upd.value.dm.name = data_model.name
         upd.value.dm.description = data_model.description
         upd.value.dm.attributes.extend(data_model.attributes)
+        return upd
+
+    def updFromDataModelValues(self, key, values, agent_id=None, db_key="dm_instance_values"):
+        upd = dap_update_pb2.DapUpdate.TableFieldValue()
+        upd.tablename = self.db_structure[db_key]["table"]
+        upd.fieldname = self.db_structure[db_key]["field"]
+        upd.key.core = key
+        if not agent_id is None:
+            upd.key.agent = agent_id
+        upd.value.type = 11
+
+        upd.value.kv.extend(values)
         return upd
 
     def updFromAttribute(self, key, attribute):
@@ -209,6 +223,9 @@ class UpdateData:
                 upd_list.append(self.updFromDataModel(key, origin.data_model))
             for dm_instance in origin.data_models:
                 upd_list.append(self.updFromDataModel(key, dm_instance.model, dm_instance.key))
+                if len(dm_instance.values)>0:
+                    upd_list.append(self.updFromDataModel(key, dm_instance.model, dm_instance.key, "dm_instance_model"))
+                    upd_list.append(self.updFromDataModelValues(key, dm_instance.values, dm_instance.key))
             for attr in origin.attributes:
                 upd_list.append(self.updFromAttribute(key, attr))
         upd = dap_update_pb2.DapUpdate()
