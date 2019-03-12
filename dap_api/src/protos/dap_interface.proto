@@ -1,5 +1,12 @@
 syntax = "proto2";
 
+message NoInputParameter {
+}
+
+message ErrorResponse {
+        optional string message = 1;
+}
+
 message DescribeResponse
 {
 }

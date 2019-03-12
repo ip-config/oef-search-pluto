@@ -15,6 +15,7 @@ from dap_api.src.protos import dap_update_pb2
 from dap_api.src.protos import dap_interface_pb2 as dap_interface
 from dap_api.src.python.DapQueryResult import DapQueryResult
 from typing import List
+from dap_api.src.python.network.DapNetwork import network_support
 
 
 class InMemoryDap(DapInterface.DapInterface):
@@ -22,6 +23,7 @@ class InMemoryDap(DapInterface.DapInterface):
     # configuration is a JSON deserialised config object.
     # structure is a map of tablename -> { fieldname -> type}
 
+    @network_support
     def __init__(self, name, configuration):
         self.store = {}
         self.name = name

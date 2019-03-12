@@ -5,6 +5,16 @@ import json
 from utils.src.python.Logging import get_logger
 
 
+def _process_tupple(data):
+    if isinstance(data, tuple):
+        if data[0] is None:
+            return data[1]
+        else:
+            return data[0]
+    else:
+        return data
+
+
 class JsonResponse:
     def __init__(self, data):
         self.data = data
@@ -52,13 +62,13 @@ def serializer(func):
         nonlocal log
         if isinstance(msg, JsonResponse):
             try:
-                return json_format.MessageToJson(msg.data)
+                return json_format.MessageToJson(_process_tupple(msg.data))
             except Exception as e:
                 print(msg.data)
                 log.exception("Exception while trying to serialize protocol buffer to json! Because: %s", str(e))
         else:
             try:
-                return msg.SerializeToString()
+                return _process_tupple(msg).SerializeToString()
             except Exception as e:
                 log.exception("Exception while trying to serialize protocol buffer! Because: %s", str(e))
     return wrapper
