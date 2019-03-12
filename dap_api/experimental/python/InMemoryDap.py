@@ -1,4 +1,5 @@
 from typing import Callable
+import json
 
 from dap_api.src.protos import dap_description_pb2
 
@@ -8,7 +9,10 @@ from dap_api.src.python import DapOperatorFactory
 from dap_api.src.python import DapQueryRepn
 from dap_api.src.python import ProtoHelpers
 from dap_api.src.python.DapInterface import DapBadUpdateRow
+from dap_api.src.python.DapInterface import decodeConstraintValue
+from dap_api.src.python.DapInterface import encodeConstraintValue
 from dap_api.src.protos import dap_update_pb2
+from dap_api.src.protos import dap_interface_pb2 as dap_interface
 from dap_api.src.python.DapQueryResult import DapQueryResult
 from typing import List
 
@@ -64,29 +68,80 @@ class InMemoryDap(DapInterface.DapInterface):
                         yield DapQueryResult(key)
             else:
                 for key in cores:
+                    print("KEY=", key)
                     row = table[key()]
                     if rowProcessor(row):
                         yield key
+
 
     # returns an object with an execute(agents=None) -> [agent]
     def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
         return None
 
-    class ConstraintProcessor(SubQueryInterface.SubQueryInterface):
-        def __init__(self, inMemoryDap, rowProcessor, target_field_name):
-            self.inMemoryDap = inMemoryDap
-            self.func = lambda row: rowProcessor(row.get(target_field_name, None))
+    # class ConstraintProcessor(SubQueryInterface.SubQueryInterface):
+    #     NAMES = [
+    #         "target_field_type",
+    #         "operator",
+    #         "query_field_type",
+    #         "query_field_value",
+    #     ]
+        
+    #     def __init__(self):
+    #         pass
 
-        def execute(self, agents=None):
-            yield from self.inMemoryDap.processRows(self.func, agents)
+    #     def fromLeaf(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf):
+    #         self.values = {}
+    #         for k in ConstraintProcessor.NAMES:
+    #             values[k] = getattr(dapQueryRepnLeaf, k)
 
-    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:
+    #     def toProto(self):
+    #         self.
+
+    #     def execute(self, agents=None):
+    #         rowProcessor = self.operatorFactory.createAttrMatcherProcessor(
+    #             self.values['target_field_type'],
+    #             self.values['operator'],
+    #             self.values['query_field_type'],
+    #             self.values['query_field_value'])
+    #         self.func = lambda row: rowProcessor(row.get(self.values['target_field_name'], None))
+
+    #     InMemoryDap.ConstraintProcessor(self, rowProcessor, dapQueryRepnLeaf.target_field_name)
+    #         yield from self.inMemoryDap.processRows(func, agents)
+
+
+    def execute(self, proto: dap_interface.ConstructQueryMementoResponse, input_idents: dap_interface.IdentifierSequence) -> dap_interface.IdentifierSequence:
+        print("EXECUTE---------------")
+        j = json.loads(proto.memento.decode("utf-8"))
         rowProcessor = self.operatorFactory.createAttrMatcherProcessor(
-                dapQueryRepnLeaf.target_field_type,
-                dapQueryRepnLeaf.operator,
-                dapQueryRepnLeaf.query_field_type,
-                dapQueryRepnLeaf.query_field_value)
-        return InMemoryDap.ConstraintProcessor(self, rowProcessor, dapQueryRepnLeaf.target_field_name)
+            j['target_field_type'],
+            j['operator'],
+            j['query_field_type'],
+            j['query_field_value'])
+        func = lambda row: rowProcessor(row.get(j['target_field_name'], None))
+
+        if input_idents.HasField('originator') and input_idents.originator:
+            idents = None
+        else:
+            idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
+
+        reply = dap_interface.IdentifierSequence()
+        reply.originator = False;
+        for core in self.processRows(func, idents):
+            c = reply.identifiers.add()
+            c.core = core()
+        return reply
+
+    def prepareConstraint(self, proto: dap_interface.ConstructQueryConstraintObjectRequest) -> dap_interface.ConstructQueryMementoResponse:
+        j = {}
+        j['target_field_name'] = proto.target_field_name
+        j['target_field_type'] = proto.target_field_type
+        j['operator'] = proto.operator
+        j['query_field_type'] = proto.query_field_type
+        j['query_field_value'] = DapInterface.decodeConstraintValue(proto.query_field_value)
+
+        r = dap_interface.ConstructQueryMementoResponse()
+        r.memento = json.dumps(j).encode('utf8')
+        return r
 
     def print(self):
         print(self.store)

@@ -54,9 +54,9 @@ class Reset(BehaveTreeTaskNode.BehaveTreeTaskNode):
         locs = []
         keys = []
         for i in range(2):
-            key = np.random.choice(list(node_locations.keys()), 1)[0]
-            loc = (node_locations[key][0] + np.random.randint(-10, 10),
-                   node_locations[key][1] + np.random.randint(-10, 10))
+            key = context.randomiser().choice(list(node_locations.keys()))
+            loc = (node_locations[key][0] + context.randomiser().randint(-10, 10),
+                   node_locations[key][1] + context.randomiser().randint(-10, 10))
             keys.append(key)
             locs.append(loc)
         target_id, source_id = keys
@@ -231,8 +231,8 @@ class QueryNearestNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
             return True
 
         if dist != 0.0:
-            context.set('delta-x', (dx/dist) * np.random.randint(2, 5)*np.random.choice([-2, -1, 1], p=[0.08, 0.12, 0.8]) )
-            context.set('delta-y', (dy/dist) * np.random.randint(2, 5)*np.random.choice([-2, -1, 1], p=[0.08, 0.12, 0.8]) )
+            context.set('delta-x', (dx/dist) * 5) #* context.randomiser().randint(2, 5))
+            context.set('delta-y', (dy/dist) * 5 ) #* context.randomiser().randint(2, 5))
 
         return False
 

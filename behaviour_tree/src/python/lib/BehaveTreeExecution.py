@@ -2,15 +2,18 @@ from behaviour_tree.src.python.lib import BehaveTree
 from behaviour_tree.src.python.lib import BehaveTreeBaseNode
 
 class BehaveTreeExecution(object):
-    def __init__(self, tree: BehaveTree):
+    def __init__(self, tree: BehaveTree=None, randomiser=None):
         self.tree = tree
         self.context = {}
         self.stack = [ tree.root ]
+        self._randomiser = randomiser or random.Random()
 
     def tick(self):
         #print("START---------------",  [ x.name for x in self.stack])
         prev=None
-        while True:
+        throttle = 0
+        while throttle < 5:
+            throttle += 1
             #print("STACK---------------", [ x.name for x in self.stack])
             foo = self.stack.pop()
             #print("CURRENT-------------", foo.name)
@@ -45,6 +48,9 @@ class BehaveTreeExecution(object):
                 pass
             r += "{}={}\n".format(k, v)
         return r
+
+    def randomiser(self):
+        return self._randomiser
 
     def has(self, something):
         return something in self.context
