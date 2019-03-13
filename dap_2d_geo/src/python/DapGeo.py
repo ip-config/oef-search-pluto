@@ -10,6 +10,7 @@ from dap_api.src.python import ProtoHelpers
 from dap_api.src.python import SubQueryInterface
 from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_2d_geo.src.python import GeoStore
+from dap_api.src.protos import dap_interface_pb2
 
 class DapGeo(DapInterface.DapInterface):
 
@@ -48,6 +49,13 @@ class DapGeo(DapInterface.DapInterface):
         return self.geos[table_name]
 
     class DapGeoQuery(SubQueryInterface.SubQueryInterface):
+        NAMES = [
+            "radius",
+            "locations",
+            "tablename",
+            "geo",
+        ]
+
         def __init__(self):
             self.radius = None
             self.locations = None
@@ -94,18 +102,32 @@ class DapGeo(DapInterface.DapInterface):
             for location in self.locations:
                 yield from self.geo.search( location, self.radius )
 
-    def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
-        # We'll let someone else handle any bigger branching logic.
-        if len(dapQueryRepnBranch.leaves) == 0 or len(dapQueryRepnBranch.subnodes) > 0:
-            return None
+        def toJSON(self):
+            r = {}
+            for k in DapGeoQuery.NAMES:
+                r[k] = getattr(self, k)
+            return json.dumps(r)
 
+        def fromJSON(self, data):
+            r = json.loads(data)
+            for k in DapGeoQuery.NAMES:
+                setattr(self, k, r.get(k, None))
+
+    def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
+        r = dap_interface_pb2.ConstructQueryMementoResponse()
+
+        # We'll let someone else handle any bigger branching logic.
+        if len(proto.constraints) == 0 or len(proto.children) > 0:
+            r.success = False
+            return r
         # We'll let someone else handle anything which isn't an ALL
-        if dapQueryRepnBranch.combiner != ProtoHelpers.COMBINER_ALL:
-            return None
+        if proto.combiner != ProtoHelpers.COMBINER_ALL:
+            r.success = False
+            return r
 
         geoQuery = DapGeo.DapGeoQuery()
-        for leaf in dapQueryRepnBranch.leaves:
-            geoQuery.setTablename(leaf.target_table_name)
+        for constraint in proto.constraints:
+            geoQuery.setTablename(constraint.target_table_name)
 
         processes = {
             (geoQuery.tablename + ".location", "location"):      lambda q,x: q.addLocation(x),
@@ -116,16 +138,39 @@ class DapGeo(DapInterface.DapInterface):
             (geoQuery.tablename + ".radius", "i64"):             lambda q,x: q.addRadius(x),
         }
 
-        for leaf in dapQueryRepnBranch.leaves:
-            func = processes.get((leaf.target_field_name, leaf.query_field_type), None)
+        for constraint in proto.constraints:
+            func = processes.get((constraint.target_field_name, constraint.query_field_type), None)
             if func == None:
-                raise Exception("GeoQuery cannot be made from " + leaf.printable())
+                self.log.error("Geo Query cannot be made")
+                r.success = False
+                return r
             else:
-                func(geoQuery, leaf.query_field_value)
+                func(geoQuery, proto.query_field_value)
 
         geoQuery.setGeo(self.getGeoByTableName(geoQuery.tablename))
 
-        return geoQuery.sanity()
+        if geoQuery.sanity():
+            r.success = False
+            return r
+        else:
+            r.success = True
+            r.memento = geoQuery.toJSON()
+
+    def execute(self, proto: dap_interface_pb2.ConstructQueryMementoResponse, input_idents: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
+        geoQuery = DapGeo.DapGeoQuery()
+        geoQuery.fromJSON(proto.memento.decode("utf-8"))
+
+        if input_idents.HasField('originator') and input_idents.originator:
+            idents = None
+        else:
+            idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
+
+        reply = dap_interface_pb2.IdentifierSequence()
+        reply.originator = False;
+        for core in geoQuery.execute(idents):
+            c = reply.identifiers.add()
+            c.core = core()
+        return reply
 
     def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:
         raise Exception("GeoQuery must be created from subtrees, not leaves")

@@ -8,24 +8,9 @@ message DescribeResponse
 }
 
 
-message UpdateResponse
-{
-        message Failed
-        {
-                optional string message    = 1;
-                optional string table_name = 2;
-                optional string core_key   = 3;
-                optional string field_name = 4;
-                optional string value_type = 5;
-                optional string field_type = 6;
-                optional string value      = 7;
-        }
-        optional Failed failure = 1;
-}
-
 message ValueMessage
 {
-        required string typecode    = 1;
+        required string typecode = 1;
 
 // LOCATION is encoded into the doubles
 // EMBEDDING is encoded into the doubles
@@ -71,7 +56,7 @@ message ConstructQueryMementoResponse
 
 message Identifier
 {
-        required string core = 1;
+        required bytes core = 1;
 }
 
 message IdentifierSequence

@@ -7,9 +7,11 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 import numpy as np
 import scipy.spatial.distance as distance
+import json
 
 from dap_api.src.protos import dap_description_pb2
 from dap_api.src.protos.dap_update_pb2 import DapUpdate
+from dap_api.src.protos import dap_interface_pb2
 from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_api.src.python.DapInterface import DapInterface
 from dap_api.src.python.DapQuery import DapQuery
@@ -147,18 +149,21 @@ class SearchEngine(DapInterface):
         for upd in update_data.update:
             self.update(upd)
 
-    def remove(self, remove_data):
-        success = False
+    def remove(self, remove_data) -> dap_interface_pb2.Successfulness:
+        r = dap_interface_pb2.Successfulness()
+        r.success = True
+
         upd = remove_data
         if upd:
             k, v = "dm", upd.value.dm
             tbname = self.tablenames[0]
             if upd.fieldname not in self.structure[tbname]:
-                raise DapBadUpdateRow("No such field", tbname, upd.key.core, upd.fieldname, k)
-
+                r.narrative.append("No such field  key={} fname={}".format(upd.key, upd.fieldname))
+                r.success = False
             field_type = self.structure[tbname][upd.fieldname]['type']
             if field_type != 'embedding':
-                raise DapBadUpdateRow("Bad type", tbname, upd.key.core, upd.fieldname, field_type, k)
+                r.narrative.append("Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, upd.key, upd.fieldname, ftype, k))
+                r.success = False
             try:
                 row = self.store[tbname][upd.key.core][upd.key.agent]
                 success |= row.pop(v.name, None) is not None
@@ -167,37 +172,27 @@ class SearchEngine(DapInterface):
                     self.store[tbname][upd.key.core].pop(upd.key.agent, None)
             except KeyError:
                 pass
-        return success
+        return r
 
     def removeAll(self, key):
         return self.store[self.tablenames[0]].pop(key, None) is not None
 
-    # def query(self, query: DapQuery, agents=None):
-    #     if len(self.store) == 0:
-    #         return []
-    #     enc_query = np.zeros((self._encoding_dim,))
-    #     if query.data_model:
-    #         enc_query = np.add(enc_query, self._dm_to_vec(query.data_model))
-    #     if query.description:
-    #         enc_query = np.add(enc_query, self._string_to_vec(query.description))
-    #     if not np.any(enc_query):
-    #         return []
-    #     table = next(iter(self.structure.keys()))
-    #     score_threshold = 0.2
-    #     result = []
-    #     for key, data in self.store[table].items():
-    #         dist = distance.cosine(data["data_model"], enc_query)
-    #         result.append((key, dist))
-    #     ordered = sorted(result, key=lambda x: x[1])
-    #     print("results: ", ordered)
-    #     result = [ordered[0]]
-    #     for i in range(1, len(ordered)):
-    #         if ordered[i][1] < score_threshold:
-    #             result.append(ordered[i])
-    #     return result
-
     class SubQuery(SubQueryInterface):
-        def __init__(self, searchSystem, leaf: DapQueryRepn.Leaf):
+        NAMES = [
+            "query_field_type",
+            "query_field_value",
+            "target_field_type",
+            "target_field_name",
+            "target_table_name",
+        ]
+
+        def __init__(self):
+            pass
+
+        def fromLeaf(self, leaf: DapQueryRepn.Leaf):
+            if leaf == None:
+                return
+
             if leaf.operator != "CLOSE_TO":
                 raise ValueError("{} is not an embed search operator.".format(leaf.operator))
             #if target_field_type != "embedding":
@@ -207,11 +202,6 @@ class SearchEngine(DapInterface):
             #        leaf.target_field_type
             #        )
             #    );
-            self.enc_query = np.zeros((searchSystem._encoding_dim,))
-            if leaf.query_field_type == "string":
-                self.enc_query = np.add(self.enc_query, searchSystem._string_to_vec(leaf.query_field_value))
-            elif leaf.query_field_type == "data_model":
-                self.enc_query = np.add(self.enc_query, searchSystem._dm_to_vec(leaf.query_field_value))
 
             self.query_field_type  = leaf.query_field_type
             self.query_field_value = leaf.query_field_value
@@ -219,7 +209,20 @@ class SearchEngine(DapInterface):
             self.target_field_name = leaf.target_field_name
             self.target_table_name = leaf.target_table_name
 
-            self._ss = searchSystem
+            self.prepare()
+            return self
+
+        def prepare(self):
+            self.enc_query = np.zeros((self.searchSystem._encoding_dim,))
+            if self.query_field_type == "string":
+                self.enc_query = np.add(self.enc_query, self.searchSystem._string_to_vec(self.query_field_value))
+            elif self.query_field_type == "data_model":
+                self.enc_query = np.add(self.enc_query, self.searchSystem._dm_to_vec(self.query_field_value))
+            return self
+
+        def setSearchSystem(self, searchSystem):
+            self.searchSystem = searchSystem
+            return self
 
         def execute(self, key_selector: List[DapQueryResult] = None):
             if key_selector == []:
@@ -228,8 +231,8 @@ class SearchEngine(DapInterface):
             key_list = []
             if key_selector is None:
                 key_list = []
-                for core in self._ss.store[self.target_table_name].keys():
-                    agents = self._ss.store[self.target_table_name][core].keys()
+                for core in self.searchSystem.store[self.target_table_name].keys():
+                    agents = self.searchSystem.store[self.target_table_name][core].keys()
                     if len(agents) > 0:
                         for agent in agents:
                             key_list.append((core, agent))
@@ -254,8 +257,41 @@ class SearchEngine(DapInterface):
                     res.score = ordered[i][2]
                     yield res
 
-    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.Leaf) -> SubQueryInterface:
-        return SearchEngine.SubQuery(self, dapQueryRepnLeaf)
+        def toJSON(self):
+            r = {}
+            for k in SearchEngine.SubQuery.NAMES:
+                r[k] = getattr(self, k)
+            return json.dumps(r)
+
+        def fromJSON(self, data):
+            r = json.loads(data)
+            for k in SearchEngine.SubQuery.NAMES:
+                setattr(self, k, r.get(k, None))
+            return self
+
+    def execute(self, proto:  dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
+        input_idents = proto.input_idents
+        query_memento = proto.query_memento
+        graphQuery = SearchEngine.SubQuery().setSearchSystem(self).fromJSON(query_memento.memento.decode("utf-8")).prepare()
+
+
+        if input_idents.HasField('originator') and input_idents.originator:
+            idents = None
+        else:
+            idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
+
+        reply = dap_interface_pb2.IdentifierSequence()
+        reply.originator = False
+        for core in graphQuery.execute(idents):
+            c = reply.identifiers.add()
+            c.core = core()
+        return reply
+
+    def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
+        q = SearchEngine.SubQuery().setSearchSystem(self).fromLeaf(DapQueryRepn.Leaf().fromProto(proto))
+        r = dap_interface_pb2.ConstructQueryMementoResponse()
+        r.memento = q.toJSON().encode('utf8')
+        return r
 
     def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.Branch) -> SubQueryInterface:
         return None

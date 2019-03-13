@@ -50,7 +50,7 @@ class BackendRouter:
                         if p is None:
                             continue
                         if isinstance(p, Exception):
-                            self.log.warn("Exception happened in handler for path {}: {}".format(path, str(p)))
+                            self.log.exception("Exception happened in handler for path {}: {}".format(path, str(p)))
                             continue
                         elif isinstance(p, list):
                             if len(p) == 0:

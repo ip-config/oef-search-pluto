@@ -119,6 +119,16 @@ class DapQueryRepn(object):
 
                 return pb
 
+        def fromProto(self, pb):
+                self.query_field_value = DapInterface.decodeConstraintValue(pb.query_field_value)
+                self.operator          = pb.operator
+                self.query_field_type  = pb.query_field_type
+                self.target_field_name = pb.target_field_name
+                self.target_field_type = pb.target_field_type
+                self.target_table_name = pb.target_table_name
+                self.dap_name          = pb.dap_name
+                return self
+
         def printable(self):
             return "Leaf {} -- {}.{}.{} ({}) {} {} ({}) ==> {}  {} {}".format(
                 self.name,
