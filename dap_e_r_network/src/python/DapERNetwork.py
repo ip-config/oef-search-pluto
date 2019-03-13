@@ -3,6 +3,7 @@ from typing import Sequence
 
 from dap_api.src.protos import dap_description_pb2
 from dap_api.src.protos import dap_update_pb2
+from dap_api.src.protos import dap_interface_pb2
 from dap_api.src.python import DapInterface
 from dap_api.src.python import DapOperatorFactory
 from dap_api.src.python import DapQueryRepn
@@ -54,13 +55,13 @@ class DapERNetwork(DapInterface.DapInterface):
         return self.graphs[table_name]
 
     class DapGraphQuery(SubQueryInterface.SubQueryInterface):
-        NAMES = {
+        NAMES = [
             "weight",
             "labels",
             "origins",
             "tablename",
             "graph",
-        }
+        ]
         def __init__(self):
             self.weight = None
             self.labels = None
@@ -77,7 +78,7 @@ class DapERNetwork(DapInterface.DapInterface):
         def fromJSON(self, data):
             r = json.loads(data)
             for k in DapGraphQuery.NAMES:
-                setattr(self, r.get(k, None))
+                setattr(self, k, r.get(k, None))
 
         def setGraph(self, graph):
             self.graph = graph
@@ -143,7 +144,7 @@ class DapERNetwork(DapInterface.DapInterface):
             return r
 
         # We'll let someone else handle anything which isn't an ALL
-        if dapQueryRepnBranch.combiner != ProtoHelpers.COMBINER_ALL:
+        if proto.combiner != ProtoHelpers.COMBINER_ALL:
             r.success = False
             return r
 
