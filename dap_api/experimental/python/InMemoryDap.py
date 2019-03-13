@@ -80,7 +80,6 @@ class InMemoryDap(DapInterface.DapInterface):
         return None
 
     def execute(self, proto: dap_interface_pb2.ConstructQueryMementoResponse, input_idents: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
-        print("EXECUTE---------------")
         j = json.loads(proto.memento.decode("utf-8"))
         rowProcessor = self.operatorFactory.createAttrMatcherProcessor(
             j['target_field_type'],
