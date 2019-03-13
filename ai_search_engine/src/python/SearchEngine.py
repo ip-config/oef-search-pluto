@@ -22,6 +22,7 @@ from fetch_teams.oef_core_protocol import query_pb2
 from utils.src.python.Logging import has_logger
 from typing import List
 
+from utils.src.python.out import out
 
 class SearchEngine(DapInterface):
     @has_logger
@@ -130,20 +131,27 @@ class SearchEngine(DapInterface):
             avg_feature = np.divide(avg_feature, float(counter))
         return avg_feature
 
-    def update(self, update_data: DapUpdate.TableFieldValue):
-        upd = update_data
-        if upd:
-            k, v = "dm", upd.value.dm
-            tbname = self.tablenames[0]
-            if upd.fieldname not in self.structure[tbname]:
-                raise DapBadUpdateRow("No such field", tbname, upd.key, upd.fieldname, k)
+    def update(self, update_data: DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
+        r = dap_interface_pb2.Successfulness()
+        r.success = True
 
-            field_type = self.structure[tbname][upd.fieldname]['type']
-            if field_type != 'embedding':
-                raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, field_type, k)
-            row = self.store.setdefault(tbname, {}).setdefault(upd.key, {})
-            row[v.name] = v
-            row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)
+        try:
+            upd = update_data
+            if upd:
+                k, v = "dm", upd.value.dm
+                tbname = self.tablenames[0]
+                if upd.fieldname not in self.structure[tbname]:
+                    raise DapBadUpdateRow("No such field", tbname, upd.key, upd.fieldname, k)
+
+                field_type = self.structure[tbname][upd.fieldname]['type']
+                if field_type != 'embedding':
+                    raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, field_type, k)
+                row = self.store.setdefault(tbname, {}).setdefault(upd.key, {})
+                row[v.name] = v
+                row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)
+        except Exception as e:
+            r.success = False
+        return r
 
     def blk_update(self, update_data: DapUpdate):
         for upd in update_data.update:
@@ -166,7 +174,6 @@ class SearchEngine(DapInterface):
                 r.success = False
             try:
                 row = self.store[tbname][upd.key]
-                success |= row.pop(v.name, None) is not None
                 row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)
                 if np.sum(row[upd.fieldname]) == 0:
                     self.store[tbname].pop(upd.key)

@@ -228,6 +228,7 @@ class QueryNearestNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         dist = math.sqrt(dx*dx + dy*dy)
 
         if dist < 10:
+            print("QueryNearestNode, returning TRUE")
             return True
 
         if dist != 0.0:
