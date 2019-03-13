@@ -34,7 +34,6 @@ def network_support(func):
             com.start(self._router)
             self._com = com
 
-        @functools.wraps(com.wait)
         def wait(self):
             return self._com.wait()
 

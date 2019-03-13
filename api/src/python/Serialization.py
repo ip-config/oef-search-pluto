@@ -24,9 +24,9 @@ def deserializer(func):
     sig = signature(func)
     return_type = sig.return_annotation
     assert return_type != sig.empty, \
-        "Serialization function must have a protocol buffer return type!"
+        "Deserialization function must have a protocol buffer return type!"
     assert hasattr(return_type, "ParseFromString"), \
-        "Serialization function seems not to have a valid protocol buffer return type!"
+        "Deserialization function seems not to have a valid protocol buffer return type!"
     log = get_logger("Deserializer")
 
     @functools.wraps(func)
@@ -51,10 +51,10 @@ def serializer(func):
     sig = signature(func)
     parameter_type = list(sig.parameters.values())[1]
     assert parameter_type != sig.empty, \
-        "Deserialization function must first argument (not counting self) of protocol buffer type!"
+        "Serialization function must first argument (not counting self) of protocol buffer type!"
     parameter_type = parameter_type.annotation
     assert hasattr(parameter_type, "SerializeToString"), \
-        "Deserialization function seems not to have a valid protocol buffer first argument type!"
+        "Serialization function seems not to have a valid protocol buffer first argument type!"
     log = get_logger("Serializer")
 
     @functools.wraps(func)

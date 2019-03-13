@@ -36,6 +36,11 @@ class InMemoryDap(DapInterface.DapInterface):
         self.structure = {}
         self.fields = {}
 
+        host = configuration["host"]
+        port = configuration["port"]
+
+        self.start_network(self, host, port)
+
         for table_name, fields in self.structure_pb.items():
             self.tablenames.append(table_name)
             for field_name, field_type in fields.items():
@@ -50,7 +55,7 @@ class InMemoryDap(DapInterface.DapInterface):
     Returns:
        DapDescription
     """
-    def describe(self):
+    def describe(self) -> dap_description_pb2.DapDescription:
         result = dap_description_pb2.DapDescription()
         result.name = self.name
 
@@ -81,9 +86,11 @@ class InMemoryDap(DapInterface.DapInterface):
     def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
         return None
 
-    def execute(self, proto: dap_interface_pb2.ConstructQueryMementoResponse, input_idents: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
+    def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
         print("EXECUTE---------------")
-        j = json.loads(proto.memento.decode("utf-8"))
+        input_idents = proto.input_idents
+        query_memento = proto.query_memento
+        j = json.loads(query_memento.memento.decode("utf-8"))
         rowProcessor = self.operatorFactory.createAttrMatcherProcessor(
             j['target_field_type'],
             j['operator'],
@@ -97,7 +104,7 @@ class InMemoryDap(DapInterface.DapInterface):
             idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
 
         reply = dap_interface_pb2.IdentifierSequence()
-        reply.originator = False;
+        reply.originator = False
         for core in self.processRows(func, idents):
             c = reply.identifiers.add()
             c.core = core()
@@ -154,7 +161,7 @@ class InMemoryDap(DapInterface.DapInterface):
 
         return r
 
-    def remove(self, remove_data) -> dap_interface_pb2.Successfulness:
+    def remove(self, remove_data: dap_update_pb2.DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
 
         r = dap_interface_pb2.Successfulness()
         r.success = True

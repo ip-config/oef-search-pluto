@@ -3,10 +3,6 @@ syntax = "proto2";
 message NoInputParameter {
 }
 
-message ErrorResponse {
-        optional string message = 1;
-}
-
 message DescribeResponse
 {
 }
@@ -82,6 +78,11 @@ message IdentifierSequence
 {
         required bool originator = 1;
         repeated Identifier identifiers = 2;
+}
+
+message DapExecute {
+    optional ConstructQueryMementoResponse query_memento = 1;
+    optional IdentifierSequence input_idents = 2;
 }
 
 message Successfulness

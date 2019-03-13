@@ -8,6 +8,7 @@ from dap_api.src.protos import dap_interface_pb2
 from dap_api.src.protos import dap_description_pb2
 from dap_api.src.protos import dap_update_pb2
 
+
 class DapInterface(abc.ABC):
     def __init__():
         pass
@@ -20,7 +21,7 @@ class DapInterface(abc.ABC):
        DapDescription
     """
     @abstractmethod
-    def describe(self) -> dap_description_pb2.DapDescription():
+    def describe(self) -> dap_description_pb2.DapDescription:
         pass
 
     """This function will be called with any update to this DAP.
@@ -65,7 +66,7 @@ class DapInterface(abc.ABC):
         return reply
 
     @abstractmethod
-    def execute(self, proto: dap_interface_pb2.ConstructQueryMementoResponse, input_idents: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
+    def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
         pass
 
 
@@ -79,8 +80,8 @@ class DapInterface(abc.ABC):
     Returns:
       Either a suitable SubQueryInterface object, or None to let the DapManager handle things.
     """
-    def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
-        return None
+    #def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
+    #    return None
 
     """This function will be called with leaf nodes of the query's
     AST.  The result should be a SubQueryInterface for the constraint object
@@ -92,8 +93,8 @@ class DapInterface(abc.ABC):
     Returns:
       Either a suitable QueryExecutionInterface object, or None to let the DapManager handle things.
     """
-    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:
-        raise Exception("BAD: constructQueryConstraintObject")
+    #def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:
+    #    raise Exception("BAD: constructQueryConstraintObject")
 
 
 

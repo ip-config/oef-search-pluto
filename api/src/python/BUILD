@@ -1,11 +1,13 @@
 py_library(
     name = "serialization",
     srcs = ["Serialization.py"],
+    visibility = ["//visibility:public"],
 )
 
 py_library(
     name = "interfaces",
     srcs = glob(["Interface*.py"]),
+    visibility = ["//visibility:public"],
 )
 
 py_library(

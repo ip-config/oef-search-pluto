@@ -27,3 +27,15 @@ py_library(
                 "//dap_api/src/python/network:dap_network"
         ],
 )
+
+
+py_binary(
+    name="network_daps",
+    visibility = ["//visibility:public"],
+    srcs = ["RunNetworkDaps.py"],
+    main="RunNetworkDaps.py",
+    deps=[
+        ":experimental_lib"
+    ]
+
+)

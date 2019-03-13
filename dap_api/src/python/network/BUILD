@@ -5,9 +5,9 @@ py_library(
         "//api/src/python:serialization",
         "//api/src/python:interfaces",
         "//utils/src/python:py_utils",
-        "//dap_api/src/protos:dap_api_pb",
+        "//dap_api/src/protos:py_dap_api_pb",
         "//api/src/python:communication_handler",
-        "//api/src/pyhon:backend_router"
+        "//api/src/python:backend_router"
     ],
     visibility = ["//visibility:public"],
 )
