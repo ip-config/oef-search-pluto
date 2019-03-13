@@ -145,6 +145,7 @@ class EnglandGrid(object):
                 diff = abs(city.coords[0]-airport.coords[0]) + abs(city.coords[1]-airport.coords[1])
                 if diff < 30:
                     city.links.extend([ (airport, "TXF") ])
+                    airport.links.extend([ (city, "TXF") ])
 
     def connectAirports(self):
         temp = popgrab.PopGrab(700, 700)

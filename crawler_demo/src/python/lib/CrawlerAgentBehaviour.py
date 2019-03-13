@@ -212,7 +212,7 @@ class QueryNearestNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
 
         target_loc = context.get("target")
 
-        query = build_query([x, y], ttl=3)
+        query = build_query([x, y], ttl=2)
         result = best_oef_core(agent.search(query))
         if result is not None:
             self.info(result)
@@ -277,18 +277,11 @@ class Snooze(BehaveTreeTaskNode.BehaveTreeTaskNode):
         super().__init__(*args, **kwargs)
 
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
-        print("SNOOZE")
-
         context.setIfAbsent('ticks', 0)
         ticks = context.get('ticks')
-        print("TICKS=", ticks, self.ticks)
-
-        if self.ticks < ticks:
+        if ticks > self.ticks:
             return self.result
-
         context.set('ticks', ticks + 1)
-        print("TICKS=", ticks, self.ticks)
-
         return self
 
     def configure(self, definition: dict=None):
@@ -306,12 +299,6 @@ TREE = """
     {
       "node": "Reset",
       "name": "Reset"
-    },
-    {
-      "node": "Snooze",
-      "name": "Snooze",
-      "ticks": 10,
-      "result": 0
     },
     {
       "node": "PickLocation",

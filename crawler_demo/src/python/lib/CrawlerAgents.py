@@ -19,7 +19,7 @@ class CrawlerAgents(object):
         randomisers = [
             self.createRandomiser(x)
             for x
-            in range(0,20)
+            in range(0,30)
         ]
 
         self.agents = [

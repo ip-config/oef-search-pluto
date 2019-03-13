@@ -15,9 +15,8 @@ class BehaveTreeExecution(object):
 
     def tick(self):
         prev=None
-        throttle = 0
-        while throttle < 25:
-            throttle += 1
+        throttle = 7
+        while throttle > 0:
             foo = self.stack.pop()
             r = foo._execute(context=self, prev=prev)
 
@@ -37,9 +36,11 @@ class BehaveTreeExecution(object):
 
             if r == True:
                 #print("(done, go round)")
+                throttle -= 1
                 continue
             elif r == False or r == None:
                 #print("(done, go round)")
+                throttle -= 1
                 continue
             elif r == foo:
                 self.stack.append(r)
@@ -48,7 +49,7 @@ class BehaveTreeExecution(object):
             else:
                 self.stack.append(foo)
                 self.stack.append(r)
-                #print("Working..")
+                throttle -= 1
 
     def printable(self):
         r = ""
