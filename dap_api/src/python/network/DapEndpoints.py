@@ -37,7 +37,7 @@ class DapInterfaceFuncEndpointBase(HasMessageHandler, HasProtoSerializer):
             error = dap_interface_pb2.Successfulness()
             error.success = False
             error.errorcode = 503
-            error.narrative = str(e)
+            error.narrative.append(str(e))
             self.exception("Exception during DAP call: ", e)
         return error, response
 

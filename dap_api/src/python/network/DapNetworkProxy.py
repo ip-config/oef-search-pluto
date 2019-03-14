@@ -42,6 +42,7 @@ class Transport:
             return "", []
 
     def close(self):
+        self.write(b'', "close")
         self._socket.close()
 
 
@@ -67,9 +68,6 @@ class ClientSocket:
             self.transport.write(in_data, func)
             path, data = self.transport.read()
         except BrokenPipeError:
-            path = ""
-            data = []
-        if path == "" and len(data) == 0:
             self.warning("Connection lost with host %s:%d, reconnecting...", self.host, self.port)
             self.connect()
             return self.call(func, in_data)

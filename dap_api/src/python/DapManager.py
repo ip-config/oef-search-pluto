@@ -237,7 +237,6 @@ class DapManager(object):
             proto.query_memento.CopyFrom(node.memento)
             proto.input_idents.CopyFrom(DapInterface.coresToIdentifierSequence(cores))
             results = self.getInstance(node.dap_name).execute(proto)
-            print(results)
             for identifier in results.identifiers:
                 if len(identifier.agents) == 0:
                     yield DapQueryResult.DapQueryResult(identifier.core)

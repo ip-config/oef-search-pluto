@@ -38,12 +38,13 @@ def deserializer(func):
             except Exception as e:
                 log.exception("Exception while trying to parse json to protocol buffer! Because: %s", str(e))
         else:
+            msg = return_type()
             try:
-                msg = return_type()
                 msg.ParseFromString(data)
                 return msg
             except Exception as e:
                 log.exception("Exception while trying to parse data to protocol buffer! Because: %s", str(e))
+                return msg
     return wrapper
 
 
@@ -64,11 +65,13 @@ def serializer(func):
             try:
                 return json_format.MessageToJson(_process_tupple(msg.data))
             except Exception as e:
-                log.exception("Exception while trying to serialize protocol buffer to json! Because: ", str(e),
-                              "! Serializer got data:", msg.data)
+                log.exception("Exception while trying to serialize protocol buffer to json! Because: ", str(e))
+                print("Serializer got data: ", msg.data)
         else:
             try:
                 return _process_tupple(msg).SerializeToString()
             except Exception as e:
                 log.exception("Exception while trying to serialize protocol buffer! Because: %s", str(e))
+                print("Serializer got data: ", msg)
+        return b''
     return wrapper
