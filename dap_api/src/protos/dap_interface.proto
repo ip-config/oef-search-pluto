@@ -1,0 +1,65 @@
+syntax = "proto2";
+
+message ValueMessage
+{
+        required string typecode    = 1;
+
+// LOCATION is encoded into the doubles
+// EMBEDDING is encoded into the doubles
+
+        optional string s  = 2;
+        optional float f   = 3;
+        optional double d  = 4;
+        optional int32 i32 = 5;
+        optional int64 i64 = 6;
+        optional bool b    = 7;
+
+        repeated string v_s  = 102;
+        repeated float v_f   = 103;
+        repeated double v_d  = 104;
+        repeated int32 v_i32 = 105;
+        repeated int64 v_i64 = 106;
+        repeated bool v_b    = 107;
+}
+
+message ConstructQueryConstraintObjectRequest
+{
+        required string operator = 1;
+        required ValueMessage query_field_value = 2;
+        required string query_field_type = 3;
+        required string target_field_name = 4;
+        required string target_field_type = 5;
+        required string target_table_name = 6;
+        required string dap_name = 7;
+}
+
+message ConstructQueryObjectRequest
+{
+        optional string operator = 1;
+        repeated ConstructQueryConstraintObjectRequest constraints = 2;
+        repeated ConstructQueryObjectRequest children = 3;
+}
+
+message ConstructQueryMementoResponse
+{
+        optional bool success = 1;
+        optional bytes memento = 2;
+}
+
+message Identifier
+{
+        required bytes core = 1;
+}
+
+message IdentifierSequence
+{
+        required bool originator = 1;
+        repeated Identifier identifiers = 2;
+}
+
+message Successfulness
+{
+        required bool success = 1;
+        optional int32 errorcode = 2;
+        repeated string narrative = 3;
+}

@@ -3,6 +3,7 @@ from typing import Sequence
 
 from dap_api.src.protos import dap_description_pb2
 from dap_api.src.protos import dap_update_pb2
+from dap_api.src.protos import dap_interface_pb2
 from dap_api.src.python import DapInterface
 from dap_api.src.python import DapOperatorFactory
 from dap_api.src.python import DapQueryRepn
@@ -10,12 +11,14 @@ from dap_api.src.python import ProtoHelpers
 from dap_api.src.python import SubQueryInterface
 from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_e_r_network.src.python import Graph
+from utils.src.python.Logging import has_logger
 
 class DapERNetwork(DapInterface.DapInterface):
 
     # configuration is a JSON deserialised config object.
     # structure is a map of tablename -> { fieldname -> type}
 
+    @has_logger
     def __init__(self, name, configuration):
         self.name = name
         self.graphs = {}
@@ -52,12 +55,30 @@ class DapERNetwork(DapInterface.DapInterface):
         return self.graphs[table_name]
 
     class DapGraphQuery(SubQueryInterface.SubQueryInterface):
+        NAMES = [
+            "weight",
+            "labels",
+            "origins",
+            "tablename",
+            "graph",
+        ]
         def __init__(self):
             self.weight = None
             self.labels = None
             self.origins = None
             self.tablename = None
             self.graph = None
+
+        def toJSON(self):
+            r = {}
+            for k in DapGraphQuery.NAMES:
+                r[k] = getattr(self, k)
+            return json.dumps(r)
+
+        def fromJSON(self, data):
+            r = json.loads(data)
+            for k in DapGraphQuery.NAMES:
+                setattr(self, k, r.get(k, None))
 
         def setGraph(self, graph):
             self.graph = graph
@@ -115,18 +136,21 @@ class DapERNetwork(DapInterface.DapInterface):
                     filter_distance_function=filter_distance_function
                 )
 
-    def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
-        # We'll let someone else handle any bigger branching logic.
-        if len(dapQueryRepnBranch.leaves) == 0 or len(dapQueryRepnBranch.subnodes) > 0:
-            return None
+    def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
+        r = dap_interface_pb2.ConstructQueryMementoResponse()
+
+        if len(proto.constraints) == 0 or len(proto.children) > 0:
+            r.success = False
+            return r
 
         # We'll let someone else handle anything which isn't an ALL
-        if dapQueryRepnBranch.combiner != ProtoHelpers.COMBINER_ALL:
-            return None
+        if proto.combiner != ProtoHelpers.COMBINER_ALL:
+            r.success = False
+            return r
 
         graphQuery = DapERNetwork.DapGraphQuery()
-        for leaf in dapQueryRepnBranch.leaves:
-            graphQuery.setTablename(leaf.target_table_name)
+        for constraint in proto.constraints:
+            graphQuery.setTablename(constraint.target_table_name)
 
         processes = {
             (graphQuery.tablename + ".origin", "string"):      lambda q,x: q.addOrigin(x),
@@ -139,18 +163,42 @@ class DapERNetwork(DapInterface.DapInterface):
             (graphQuery.tablename + ".weight", "int64"):       lambda q,x: q.addWeight(x),
         }
 
-        for leaf in dapQueryRepnBranch.leaves:
-            func = processes.get((leaf.target_field_name, leaf.query_field_type), None)
+        for constraint in proto.constraints:
+            func = processes.get((constraint.target_field_name, constraint.query_field_type), None)
             if func == None:
-                raise Exception("Graph Query cannot be made from " + leaf.printable())
+                self.log.error("Graph Query cannot be made")
+                r.success = False
+                return r
             else:
-                func(graphQuery, leaf.query_field_value)
+                func(graphQuery, proto.query_field_value)
 
         graphQuery.setGraph(self.graphs[graphQuery.tablename])
 
-        return graphQuery.sanity()
+        if graphQuery.sanity():
+            r.success = False
+            return r
+        else:
+            r.success = True
+            r.memento = graphQuery.toJSON()
+            return r
 
-    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:
+    def execute(self, proto: dap_interface_pb2.ConstructQueryMementoResponse, input_idents: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
+        graphQuery = DapERNetwork.DapGraphQuery()
+        graphQuery.fromJSON(proto.memento.decode("utf-8"))
+
+        if input_idents.HasField('originator') and input_idents.originator:
+            idents = None
+        else:
+            idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
+
+        reply = dap_interface_pb2.IdentifierSequence()
+        reply.originator = False;
+        for core in graphQuery.execute(idents):
+            c = reply.identifiers.add()
+            c.core = core()
+        return reply
+
+    def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
         raise Exception("DapERNetwork must create queries from subtrees, not leaves")
 
     """This function will be called with any update to this DAP.

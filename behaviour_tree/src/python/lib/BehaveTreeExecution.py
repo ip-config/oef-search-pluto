@@ -2,29 +2,45 @@ from behaviour_tree.src.python.lib import BehaveTree
 from behaviour_tree.src.python.lib import BehaveTreeBaseNode
 
 class BehaveTreeExecution(object):
-    def __init__(self, tree: BehaveTree):
+
+    instances = 0
+
+    def __init__(self, tree: BehaveTree=None, randomiser=None):
         self.tree = tree
         self.context = {}
         self.stack = [ tree.root ]
+        self._randomiser = randomiser or random.Random()
+        self.name = "BehaveTreeExecution-{}".format(BehaveTreeExecution.instances)
+        BehaveTreeExecution.instances += 1
 
     def tick(self):
-        #print("START---------------",  [ x.name for x in self.stack])
         prev=None
-        while True:
-            #print("STACK---------------", [ x.name for x in self.stack])
+        throttle = 7
+        while throttle > 0:
             foo = self.stack.pop()
-            #print("CURRENT-------------", foo.name)
-            #print("PREV----------------", prev, prev[0].name if prev else "")
             r = foo._execute(context=self, prev=prev)
-            #print("STACK-2-------------", [ x.name for x in self.stack])
+
+#            pp = prev
+#            if pp != None:
+#                if pp[1]:
+#                    pp = "({},{})".format(pp[0].printable(), pp[1])
+#                else:
+#                    pp = "({},{})".format(pp[0], pp[1])
+#            rp = r
+#            if hasattr(rp, "printable"):
+#                rp = rp.printable()
+#            print(self.name, "TICK: cycle=", throttle, "   step=", foo.printable(), "prev=", pp, " RESULT => ", rp)
+
+
             prev=(foo, r)
-            #print("RES:", r)
 
             if r == True:
                 #print("(done, go round)")
+                throttle -= 1
                 continue
             elif r == False or r == None:
                 #print("(done, go round)")
+                throttle -= 1
                 continue
             elif r == foo:
                 self.stack.append(r)
@@ -33,7 +49,7 @@ class BehaveTreeExecution(object):
             else:
                 self.stack.append(foo)
                 self.stack.append(r)
-                #print("Working..")
+                throttle -= 1
 
     def printable(self):
         r = ""
@@ -45,6 +61,9 @@ class BehaveTreeExecution(object):
                 pass
             r += "{}={}\n".format(k, v)
         return r
+
+    def randomiser(self):
+        return self._randomiser
 
     def has(self, something):
         return something in self.context

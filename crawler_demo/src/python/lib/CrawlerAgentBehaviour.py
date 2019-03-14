@@ -54,9 +54,9 @@ class Reset(BehaveTreeTaskNode.BehaveTreeTaskNode):
         locs = []
         keys = []
         for i in range(2):
-            key = np.random.choice(list(node_locations.keys()), 1)[0]
-            loc = (node_locations[key][0] + np.random.randint(-10, 10),
-                   node_locations[key][1] + np.random.randint(-10, 10))
+            key = context.randomiser().choice(list(node_locations.keys()))
+            loc = (node_locations[key][0] + context.randomiser().randint(-10, 10),
+                   node_locations[key][1] + context.randomiser().randint(-10, 10))
             keys.append(key)
             locs.append(loc)
         target_id, source_id = keys
@@ -212,7 +212,7 @@ class QueryNearestNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
 
         target_loc = context.get("target")
 
-        query = build_query([x, y], ttl=3)
+        query = build_query([x, y], ttl=2)
         result = best_oef_core(agent.search(query))
         if result is not None:
             self.info(result)
@@ -228,11 +228,12 @@ class QueryNearestNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         dist = math.sqrt(dx*dx + dy*dy)
 
         if dist < 10:
+            print("QueryNearestNode, returning TRUE")
             return True
 
         if dist != 0.0:
-            context.set('delta-x', (dx/dist) * np.random.randint(2, 5)*np.random.choice([-2, -1, 1], p=[0.08, 0.12, 0.8]) )
-            context.set('delta-y', (dy/dist) * np.random.randint(2, 5)*np.random.choice([-2, -1, 1], p=[0.08, 0.12, 0.8]) )
+            context.set('delta-x', (dx/dist) * 5) #* context.randomiser().randint(2, 5))
+            context.set('delta-y', (dy/dist) * 5 ) #* context.randomiser().randint(2, 5))
 
         return False
 
@@ -276,18 +277,11 @@ class Snooze(BehaveTreeTaskNode.BehaveTreeTaskNode):
         super().__init__(*args, **kwargs)
 
     def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode'=None):
-        print("SNOOZE")
-
         context.setIfAbsent('ticks', 0)
         ticks = context.get('ticks')
-        print("TICKS=", ticks, self.ticks)
-
-        if self.ticks < ticks:
+        if ticks > self.ticks:
             return self.result
-
         context.set('ticks', ticks + 1)
-        print("TICKS=", ticks, self.ticks)
-
         return self
 
     def configure(self, definition: dict=None):
@@ -305,12 +299,6 @@ TREE = """
     {
       "node": "Reset",
       "name": "Reset"
-    },
-    {
-      "node": "Snooze",
-      "name": "Snooze",
-      "ticks": 10,
-      "result": 0
     },
     {
       "node": "PickLocation",

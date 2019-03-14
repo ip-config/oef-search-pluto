@@ -29,7 +29,6 @@ def process_update(self, msg):
         msg = "Failed to update data, because: " + str(e)
         resp.status = ResponseType.Value("ERROR")
         resp.message = msg
-        self.log.info(msg)
     return resp
 
 

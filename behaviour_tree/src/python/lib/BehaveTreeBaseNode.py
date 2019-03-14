@@ -41,3 +41,6 @@ class BehaveTreeBaseNode(object):
             #print("RUNNING:", self.name)
             pass
         return r
+
+    def printable(self):
+        return "{} ({},{})".format(self.name, type(self).__name__, "" if not hasattr(self, "kind") else getattr(self, "kind"))

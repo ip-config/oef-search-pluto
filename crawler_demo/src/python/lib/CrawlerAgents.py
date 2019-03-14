@@ -1,3 +1,5 @@
+import random
+
 from crawler_demo.src.python.lib import CrawlerAgentBehaviour
 from behaviour_tree.src.python.lib import BehaveTreeExecution
 from svg_output.src.python.lib import SvgStyle
@@ -7,25 +9,23 @@ from behaviour_tree.src.python.lib import BehaveTreeExecution
 from crawler_demo.src.python.lib.SearchNetwork import SearchNetwork, ConnectionFactory
 from utils.src.python.Logging import has_logger
 
-
 class CrawlerAgents(object):
+
     @has_logger
     def __init__(self, connection_factory, grid):
         self.tree = CrawlerAgentBehaviour.CrawlerAgentBehaviour()
         self.grid = grid
+
+        randomisers = [
+            self.createRandomiser(x)
+            for x
+            in range(0,30)
+        ]
+
         self.agents = [
-            BehaveTreeExecution.BehaveTreeExecution(self.tree),
-            BehaveTreeExecution.BehaveTreeExecution(self.tree),
-            BehaveTreeExecution.BehaveTreeExecution(self.tree),
-            BehaveTreeExecution.BehaveTreeExecution(self.tree),
-            BehaveTreeExecution.BehaveTreeExecution(self.tree),
-            BehaveTreeExecution.BehaveTreeExecution(self.tree),
-            BehaveTreeExecution.BehaveTreeExecution(self.tree),
-            BehaveTreeExecution.BehaveTreeExecution(self.tree),
-            BehaveTreeExecution.BehaveTreeExecution(self.tree),
-            BehaveTreeExecution.BehaveTreeExecution(self.tree),
-            BehaveTreeExecution.BehaveTreeExecution(self.tree),
-            BehaveTreeExecution.BehaveTreeExecution(self.tree),
+            BehaveTreeExecution.BehaveTreeExecution(self.tree, randomiser=x)
+            for x
+            in randomisers
         ]
         locations = {}
         for key, entity in grid.entities.items():
@@ -43,6 +43,11 @@ class CrawlerAgents(object):
 
     def tick(self):
         _ = [ x.tick() for x in self.agents ]
+
+    def createRandomiser(self, sequence):
+        r = random.Random()
+        r.seed(sequence)
+        return r
 
     def getSVG(self):
         locations = [
