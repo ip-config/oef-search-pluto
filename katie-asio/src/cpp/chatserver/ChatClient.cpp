@@ -19,7 +19,6 @@ tcp::socket& ChatClient::socket()
 }
 void ChatClient::go()
 {
-  std::cout << "natter" << std::endl;
   core.add(this);
   read_start();
 }
@@ -30,29 +29,56 @@ void ChatClient::send(const std::string &s)
   core.context -> post(std::bind(&ChatClient::write_start, this));
 }
 
-void ChatClient::write_complete(const boost::system::error_code&, const size_t &bytes)
+void ChatClient::write_complete(ChatCore &thecore, const boost::system::error_code& ec, const size_t &bytes)
 {
+  if (ec == boost::asio::error::eof || ec == boost::asio::error::operation_aborted)
+  {
+    thecore.gone(this);
+    return;
+  }
+
+  if (ec)
+  {
+    thecore.error(this, ec);
+    return;
+  }
+
   core.context -> post(std::bind(&ChatClient::write_start, this));
   write_start();
 }
 
-void ChatClient::wibble(const boost::system::error_code&ec, const size_t &bytes)
+void ChatClient::read_complete(ChatCore &thecore, const boost::system::error_code& ec, const size_t &bytes)
 {
-}
+  if (ec == boost::asio::error::eof || ec == boost::asio::error::operation_aborted)
+  {
+    thecore.gone(this);
+    return;
+  }
 
-void ChatClient::read_complete(const boost::system::error_code&ec, const size_t &bytes)
-{
-  std::cout << " ec=" << ec << " bytes=" <<bytes<<std::endl;
+  if (ec)
+  {
+    thecore.error(this, ec);
+    return;
+  }
+
   if (bytes > 0)
   {
     std::string s;
     std::istream is(&read_buffer);
-    is >> s;
-    if (s!="\n")
+    std::getline(is, s, '\n');
+
+    while(s.length() &&
+          (
+           s[s.length()-1]=='\n'
+          ||
+          s[s.length()-1]=='\r'
+           )
+          )
     {
-      inq.push_back(s);
-      std::cout << "R:" << s << std::endl;
+      s.pop_back();
     }
+
+    inq.push_back(s);
     core.context -> post(std::bind(&ChatClient::in_work, this));
   }
   read_start();
@@ -67,6 +93,7 @@ void ChatClient::write_start()
                              std::bind(
                                        &ChatClient::write_complete,
                                        this,
+                                       std::ref(core),
                                        std::placeholders::_1,
                                        std::placeholders::_2
                                        )
@@ -83,6 +110,7 @@ void ChatClient::read_start()
                                 std::bind(
                                           &ChatClient::read_complete,
                                           this,
+                                          std::ref(core),
                                           std::placeholders::_1,
                                           std::placeholders::_2
                                           )
@@ -93,8 +121,14 @@ void ChatClient::in_work()
 {
   if (inq.size())
   {
-    std::cout << "I:" << inq.front() << std::endl;
-    core.message(this, inq.front());
+    auto a = inq.front();
+    if (a == "exit" || a == "quit")
+    {
+      sock.close();
+      return;
+    }
+
+    core.message(this, a + "\n");
     inq.pop_front();
     core.context -> post(std::bind(&ChatClient::in_work, this));
   }

@@ -20,12 +20,10 @@ public:
   virtual tcp::socket& socket();
   virtual void go();
   virtual void send(const std::string &s);
-  void write_complete(const boost::system::error_code&, const size_t &bytes);
-  void read_complete(const boost::system::error_code&, const size_t &bytes);
+  void write_complete(ChatCore &thecore, const boost::system::error_code&, const size_t &bytes);
+  void read_complete(ChatCore &thecore, const boost::system::error_code&, const size_t &bytes);
   void write_start();
   void read_start();
   void in_work();
-
-  void wibble(const boost::system::error_code&, const size_t &bytes);
 };
 
