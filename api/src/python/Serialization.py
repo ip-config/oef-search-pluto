@@ -64,8 +64,8 @@ def serializer(func):
             try:
                 return json_format.MessageToJson(_process_tupple(msg.data))
             except Exception as e:
-                print(msg.data)
-                log.exception("Exception while trying to serialize protocol buffer to json! Because: %s", str(e))
+                log.exception("Exception while trying to serialize protocol buffer to json! Because: ", str(e),
+                              "! Serializer got data:", msg.data)
         else:
             try:
                 return _process_tupple(msg).SerializeToString()

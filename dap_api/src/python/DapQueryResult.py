@@ -1,7 +1,7 @@
 
 
 class DapQueryResult:
-    def __init__(self, core: bytes, agent: bytes = 0):
+    def __init__(self, core: bytes, agent: bytes = b''):
         self.key = core
         self.agent_id = agent
         self.score = -1

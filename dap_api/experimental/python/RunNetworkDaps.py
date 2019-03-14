@@ -1,8 +1,9 @@
 from dap_api.experimental.python.InMemoryDap import InMemoryDap
+from ai_search_engine.src.python.SearchEngine import SearchEngine
 import sys
 import inspect
 from utils.src.python.Logging import configure as configure_logging
-from dap_api.experimental.python.NetworkDapContract import contract_config
+from dap_api.experimental.python.NetworkDapContract import config_backend as config
 
 
 def lookup(clss, name):
@@ -15,6 +16,6 @@ def lookup(clss, name):
 configure_logging()
 classes = inspect.getmembers(sys.modules[__name__])
 daps = []
-for name, conf in contract_config.items():
+for name, conf in config.items():
     cls = lookup(classes, conf["class"])
     daps.append(cls(name, conf["config"]))

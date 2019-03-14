@@ -62,7 +62,7 @@ class DapInterface(abc.ABC):
 
     def prepare(self, proto: dap_interface_pb2.ConstructQueryObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
         reply = dap_interface_pb2.ConstructQueryMementoResponse()
-        reply.success = False;
+        reply.success = False
         return reply
 
     @abstractmethod

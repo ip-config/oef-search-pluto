@@ -28,6 +28,11 @@ py_library(
         ],
 )
 
+py_library(
+    name="network_dap_contract",
+    visibility = ["//visibility:public"],
+    srcs = ["NetworkDapContract.py"]
+)
 
 py_binary(
     name="network_daps",
@@ -35,7 +40,9 @@ py_binary(
     srcs = ["RunNetworkDaps.py"],
     main="RunNetworkDaps.py",
     deps=[
-        ":experimental_lib"
+        ":experimental_lib",
+        ":network_dap_contract",
+        "//ai_search_engine/src/python:search_engine",
     ]
 
 )

@@ -53,10 +53,8 @@ py_library(
     deps = [
         "//network/src/python/async_socket:async_socket",
         "//api/src/python:backend_router",
-        "//api/src/python:endpoints",
         "//fetch_teams/bottle:bottle",
         "//utils/src/python:py_utils",
-        "//dap_api/src/python:dap_api",
         ":utils",
     ],
     data = [

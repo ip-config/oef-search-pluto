@@ -24,7 +24,6 @@ class InMemoryDap(DapInterface.DapInterface):
     # configuration is a JSON deserialised config object.
     # structure is a map of tablename -> { fieldname -> type}
 
-    @network_support
     def __init__(self, name, configuration):
         self.store = {}
         self.name = name
@@ -35,11 +34,6 @@ class InMemoryDap(DapInterface.DapInterface):
         self.tablenames = []
         self.structure = {}
         self.fields = {}
-
-        host = configuration["host"]
-        port = configuration["port"]
-
-        self.start_network(self, host, port)
 
         for table_name, fields in self.structure_pb.items():
             self.tablenames.append(table_name)
@@ -151,11 +145,11 @@ class InMemoryDap(DapInterface.DapInterface):
                     ftype = self.fields[upd.fieldname]["type"]
 
                 if ftype != k:
-                    r.narrative.append("Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, upd.key, upd.fieldname, ftype, k))
+                    r.narrative.append("Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, upd.key.core, upd.fieldname, ftype, k))
                     r.success = False
 
                 if commit:
-                    self.store.setdefault(tbname, {}).setdefault(upd.key, {})[upd.fieldname] = v
+                    self.store.setdefault(tbname, {}).setdefault(upd.key.core, {})[upd.fieldname] = v
             if not r.success:
                 break
 

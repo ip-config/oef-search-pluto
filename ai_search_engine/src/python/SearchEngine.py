@@ -21,10 +21,12 @@ from dap_api.src.python.SubQueryInterface import SubQueryInterface
 from fetch_teams.oef_core_protocol import query_pb2
 from utils.src.python.Logging import has_logger
 from typing import List
+from dap_api.src.python.network.DapNetwork import network_support
 
 
 class SearchEngine(DapInterface):
     @has_logger
+    @network_support
     def __init__(self, name, config):
         self._storage = {}
         nltk.download('stopwords')
@@ -38,6 +40,11 @@ class SearchEngine(DapInterface):
         self.store = {}
         self.name = name
         self.structure_pb = config["structure"]
+
+        host = config["host"]
+        port = config["port"]
+
+        self.start_network(self, host, port)
 
         self.tablenames = []
         self.structure = {}
@@ -100,7 +107,7 @@ class SearchEngine(DapInterface):
         avg_feature = np.divide(avg_feature, float(counter)) #todo check without, seemed to be good
         return avg_feature
 
-    def describe(self):
+    def describe(self) -> dap_description_pb2.DapDescription:
         result = dap_description_pb2.DapDescription()
         result.name = self.name
 
@@ -130,7 +137,9 @@ class SearchEngine(DapInterface):
             avg_feature = np.divide(avg_feature, float(counter))
         return avg_feature
 
-    def update(self, update_data: DapUpdate.TableFieldValue):
+    def update(self, update_data: DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
+        r = dap_interface_pb2.Successfulness()
+        r.success = True
         upd = update_data
         if upd:
             k, v = "dm", upd.value.dm
@@ -140,16 +149,20 @@ class SearchEngine(DapInterface):
 
             field_type = self.structure[tbname][upd.fieldname]['type']
             if field_type != 'embedding':
-                raise DapBadUpdateRow("Bad type", tbname, upd.key.core, upd.fieldname, field_type, k)
+                r.narrative.append(
+                    "Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, upd.key, upd.fieldname, ftype,
+                                                                                 k))
+                r.success = False
             row = self.store.setdefault(tbname, {}).setdefault(upd.key.core, {}).setdefault(upd.key.agent, {})
             row[v.name] = v
             row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)
+        return r
 
     def blk_update(self, update_data: DapUpdate):
         for upd in update_data.update:
             self.update(upd)
 
-    def remove(self, remove_data) -> dap_interface_pb2.Successfulness:
+    def remove(self, remove_data: DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
         r = dap_interface_pb2.Successfulness()
         r.success = True
 
@@ -241,10 +254,9 @@ class SearchEngine(DapInterface):
             else:
                 for key in key_selector:
                     key_list.append(key(True))
-
             result = []
             for key in key_list:
-                data = self._ss.store[self.target_table_name][key[0]][key[1]]
+                data = self.searchSystem.store[self.target_table_name][key[0]][key[1]]
                 dist = distance.cosine(data[self.target_field_name], self.enc_query)
                 result.append((*key, dist))
             ordered = sorted(result, key=lambda x: x[2])
@@ -274,12 +286,10 @@ class SearchEngine(DapInterface):
         query_memento = proto.query_memento
         graphQuery = SearchEngine.SubQuery().setSearchSystem(self).fromJSON(query_memento.memento.decode("utf-8")).prepare()
 
-
         if input_idents.HasField('originator') and input_idents.originator:
             idents = None
         else:
             idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
-
         reply = dap_interface_pb2.IdentifierSequence()
         reply.originator = False
         for core in graphQuery.execute(idents):
