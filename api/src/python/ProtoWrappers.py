@@ -103,7 +103,8 @@ class ValueTransformer(object):
         7: (7, "i32", "i32", identity_transformer.__get__(object)),
         8: (8, "b", "b", identity_transformer.__get__(object)),
         9: (9, "l", "l", identity_transformer.__get__(object)),
-        10: (10, "a", "a", address_transformer.__get__(object))
+        10: (10, "a", "a", address_transformer.__get__(object)),
+        11: (11, "kv", "kv", address_transformer.__get__(object))
     }
 
     @classmethod
@@ -120,7 +121,9 @@ class UpdateData:
     data_store = {
         "default": lambda table, field: {"default": UpdateData._table_entry(table, field)},
         "data_model": lambda table, field: {"data_model": UpdateData._table_entry(table,field)},
-        "attribute": lambda attrname, table, field: {"attributes": {attrname: UpdateData._table_entry(table, field)}}
+        "attribute": lambda attrname, table, field: {"attributes": {attrname: UpdateData._table_entry(table, field)}},
+        "data_model_2": lambda table, field: {"dm_instance_model": UpdateData._table_entry(table, field)},
+        "dm_values": lambda table, field: {"dm_instance_values": UpdateData._table_entry(table, field)}
     }
 
     def __init__(self, origin: update_pb2.Update, db_structure: dict, address_resolver):
@@ -160,16 +163,30 @@ class UpdateData:
         upd.dm.description = origin.data_model.description
         upd.dm.attributes.extend(origin.data_model.attributes)
 
-    def updFromDataModel(self, key, data_model):
+    def updFromDataModel(self, key, data_model, agent_id=None, db_key="data_model"):
         upd = dap_update_pb2.DapUpdate.TableFieldValue()
-        upd.tablename = self.db_structure["data_model"]["table"]
-        upd.fieldname = self.db_structure["data_model"]["field"]
-        upd.key = key
+        upd.tablename = self.db_structure[db_key]["table"]
+        upd.fieldname = self.db_structure[db_key]["field"]
+        upd.key.core = key
+        if not agent_id is None:
+            upd.key.agent = agent_id
         upd.value.type = 6
 
         upd.value.dm.name = data_model.name
         upd.value.dm.description = data_model.description
         upd.value.dm.attributes.extend(data_model.attributes)
+        return upd
+
+    def updFromDataModelValues(self, key, values, agent_id=None, db_key="dm_instance_values"):
+        upd = dap_update_pb2.DapUpdate.TableFieldValue()
+        upd.tablename = self.db_structure[db_key]["table"]
+        upd.fieldname = self.db_structure[db_key]["field"]
+        upd.key.core = key
+        if not agent_id is None:
+            upd.key.agent = agent_id
+        upd.value.type = 11
+
+        upd.value.kv.extend(values)
         return upd
 
     def updFromAttribute(self, key, attribute):
@@ -187,7 +204,7 @@ class UpdateData:
                 db_name = "default"
         upd.tablename = sdb[db_name]["table"]
         upd.fieldname = sdb[db_name]["field"]
-        upd.key = key
+        upd.key.core = key
         upd.value.CopyFrom(ValueTransformer.transform(attribute.value))
         return upd
 
@@ -204,8 +221,11 @@ class UpdateData:
                 raise InvalidAttribute("Key", "OEFCorePublicKey", "bytes", "Required key field not set!")
             if origin.HasField("data_model"):
                 upd_list.append(self.updFromDataModel(key, origin.data_model))
-            for dm in origin.data_models:
-                upd_list.append(self.updFromDataModel(key, dm))
+            for dm_instance in origin.data_models:
+                upd_list.append(self.updFromDataModel(key, dm_instance.model, dm_instance.key))
+                if len(dm_instance.values)>0:
+                    upd_list.append(self.updFromDataModel(key, dm_instance.model, dm_instance.key, "dm_instance_model"))
+                    upd_list.append(self.updFromDataModelValues(key, dm_instance.values, dm_instance.key))
             for attr in origin.attributes:
                 upd_list.append(self.updFromAttribute(key, attr))
         upd = dap_update_pb2.DapUpdate()

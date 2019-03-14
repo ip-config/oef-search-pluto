@@ -1,4 +1,4 @@
-
+import asyncio
 from api.src.proto import update_pb2
 import abc
 from fake_oef.src.python.lib.ConnectionFactory import SupportsConnectionInterface
@@ -61,13 +61,13 @@ class FakeOef(FakeBase.FakeBase, SupportsConnectionInterface):
     def disconnect_search(self):
         self.search_com.disconnect()
 
-    def search(self, query):
+    async def async_search(self, query):
         self.log.info("Got search query with TTL %d", query.ttl)
         my_location = self.search_com.call("get", "location")
         my_distance = my_location.distance(query.directed_search.target.geo)
         query.source_key = self._bin_id
         query.directed_search.distance.geo = my_distance+1.
-        result = self.search_com.call("search", query)
+        result = await self.search_com.call_node("search", query)
         res = response_pb2.SearchResponse()
         res.ParseFromString(result)
         for r in res.result:
@@ -75,21 +75,35 @@ class FakeOef(FakeBase.FakeBase, SupportsConnectionInterface):
                 res.result.remove(r)
         return res
 
+    def search(self, query):
+        return asyncio.run(self.async_search(query))
+
     def get(self, what):
         if what == "location":
             return self.search_com.call("get", "location")
 
-    def register_service(self, agent_id, service_update):
-        self.log.info("OEF got service from agent {}".format(agent_id))
+    async def async_register_service(self, agent_id, service_update):
+        self.error("OEF got service from agent {}".format(agent_id))
         upd = service_update
         if not isinstance(service_update, update_pb2.Update):
             upd = update_pb2.Update()
             upd.key = self._bin_id
-            dm = query_pb2.Query.DataModel()
-            dm.ParseFromString(service_update)
-            upd.data_models.extend([dm])
-        self.search_com.call("update", upd)
-        self.service_directory[agent_id] = upd
+            dm_instance = update_pb2.Update.DataModelInstance()
+            dm_instance.key = agent_id.encode("UTF-8")
+            if isinstance(service_update, query_pb2.Query.Instance):
+                dm = service_update.model
+                dm_instance.values.extend(service_update.values)
+                #TODO service_update.values
+            else:
+                dm = query_pb2.Query.DataModel()
+                dm.ParseFromString(service_update)
+            dm_instance.model.CopyFrom(dm)
+            upd.data_models.extend([dm_instance])
+        self.service_directory[agent_id] = service_update
+        await self.search_com.call_node("update", upd)
+
+    def register_service(self, agent_id, service_update):
+        return asyncio.run(self.async_register_service(agent_id, service_update))
 
     def unregister_service(self, agent_id):
         self.search_com.call("remove", self.service_directory[agent_id])

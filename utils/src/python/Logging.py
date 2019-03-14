@@ -74,4 +74,4 @@ def has_logger(func):
 
 
 def get_logger(name):
-    return colorlog.getLogger(name)
+    return Logger(name)

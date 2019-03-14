@@ -1,8 +1,16 @@
 syntax = "proto2";
 
+message NoInputParameter {
+}
+
+message DescribeResponse
+{
+}
+
+
 message ValueMessage
 {
-        required string typecode    = 1;
+        required string typecode = 1;
 
 // LOCATION is encoded into the doubles
 // EMBEDDING is encoded into the doubles
@@ -49,12 +57,18 @@ message ConstructQueryMementoResponse
 message Identifier
 {
         required bytes core = 1;
+        repeated bytes agents = 2;
 }
 
 message IdentifierSequence
 {
         required bool originator = 1;
         repeated Identifier identifiers = 2;
+}
+
+message DapExecute {
+    optional ConstructQueryMementoResponse query_memento = 1;
+    optional IdentifierSequence input_idents = 2;
 }
 
 message Successfulness

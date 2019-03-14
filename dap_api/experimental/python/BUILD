@@ -16,12 +16,33 @@ py_library(
         visibility = ["//visibility:public"],
         srcs=[
                 "InMemoryDap.py",
-                "AddressRegistry.py"
+                "AddressRegistry.py",
+                "DataModelInstanceStore.py"
         ],
         deps=[
                 "//dap_api/src/protos:py_dap_api_pb",
                 "//dap_api/src/python:dap_api",
                 "@com_google_protobuf//:protobuf_python",
-                "//utils/src/python:py_utils"
+                "//utils/src/python:py_utils",
+                "//dap_api/src/python/network:dap_network"
         ],
+)
+
+py_library(
+    name="network_dap_contract",
+    visibility = ["//visibility:public"],
+    srcs = ["NetworkDapContract.py"]
+)
+
+py_binary(
+    name="network_daps",
+    visibility = ["//visibility:public"],
+    srcs = ["RunNetworkDaps.py"],
+    main="RunNetworkDaps.py",
+    deps=[
+        ":experimental_lib",
+        ":network_dap_contract",
+        "//ai_search_engine/src/python:search_engine",
+    ]
+
 )

@@ -42,17 +42,22 @@ class SupportsConnectionInterface(abc.ABC):
             c.disconnect()
 
 
+
 class ConnectionFactory(object):
     @has_logger
     def __init__(self):
         self._obj_store = {}
+        self._addr_store = {}
 
     def add_obj(self, obj_id, obj):
         if obj_id in self._obj_store and obj != self._obj_store[obj_id]:
-            print(self._obj_store)
-            print(obj_id)
             raise KeyError("Different object in the store with the same id: {}".format(obj_id))
         self._obj_store[obj_id] = obj
+
+    def add_addr(self, obj_id, addr):
+        if obj_id in self._addr_store and addr != self._addr_store[obj_id]:
+            raise KeyError("Different address in the store with the same id: {}".format(obj_id))
+        self._addr_store[obj_id] = addr
 
     def clear(self, what = None):
         keys = self._obj_store.keys()

@@ -72,7 +72,7 @@ class BackendRouter:
                     if len(merged_list) == 1:
                         response = merged_list[0]
                     elif len(merged_list) == 0:
-                        self.log.warn("Empty merged list")
+                        self.log.warning("Empty merged list")
                         return []
                     else:
                         response = self.__response_builder[path].build_responses(merged_list)

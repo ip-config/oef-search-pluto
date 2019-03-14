@@ -7,6 +7,7 @@ py_library(
         "//api/src/proto:py_api_pb",
         "//fetch_teams/oef_core_protocol:py_oef_protocol",
         "//utils/src/python:py_utils",
+        "//network/src/python/async_socket:async_socket",
     ],
     data = [
     ],

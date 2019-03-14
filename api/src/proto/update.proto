@@ -50,13 +50,25 @@ message Update {
         string description = 3; //if name is CUSTOM then this must be specified, basically it's custom name
     }
 
+    message DataModelInstance {
+
+        message KeyValue {
+            string key = 1;
+            Attribute.ValueType value = 2;
+        }
+        bytes key = 1;
+        fetch.oef.pb.Query.DataModel model = 2;
+        repeated fetch.oef.pb.Query.KeyValue values = 3;
+    }
+
+    //todo remove
     message BulkUpdate {
         repeated Update list = 1;
     }
 
     bytes key = 1;
     repeated Attribute attributes = 2;
-    repeated fetch.oef.pb.Query.DataModel data_models = 3;
-    Uri uri = 4; // todo: remove
-    fetch.oef.pb.Query.DataModel data_model = 5; //todo remove
+    repeated DataModelInstance data_models = 3;
+    Uri uri = 5; // todo: remove
+    fetch.oef.pb.Query.DataModel data_model = 6; //todo remove
 }

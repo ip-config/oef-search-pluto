@@ -16,6 +16,7 @@ from dap_api.src.protos import dap_interface_pb2
 from dap_api.src.protos import dap_update_pb2
 from dap_api.src.python.DapQueryResult import DapQueryResult
 from typing import List
+from dap_api.src.python.network.DapNetwork import network_support
 
 
 class InMemoryDap(DapInterface.DapInterface):
@@ -48,7 +49,7 @@ class InMemoryDap(DapInterface.DapInterface):
     Returns:
        DapDescription
     """
-    def describe(self):
+    def describe(self) -> dap_description_pb2.DapDescription:
         result = dap_description_pb2.DapDescription()
         result.name = self.name
 
@@ -79,8 +80,11 @@ class InMemoryDap(DapInterface.DapInterface):
     def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
         return None
 
-    def execute(self, proto: dap_interface_pb2.ConstructQueryMementoResponse, input_idents: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
-        j = json.loads(proto.memento.decode("utf-8"))
+    def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
+        print("EXECUTE---------------")
+        input_idents = proto.input_idents
+        query_memento = proto.query_memento
+        j = json.loads(query_memento.memento.decode("utf-8"))
         rowProcessor = self.operatorFactory.createAttrMatcherProcessor(
             j['target_field_type'],
             j['operator'],
@@ -94,7 +98,7 @@ class InMemoryDap(DapInterface.DapInterface):
             idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
 
         reply = dap_interface_pb2.IdentifierSequence()
-        reply.originator = False;
+        reply.originator = False
         for core in self.processRows(func, idents):
             c = reply.identifiers.add()
             c.core = core()
@@ -141,17 +145,17 @@ class InMemoryDap(DapInterface.DapInterface):
                     ftype = self.fields[upd.fieldname]["type"]
 
                 if ftype != k:
-                    r.narrative.append("Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, upd.key, upd.fieldname, ftype, k))
+                    r.narrative.append("Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, upd.key.core, upd.fieldname, ftype, k))
                     r.success = False
 
                 if commit:
-                    self.store.setdefault(tbname, {}).setdefault(upd.key, {})[upd.fieldname] = v
+                    self.store.setdefault(tbname, {}).setdefault(upd.key.core, {})[upd.fieldname] = v
             if not r.success:
                 break
 
         return r
 
-    def remove(self, remove_data) -> dap_interface_pb2.Successfulness:
+    def remove(self, remove_data: dap_update_pb2.DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
 
         r = dap_interface_pb2.Successfulness()
         r.success = True

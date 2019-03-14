@@ -10,6 +10,8 @@ py_binary(
         "//fetch_teams/oef_core_protocol:py_oef_protocol",
         "//pluto_app/src/python/app:app",
         "//utils/src/python:py_utils",
+        "//dap_api/experimental/python:network_dap_contract",
+        "//dap_api/src/python/network:dap_network"
     ],
 )
 

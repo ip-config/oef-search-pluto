@@ -134,6 +134,7 @@ class DapManager(object):
         return self.instances[name]
 
     def update(self, update: dap_update_pb2.DapUpdate):
+        success = True
         for upd in update.update:
             cls = self.getField(upd.fieldname)["dap"]
             r = self.getInstance(cls).update(upd)
@@ -232,9 +233,16 @@ class DapManager(object):
         if node.query:
             yield from node.query.execute(cores)
         elif node.memento:
-            results = self.getInstance(node.dap_name).execute(node.memento, DapInterface.coresToIdentifierSequence(cores))
+            proto = dap_interface_pb2.DapExecute()
+            proto.query_memento.CopyFrom(node.memento)
+            proto.input_idents.CopyFrom(DapInterface.coresToIdentifierSequence(cores))
+            results = self.getInstance(node.dap_name).execute(proto)
             for identifier in results.identifiers:
-                yield DapQueryResult.DapQueryResult(identifier.core)
+                if len(identifier.agents) == 0:
+                    yield DapQueryResult.DapQueryResult(identifier.core)
+                else:
+                    for agent in identifier.agents:
+                        yield DapQueryResult.DapQueryResult(identifier.core, agent)
         else:
             raise Exception("Node didn't compile")
 
