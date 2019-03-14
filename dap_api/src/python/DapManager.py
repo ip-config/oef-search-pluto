@@ -237,8 +237,13 @@ class DapManager(object):
             proto.query_memento.CopyFrom(node.memento)
             proto.input_idents.CopyFrom(DapInterface.coresToIdentifierSequence(cores))
             results = self.getInstance(node.dap_name).execute(proto)
+            print(results)
             for identifier in results.identifiers:
-                yield DapQueryResult.DapQueryResult(identifier.core)
+                if len(identifier.agents) == 0:
+                    yield DapQueryResult.DapQueryResult(identifier.core)
+                else:
+                    for agent in identifier.agents:
+                        yield DapQueryResult.DapQueryResult(identifier.core, agent)
         else:
             raise Exception("Node didn't compile")
 

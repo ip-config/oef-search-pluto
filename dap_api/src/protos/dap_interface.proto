@@ -57,6 +57,7 @@ message ConstructQueryMementoResponse
 message Identifier
 {
         required bytes core = 1;
+        repeated bytes agents = 2;
 }
 
 message IdentifierSequence

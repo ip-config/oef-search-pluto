@@ -292,9 +292,11 @@ class SearchEngine(DapInterface):
             idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
         reply = dap_interface_pb2.IdentifierSequence()
         reply.originator = False
-        for core in graphQuery.execute(idents):
+        for ident in graphQuery.execute(idents):
             c = reply.identifiers.add()
-            c.core = core()
+            core, agent = ident(True)
+            c.core = core
+            c.agents.append(agent)
         return reply
 
     def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
