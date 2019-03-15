@@ -63,24 +63,30 @@ void ChatClient::read_complete(ChatCore &thecore, const boost::system::error_cod
 
   if (bytes > 0)
   {
-    std::string s;
-    std::istream is(&read_buffer);
-    std::getline(is, s, '\n');
-
-    while(s.length() &&
-          (
-           s[s.length()-1]=='\n'
-          ||
-          s[s.length()-1]=='\r'
-           )
-          )
-    {
-      s.pop_back();
-    }
-
-    inq.push_back(s);
-    core.context -> post(std::bind(&ChatClient::in_work, this));
+    //std::cout << "GOT:" << bytes << std::endl;
+    std::cout << "GOT:" << bytes << std::endl << "   :" << read_buffer.bigbuf << std::endl;
   }
+                                    
+                                    
+
+    //std::string s;
+//    std::istream is(&read_buffer);
+//    std::getline(is, s, '\n');
+//
+//    while(s.length() &&
+//          (
+//           s[s.length()-1]=='\n'
+//          ||
+//          s[s.length()-1]=='\r'
+//           )
+//          )
+//    {
+//      s.pop_back();
+//    }
+//
+//    inq.push_back(s);
+//    core.context -> post(std::bind(&ChatClient::in_work, this));
+//  }
   read_start();
 }
 
@@ -104,9 +110,15 @@ void ChatClient::write_start()
 
 void ChatClient::read_start()
 {
-  boost::asio::async_read_until(sock,
+  read_buffer.clear();
+
+  read_buffer.clear();
+  //read_buffer.push_back(boost::asio::buffer(bigbuffer, 100));
+  //read_buffer.push_back(boost::asio::buffer(bigbuffer+100, 900));
+
+  boost::asio::async_read(sock,
                                 read_buffer,
-                                "\r\n",
+                                //"\r\n",
                                 std::bind(
                                           &ChatClient::read_complete,
                                           this,

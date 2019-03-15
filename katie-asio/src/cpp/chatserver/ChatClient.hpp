@@ -1,7 +1,8 @@
 #pragma once
-#include "katie-asio/src/cpp/comms/Listener.hpp"
-
 #include <list>
+
+#include "katie-asio/src/cpp/comms/Listener.hpp"
+#include "ReadBufferSequence.hpp"
 
 class ChatCore;
 
@@ -13,7 +14,10 @@ public:
 
   ChatCore &core;
   tcp::socket sock;
-  boost::asio::streambuf read_buffer;
+  //boost::asio::streambuf read_buffer;
+  //std::list<boost::asio::mutable_buffer> read_buffer;
+  BufferSeq read_buffer;
+  char bigbuffer[1000];
   std::list<std::string> outq;
   std::list<std::string> inq;
 
