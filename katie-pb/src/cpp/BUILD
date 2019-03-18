@@ -1,12 +1,12 @@
 cc_binary(
-    name = "chatserver",
+    name = "app",
     visibility = [
         "//visibility:public",
     ],
-    srcs = glob(["commserver.cpp"]),
+    srcs = glob(["main.cpp"]),
     deps = [
-        "//katie-asio/src/cpp/comms:lib",
         ":lib",
+        "//katie-pb/src/protos:cc_katie_pb",
     ],
     #linkshared = True,
     #linkstatic = True,
@@ -21,7 +21,7 @@ cc_library(
     hdrs = glob(["*.hpp"]),
     deps = [
         "@boost//:asio",
-        "//katie-asio/src/cpp/comms:lib",
+        "//katie-pb/src/protos:cc_katie_pb",
     ],
 )
 

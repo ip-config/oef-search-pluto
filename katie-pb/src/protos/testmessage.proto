@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+
+message TestMessage
+{
+        optional string verb = 1;
+        repeated string noun = 2;
+}
