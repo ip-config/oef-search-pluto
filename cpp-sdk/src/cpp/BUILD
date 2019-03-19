@@ -11,8 +11,8 @@ cc_library(
          "DapInterface.hpp",
          "Listener.hpp",
          "CircularBuffer.hpp",
-         "ProtoFactory.hpp",
-         "char_array_buffer.hpp"
+         "char_array_buffer.hpp",
+         "TransportFactory.hpp"
          ],
     deps = [
         "@boost//:asio",

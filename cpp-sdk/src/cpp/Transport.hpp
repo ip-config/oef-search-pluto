@@ -1,12 +1,9 @@
 #pragma once
 
-#include "google/protobuf/message.h"
-#include "cpp-sdk/src/cpp/ProtoFactory.hpp"
 #include "cpp-sdk/src/cpp/CircularBuffer.hpp"
 #include "cpp-sdk/src/cpp/char_array_buffer.hpp"
-#include "cpp-sdk/src/cpp/Listener.hpp"
 
-
+#include "google/protobuf/message.h"
 #include "boost/asio.hpp"
 #include "boost/asio/ip/tcp.hpp"
 #include "boost/asio/write.hpp"
@@ -17,24 +14,42 @@
 #include <unordered_map>
 
 
-class Transport : Listener::ISocketOwner, public std::enable_shared_from_this<Transport> {
+class IDestroyer {
 public:
-  using Socket     = boost::asio::ip::tcp::socket;
-  using SocketPtr  = std::shared_ptr<Socket>;
-  using Buffer     = std::vector<uint8_t>;
-  using BufferPtr  = std::shared_ptr<Buffer>;
-  using Message    = google::protobuf::Message;
-  using MessagePtr = std::shared_ptr<Message>;
-  using ErrorCb    = std::function<void(std::error_code)>;
-  using CbStore    = std::unordered_map<std::string, std::function<void(std::istream*)>>;
+  IDestroyer() = default;
+  virtual ~IDestroyer() = default;
+
+  virtual void destroy(uint16_t) = 0;
+};
+
+
+class ISocketOwner
+{
+public:
+  ISocketOwner() {}
+  virtual ~ISocketOwner() {}
+  virtual boost::asio::ip::tcp::socket& socket() = 0;
+  virtual void go() = 0;
+};
+
+
+class Transport : ISocketOwner, public std::enable_shared_from_this<Transport> {
+public:
+  using Socket       = boost::asio::ip::tcp::socket;
+  using SocketPtr    = std::shared_ptr<Socket>;
+  using Buffer       = std::vector<uint8_t>;
+  using BufferPtr    = std::shared_ptr<Buffer>;
+  using Message      = google::protobuf::Message;
+  using MessagePtr   = std::shared_ptr<Message>;
+  using CbStore      = std::unordered_map<std::string, std::function<void(std::istream*)>>;
   using TransportPtr = std::shared_ptr<Transport>;
 
-  Transport(Socket socket, ProtoFactory &protoFactory)
+  Transport(Socket socket, uint16_t id)
   : socket_(std::move(socket))
-  , protoFactory_(protoFactory)
-  , errorCb_{[](std::error_code){}}
   , read_buffer_(128) // 32KB
+  , id_{id}
   {}
+
   virtual ~Transport() = default;
 
   virtual Socket& socket(){
@@ -66,10 +81,6 @@ public:
     });
   }
 
-  void SetErrorCallback(ErrorCb errorCb){
-    errorCb_ = errorCb;
-  }
-
   template <class PROTO> void AddReadCallback(const std::string& path, std::function<void(PROTO, TransportPtr)> readCb){
     cb_store_[path] = [readCb, this](std::istream* is_ptr){
       PROTO proto;
@@ -82,11 +93,14 @@ public:
   void read(const boost::system::error_code& ec = boost::system::error_code(), std::size_t length = 0){
     std::cerr << "Called read: " << ec << ", " << ec.message() << ", length = " << length << std::endl;
 
-    if (ec != boost::system::errc::errc_t ::success){
+    if (ec != boost::system::errc::errc_t::success){
       if (ec==boost::asio::error::eof){ //close connection
         std::cerr << "CONNECTION CLOSED" << std::endl;
+        auto ptr = destroyer_.lock();
+        if (ptr){
+          ptr->destroy(id_);
+        }
       }
-      //errorCb_(ec);
       return;
     }
 
@@ -143,16 +157,25 @@ public:
     }
 
     //issue read
-    boost::asio::async_read(
-        socket_,
-        read_buffer_.getBuffersToWrite(stateData_.length),
-        std::bind(&Transport::read, this, std::placeholders::_1, std::placeholders::_2)
-    );
+    auto self(shared_from_this());
+    boost::asio::async_read(socket_,read_buffer_.getBuffersToWrite(stateData_.length),
+        [self](boost::system::error_code ec, std::size_t length){
+      self->read(ec, length);
+    });
 
   }
 
   void stopRead(){
     active_.store(false);
+  }
+
+  void close(){
+    stopRead();
+    socket_.close();
+  }
+
+  void SetDestroyer(std::weak_ptr<IDestroyer> destroyer){
+    destroyer_ = destroyer;
   }
 
 private:
@@ -209,9 +232,11 @@ private:
 
 private:
   Socket socket_;
-  ProtoFactory& protoFactory_;
-  ErrorCb errorCb_;
   CircularBuffer read_buffer_;
+  CbStore cb_store_;
+  std::weak_ptr<IDestroyer> destroyer_;
+  uint16_t id_;
+
 
   struct StateData {
     uint32_t length;
@@ -230,6 +255,4 @@ private:
   States state_ = {States::START};
   StateData stateData_ = {INT_SIZE, ""};
   std::atomic<bool> active_{true};
-
-  CbStore cb_store_;
 };
