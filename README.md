@@ -1,6 +1,8 @@
 # OEF Search Pluto
 
-## Setup an OEF Search Pluto node (using `oef-search-pluto-image` docker image)
+## Setup an OEF Search Pluto node 
+
+#### Using `oef-search-pluto-image` docker image
 
 - Build: 
 
