@@ -50,7 +50,7 @@ class BackendRouter:
                         if p is None:
                             continue
                         if isinstance(p, Exception):
-                            self.log.warn("Exception happened in handler for path {}: {}".format(path, str(p)))
+                            self.log.exception("Exception happened in handler for path {}: {}".format(path, str(p)))
                             continue
                         elif isinstance(p, list):
                             if len(p) == 0:
@@ -72,7 +72,7 @@ class BackendRouter:
                     if len(merged_list) == 1:
                         response = merged_list[0]
                     elif len(merged_list) == 0:
-                        self.log.warn("Empty merged list")
+                        self.log.warning("Empty merged list")
                         return []
                     else:
                         response = self.__response_builder[path].build_responses(merged_list)

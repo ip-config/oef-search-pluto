@@ -7,9 +7,11 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 import numpy as np
 import scipy.spatial.distance as distance
+import json
 
 from dap_api.src.protos import dap_description_pb2
 from dap_api.src.protos.dap_update_pb2 import DapUpdate
+from dap_api.src.protos import dap_interface_pb2
 from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_api.src.python.DapInterface import DapInterface
 from dap_api.src.python.DapQuery import DapQuery
@@ -19,10 +21,13 @@ from dap_api.src.python.SubQueryInterface import SubQueryInterface
 from fetch_teams.oef_core_protocol import query_pb2
 from utils.src.python.Logging import has_logger
 from typing import List
+from dap_api.src.python.network.DapNetwork import network_support
 
+from utils.src.python.out import out
 
 class SearchEngine(DapInterface):
     @has_logger
+    @network_support
     def __init__(self, name, config):
         self._storage = {}
         nltk.download('stopwords')
@@ -36,6 +41,11 @@ class SearchEngine(DapInterface):
         self.store = {}
         self.name = name
         self.structure_pb = config["structure"]
+
+        host = config["host"]
+        port = config["port"]
+
+        self.start_network(self, host, port)
 
         self.tablenames = []
         self.structure = {}
@@ -98,7 +108,7 @@ class SearchEngine(DapInterface):
         avg_feature = np.divide(avg_feature, float(counter)) #todo check without, seemed to be good
         return avg_feature
 
-    def describe(self):
+    def describe(self) -> dap_description_pb2.DapDescription:
         result = dap_description_pb2.DapDescription()
         result.name = self.name
 
@@ -128,76 +138,78 @@ class SearchEngine(DapInterface):
             avg_feature = np.divide(avg_feature, float(counter))
         return avg_feature
 
-    def update(self, update_data: DapUpdate.TableFieldValue):
-        upd = update_data
-        if upd:
-            k, v = "dm", upd.value.dm
-            tbname = self.tablenames[0]
-            if upd.fieldname not in self.structure[tbname]:
-                raise DapBadUpdateRow("No such field", tbname, upd.key, upd.fieldname, k)
+    def update(self, update_data: DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
+        r = dap_interface_pb2.Successfulness()
+        r.success = True
+        try:
+            upd = update_data
+            if upd:
+                k, v = "dm", upd.value.dm
+                tbname = self.tablenames[0]
+                if upd.fieldname not in self.structure[tbname]:
+                    raise DapBadUpdateRow("No such field", tbname, upd.key.core, upd.fieldname, k)
 
-            field_type = self.structure[tbname][upd.fieldname]['type']
-            if field_type != 'embedding':
-                raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, field_type, k)
-            row = self.store.setdefault(tbname, {}).setdefault(upd.key, {})
-            row[v.name] = v
-            row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)
+                field_type = self.structure[tbname][upd.fieldname]['type']
+                if field_type != 'embedding':
+                    r.narrative.append(
+                        "Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, upd.key, upd.fieldname, ftype,
+                                                                                 k))
+                    r.success = False
+                row = self.store.setdefault(tbname, {}).setdefault(upd.key.core, {}).setdefault(upd.key.agent, {})
+                row[v.name] = v
+                row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)
+        except Exception as e:
+            r.success = False
+        return r
 
     def blk_update(self, update_data: DapUpdate):
         for upd in update_data.update:
             self.update(upd)
 
-    def remove(self, remove_data):
-        success = False
+    def remove(self, remove_data: DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
+        r = dap_interface_pb2.Successfulness()
+        r.success = True
+
         upd = remove_data
         if upd:
             k, v = "dm", upd.value.dm
             tbname = self.tablenames[0]
             if upd.fieldname not in self.structure[tbname]:
-                raise DapBadUpdateRow("No such field", tbname, upd.key, upd.fieldname, k)
-
+                r.narrative.append("No such field  key={} fname={}".format(upd.key, upd.fieldname))
+                r.success = False
             field_type = self.structure[tbname][upd.fieldname]['type']
             if field_type != 'embedding':
-                raise DapBadUpdateRow("Bad type", tbname, upd.key, upd.fieldname, field_type, k)
+                r.narrative.append("Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, upd.key, upd.fieldname, ftype, k))
+                r.success = False
             try:
-                row = self.store[tbname][upd.key]
-                success |= row.pop(v.name, None) is not None
+                row = self.store[tbname][upd.key.core][upd.key.agent]
+                r.success &= row.pop(v.name, None) is not None
                 row[upd.fieldname] = self._get_avg_oef_vec(row, upd.fieldname)
                 if np.sum(row[upd.fieldname]) == 0:
-                    self.store[tbname].pop(upd.key)
+                    self.store[tbname][upd.key.core].pop(upd.key.agent, None)
             except KeyError:
                 pass
-        return success
+        return r
 
     def removeAll(self, key):
         return self.store[self.tablenames[0]].pop(key, None) is not None
 
-    # def query(self, query: DapQuery, agents=None):
-    #     if len(self.store) == 0:
-    #         return []
-    #     enc_query = np.zeros((self._encoding_dim,))
-    #     if query.data_model:
-    #         enc_query = np.add(enc_query, self._dm_to_vec(query.data_model))
-    #     if query.description:
-    #         enc_query = np.add(enc_query, self._string_to_vec(query.description))
-    #     if not np.any(enc_query):
-    #         return []
-    #     table = next(iter(self.structure.keys()))
-    #     score_threshold = 0.2
-    #     result = []
-    #     for key, data in self.store[table].items():
-    #         dist = distance.cosine(data["data_model"], enc_query)
-    #         result.append((key, dist))
-    #     ordered = sorted(result, key=lambda x: x[1])
-    #     print("results: ", ordered)
-    #     result = [ordered[0]]
-    #     for i in range(1, len(ordered)):
-    #         if ordered[i][1] < score_threshold:
-    #             result.append(ordered[i])
-    #     return result
-
     class SubQuery(SubQueryInterface):
-        def __init__(self, searchSystem, leaf: DapQueryRepn.Leaf):
+        NAMES = [
+            "query_field_type",
+            "query_field_value",
+            "target_field_type",
+            "target_field_name",
+            "target_table_name",
+        ]
+
+        def __init__(self):
+            pass
+
+        def fromLeaf(self, leaf: DapQueryRepn.Leaf):
+            if leaf == None:
+                return
+
             if leaf.operator != "CLOSE_TO":
                 raise ValueError("{} is not an embed search operator.".format(leaf.operator))
             #if target_field_type != "embedding":
@@ -208,48 +220,94 @@ class SearchEngine(DapInterface):
             #        )
             #    );
 
-            self.enc_query = np.zeros((searchSystem._encoding_dim,))
-            if leaf.query_field_type == "string":
-                self.enc_query = np.add(self.enc_query, searchSystem._string_to_vec(leaf.query_field_value))
-            elif leaf.query_field_type == "data_model":
-                self.enc_query = np.add(self.enc_query, searchSystem._dm_to_vec(leaf.query_field_value))
-
             self.query_field_type  = leaf.query_field_type
             self.query_field_value = leaf.query_field_value
             self.target_field_type = leaf.target_field_type
             self.target_field_name = leaf.target_field_name
             self.target_table_name = leaf.target_table_name
 
-            self._ss = searchSystem
+            self.prepare()
+            return self
 
-        def execute(self, oef_cores: List[DapQueryResult] = None):
-            if oef_cores == []:
+        def prepare(self):
+            self.enc_query = np.zeros((self.searchSystem._encoding_dim,))
+            if self.query_field_type == "string":
+                self.enc_query = np.add(self.enc_query, self.searchSystem._string_to_vec(self.query_field_value))
+            elif self.query_field_type == "data_model":
+                self.enc_query = np.add(self.enc_query, self.searchSystem._dm_to_vec(self.query_field_value))
+            return self
+
+        def setSearchSystem(self, searchSystem):
+            self.searchSystem = searchSystem
+            return self
+
+        def execute(self, key_selector: List[DapQueryResult] = None):
+            if key_selector == []:
                 return []
 
             key_list = []
-            if oef_cores is None:
-                key_list = self._ss.store[self.target_table_name].keys()
+            if key_selector is None:
+                key_list = []
+                for core in self.searchSystem.store[self.target_table_name].keys():
+                    agents = self.searchSystem.store[self.target_table_name][core].keys()
+                    if len(agents) > 0:
+                        for agent in agents:
+                            key_list.append((core, agent))
+                    else:
+                        key_list.append(core)
             else:
-                for key in oef_cores:
-                    key_list.append(key())
-
+                for key in key_selector:
+                    key_list.append(key(True))
             result = []
             for key in key_list:
-                data = self._ss.store[self.target_table_name][key]
+                data = self.searchSystem.store[self.target_table_name][key[0]][key[1]]
                 dist = distance.cosine(data[self.target_field_name], self.enc_query)
-                result.append((key, dist))
-            ordered = sorted(result, key=lambda x: x[1])
-            res = DapQueryResult(ordered[0][0])
-            res.score = ordered[0][1]
+                result.append((*key, dist))
+            ordered = sorted(result, key=lambda x: x[2])
+            res = DapQueryResult(ordered[0][0], ordered[0][1])
+            res.score = ordered[0][2]
             yield res
             for i in range(1, len(ordered)):
-                if ordered[i][1] < 0.2:
-                    res = DapQueryResult(ordered[i][0])
-                    res.score = ordered[i][1]
+                if ordered[i][2] < 0.2:
+                    res = DapQueryResult(ordered[i][0], ordered[i][1])
+                    res.score = ordered[i][2]
                     yield res
 
-    def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.Leaf) -> SubQueryInterface:
-        return SearchEngine.SubQuery(self, dapQueryRepnLeaf)
+        def toJSON(self):
+            r = {}
+            for k in SearchEngine.SubQuery.NAMES:
+                r[k] = getattr(self, k)
+            return json.dumps(r)
+
+        def fromJSON(self, data):
+            r = json.loads(data)
+            for k in SearchEngine.SubQuery.NAMES:
+                setattr(self, k, r.get(k, None))
+            return self
+
+    def execute(self, proto:  dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
+        input_idents = proto.input_idents
+        query_memento = proto.query_memento
+        graphQuery = SearchEngine.SubQuery().setSearchSystem(self).fromJSON(query_memento.memento.decode("utf-8")).prepare()
+
+        if input_idents.HasField('originator') and input_idents.originator:
+            idents = None
+        else:
+            idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
+        reply = dap_interface_pb2.IdentifierSequence()
+        reply.originator = False
+        for ident in graphQuery.execute(idents):
+            c = reply.identifiers.add()
+            core, agent = ident(True)
+            c.core = core
+            c.agents.append(agent)
+        return reply
+
+    def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
+        q = SearchEngine.SubQuery().setSearchSystem(self).fromLeaf(DapQueryRepn.Leaf().fromProto(proto))
+        r = dap_interface_pb2.ConstructQueryMementoResponse()
+        r.memento = q.toJSON().encode('utf8')
+        return r
 
     def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.Branch) -> SubQueryInterface:
         return None

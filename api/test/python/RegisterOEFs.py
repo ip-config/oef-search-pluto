@@ -20,7 +20,10 @@ def create_update(key: str, name: str, description: str, attributes: list) -> up
     dm.name = name
     dm.description = description
     dm.attributes.extend(attributes)
-    upd.data_models.extend([dm])
+    dm_instance = update_pb2.Update.DataModelInstance()
+    dm_instance.key = upd.key
+    dm_instance.model.CopyFrom(dm)
+    upd.data_models.extend([dm_instance])
     return upd
 
 

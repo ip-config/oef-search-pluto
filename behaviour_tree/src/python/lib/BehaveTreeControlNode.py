@@ -45,9 +45,7 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         if at >= len(self.children):
             return True
 
-        context.pushTask(self)
-        context.pushTask(self.children[at])
-        return True
+        return self.children[at]
 
     def tickAll(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
         at = 0
@@ -59,9 +57,7 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         if at >= len(self.children):
             return True
 
-        context.pushTask(self)
-        context.pushTask(self.children[at])
-        return True
+        return self.children[at]
 
     def tickFirst(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
         at = 0
@@ -76,16 +72,13 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         if at >= len(self.children):
             return False
 
-        context.pushTask(self)
-        context.pushTask(self.children[at])
-        return True
+        return self.children[at]
 
     def tickYield(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
-        if not hasattr(self, "result"):
-            self.warning("Exiting", dir(self), self)
-            exit(1)
-        if prev == None:
-            return True if self.result == None else self.result
+        if context.has("_yielded"):
+            context.delete("_yielded")
+            return self.result
+        context.set("_yielded", 1)
         return self
 
     def tickLoop(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
@@ -98,9 +91,7 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         if at >= len(self.children):
             return self
 
-        context.pushTask(self)
-        context.pushTask(self.children[at])
-        return True
+        return self.children[at]
 
     def tickForever(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
         return self
@@ -109,7 +100,6 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         at = 0
 
         if prev and prev[1] and prev[0] in self.children:
-            self.info("CHILD SUCCESS")
             return True
 
         if prev and prev[0] in self.children:
@@ -119,6 +109,4 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         if at >= len(self.children):
             at = 0
 
-        context.pushTask(self)
-        context.pushTask(self.children[at])
-        return True
+        return self.children[at]

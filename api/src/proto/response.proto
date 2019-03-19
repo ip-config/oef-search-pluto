@@ -14,12 +14,20 @@ message UpdateResponse {
 
 message SearchResponse {
     message Item {
+
+        message AgentInfo {
+            bytes key = 1;
+            //later extra info about the agents (local search)
+            //e.g. score (this would mean search system index dm by agent key)
+        }
+
         bytes key = 1;
         string ip = 2;
         uint32 port = 3;
         double score = 4;
         string info = 5;
         double distance = 6;
+        repeated AgentInfo agents = 7;
     }
 
     repeated Item result = 1;

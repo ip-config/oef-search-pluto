@@ -1,9 +1,11 @@
 import sys
 
 from dap_api.src.python import DapManager
+from dap_api.src.python.network import DapNetworkProxy
 from ai_search_engine.src.python import SearchEngine
 from dap_api.experimental.python import InMemoryDap
 from dap_api.experimental.python import AddressRegistry
+from dap_api.experimental.python import DataModelInstanceStore
 import api.src.python.ProtoWrappers as ProtoWrappers
 from api.src.python.EndpointSearch import SearchQuery
 from api.src.python.EndpointUpdate import UpdateEndpoint, BlkUpdateEndpoint
@@ -11,7 +13,7 @@ from api.src.python.EndpointRemove import RemoveEndpoint
 from api.src.python.BackendRouter import BackendRouter
 from dap_2d_geo.src.python import DapGeo
 from dap_e_r_network.src.python import DapERNetwork
-
+from dap_api.experimental.python.NetworkDapContract import config_contract
 
 class PlutoApp:
     def __init__(self):
@@ -53,16 +55,7 @@ class PlutoApp:
                         },
                     },
                 },
-                "data_model_searcher": {
-                    "class": "SearchEngine",
-                    "config": {
-                        "structure": {
-                            "data_model_table": {
-                                "data_model": "embedding"
-                            },
-                        },
-                    },
-                },
+                "data_model_searcher": config_contract["data_model_searcher"],
                 "address_registry": {
                     "class": "AddressRegistry",
                     "config": {
@@ -72,7 +65,18 @@ class PlutoApp:
                             },
                         },
                     },
-                }
+                },
+                #"data_model_store": {
+                #    "class": "DataModelInstanceStore",
+                #    "config": {
+                #        "structure": {
+                #            "local_dm_table": {
+                #                "data_model_2": "dm",
+                #                "dm_values": "keyvalue"
+                #            },
+                #        },
+                #    },
+                #}
             }
 
         self.dapManager.setup(
@@ -94,6 +98,8 @@ class PlutoApp:
             .attribute(AttrName.Value("CITY"), "location_table", "city")\
             .attribute(AttrName.Value("NETWORK_ADDRESS"), "address_registry_table", "address_field")\
             .default("default_table", "default_field")\
+            .data_model_2("local_dm_table", "data_model_2")\
+            .dm_values("local_dm_table", "dm_values")\
             .build()
 
         address_registry = self.dapManager.getInstance("address_registry")

@@ -19,6 +19,7 @@ from crawler_demo.src.python.lib import CrawlerAgents
 from utils.src.python import ThreadedWebserver
 from fake_oef.src.python.lib import FakeAgent
 from api.src.proto import query_pb2, response_pb2
+import logging
 
 
 class ActivityObserver(Observer):
@@ -121,7 +122,7 @@ class App(object):
 
 
 def main():
-    configure_logging()
+    configure_logging(level=logging.ERROR)
     app = App()
 
     parser = argparse.ArgumentParser(description='Test application for PLUTO.')

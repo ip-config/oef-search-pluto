@@ -35,7 +35,8 @@ def create_address_attribute_remove(key: str, ip: str, port: int):
     attr.value.a.key = key
     attr.value.a.signature = "Signed".encode("utf-8")
     upd = remove_pb2.Remove()
-    upd.key = key
+    upd.key.core = key
+    upd.key.agent = key
     upd.attributes.extend([attr])
     return upd
 

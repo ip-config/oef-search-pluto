@@ -2,7 +2,7 @@ from fake_oef.src.python.lib import FakeBase
 from pluto_app.src.python.app import PlutoApp
 from fake_oef.src.python.lib.ConnectionFactory import SupportsConnectionInterface
 from api.src.proto import response_pb2
-from api.src.proto import query_pb2
+from api.src.proto import query_pb2, update_pb2
 from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer
 from api.src.python.Serialization import serializer, deserializer
 import asyncio
@@ -201,11 +201,18 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
     async def call_node(self, path: str, data):
         self.log.info("Got request for path %s", path)
         if path == "search":
-            query = query_pb2.Query()
-            query.ParseFromString(data)
+            if isinstance(data, query_pb2.Query):
+                query = data
+            else:
+                query = query_pb2.Query()
+                query.ParseFromString(data)
             if not self._am_i_closer_and_update_query(query):
                 return []
             data = query.SerializeToString()
+        elif path == "update":
+            self.error("GOT update", data)
+            if isinstance(data, update_pb2.Update):
+                data = data.SerializeToString()
         result = await self.callMe(path, data)
         if path == "update":
             self.notify_update()

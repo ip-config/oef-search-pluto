@@ -8,6 +8,8 @@ from api.src.proto import update_pb2
 from fake_oef.src.python.lib.FakeSearch import MultiFieldObserver, NodeAttributeInterface, Observer, ObserverNotifier
 from fake_oef.src.python.lib.FakeDirector import Location
 from fake_oef.src.python.lib.ConnectionFactory import ConnectionFactory
+from fake_oef.src.python.lib.OEFSocketAdapter import OEFSocketAdapterServerBuilder
+from utils.src.python.Logging import get_logger, has_logger
 
 
 def get_attr_b(name, desc, t=2):
@@ -74,13 +76,19 @@ class FakeDirector(MultiFieldObserver):
 
 
 class SearchNetwork:
+    @has_logger
     def __init__(self, connection_factory: ConnectionFactory, entities):
         self.connection_factory = connection_factory
         self.w2v = FakeSearch.LazyW2V()
         self.cache_lifetime = 10
         self.executor = ThreadPoolExecutor(1)
+        self.server_executor = ThreadPoolExecutor(1)
         self.director = FakeDirector(entities)
         self.stacks = {}  # mapping of name -> { 'search_node', 'eof_core' }
+        self._socket_servers = OEFSocketAdapterServerBuilder(connection_factory, "127.0.0.1")
+
+    def close_sockets(self):
+        self._socket_servers.cancel()
 
     def register_activity_observer(self, observer: Observer):
         self.director.register_activity_observer(observer)
@@ -94,6 +102,9 @@ class SearchNetwork:
     def create_oef_core_for_node(self, search_node_id: str, oef_core_id: str, port: int):
         core = FakeOef(id=oef_core_id, connection_factory=self.connection_factory, port=port)
         core.connect_to_search(search_node_id)
+        if port == 10000:
+            self.error("Create oef socket adapter for node %s and port %d", oef_core_id, port)
+            self._socket_servers.create_socket(port, oef_core_id)
         return core
 
     def create_weather_agent_for_core(self, oef_core_id: str, agent_id: str):
@@ -112,15 +123,16 @@ class SearchNetwork:
         r['agent'] = self.create_weather_agent_for_core(oef_core_id, agent_id)
         return r
 
-    def build_from_entities(self, entities):
+    def build_from_entities(self, entities, initial_port=10000):
         connections = {}
-        port = 1
+        port = initial_port
         for key, entity in entities.items():
             self.add_stack(entity.name, port)
             port += 1
             connections[entity.name] = [link[0].name for link in entity.links]
         for key in connections:
             self.set_connection(key, connections[key])
+        self.server_executor.submit(OEFSocketAdapterServerBuilder.run_forever, self._socket_servers)
 
     def set_connection(self, search_node_id: str, connections: List[str]):
         for target_search_id in connections:
