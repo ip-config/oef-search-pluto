@@ -27,6 +27,8 @@ RUN wget https://github.com/bazelbuild/bazel/releases/download/0.23.0/bazel-0.23
 WORKDIR /source
 COPY . /source
 
+RUN bazel build fetch_teams/bottle
+
 #RUN rm -Rf build &&\
 #    mkdir build &&\
 #    cd build &&\
