@@ -1,6 +1,8 @@
 #pragma once
 #include <memory>
 #include "boost/asio.hpp"
+#include "cpp-sdk/src/cpp/ProtoFactory.hpp"
+
 
 using boost::asio::ip::tcp;
 
@@ -30,4 +32,5 @@ public:
 
   boost::asio::io_context io_context;
 
+  ProtoFactory protoFactory_;
 };

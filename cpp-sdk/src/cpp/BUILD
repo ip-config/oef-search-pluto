@@ -9,11 +9,15 @@ cc_library(
     hdrs = [
          "Transport.hpp",
          "DapInterface.hpp",
-         "Listener.hpp"
+         "Listener.hpp",
+         "CircularBuffer.hpp",
+         "ProtoFactory.hpp",
+         "char_array_buffer.hpp"
          ],
     deps = [
         "@boost//:asio",
-        "@boost//:coroutine2"
+        "//dap_api/src/protos:cc_dap_api_pb",
+        "//api/src/proto:cc_api_pb"
     ],
 )
 

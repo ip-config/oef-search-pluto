@@ -1,8 +1,20 @@
-//
-// Created by Attila Bagoly on 2019-03-18.
-//
+#pragma once
 
-#ifndef OEF_SEARCH_PLUTO_PROTOFACTORY_HPP
-#define OEF_SEARCH_PLUTO_PROTOFACTORY_HPP
+#include <string>
+//#include "dap_api/src/protos/dap_subquer"
+#include "api/src/proto/query.pb.h"
 
-#endif //OEF_SEARCH_PLUTO_PROTOFACTORY_HPP
+
+class ProtoFactory {
+public:
+
+  ProtoFactory() = default;
+  virtual ~ProtoFactory() = default;
+
+  template <class T> std::shared_ptr<T> create(const std::string& path) {
+    if (path == "subquery"){
+      return std::make_shared<Query>();
+    }
+    return nullptr;
+  }
+};
