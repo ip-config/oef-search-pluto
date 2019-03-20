@@ -37,7 +37,7 @@ public:
       std::cerr << "Config json parsing failed: " << status.ToString() << std::endl;
     }
 
-    dap_ = std::make_shared<DapClass>();
+    dap_ = std::make_shared<DapClass>(dap_config_.description());
     dap_factory_ = std::make_shared<DapInterfaceTransportFactory>(std::dynamic_pointer_cast<DapInterface>(dap_));
 
     server_ = std::make_shared<Listener>(dap_config_.port(), std::dynamic_pointer_cast<TransportFactory>(dap_factory_));

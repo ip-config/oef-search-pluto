@@ -5,14 +5,11 @@
 
 class EmbeddingDap : public DapInterface {
 public:
-  EmbeddingDap() = default;
-  virtual ~EmbeddingDap() = default;
-
-  virtual DapDescription describe() {
-    DapDescription proto;
-    proto.set_name("Hello");
-    return proto;
+  EmbeddingDap(const DapDescription& description)
+   : DapInterface(description)
+  {
   }
+  virtual ~EmbeddingDap() = default;
 
   virtual Successfulness update(const DapUpdate&) {
     Successfulness proto;

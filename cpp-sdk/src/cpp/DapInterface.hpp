@@ -8,15 +8,25 @@
 
 class DapInterface {
 public:
-  DapInterface() = default;
+  DapInterface(const DapDescription& description)
+   : description_{description}
+  {
+  }
+
   virtual ~DapInterface() = default;
 
-  virtual DapDescription describe() = 0;
+  virtual const DapDescription& describe() {
+    return description_;
+  }
+
   virtual Successfulness update(const DapUpdate&) = 0;
   virtual Successfulness remove(const DapUpdate&) = 0;
   virtual ConstructQueryMementoResponse prepareConstraint(const ConstructQueryConstraintObjectRequest&) = 0;
   virtual ConstructQueryMementoResponse prepare(const ConstructQueryObjectRequest&) = 0;
   virtual DapExecute execute(const IdentifierSequence&) = 0;
+
+protected:
+  const DapDescription& description_;
 };
 
 
