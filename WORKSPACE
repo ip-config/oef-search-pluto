@@ -1,4 +1,6 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 http_archive(
     name = "com_google_protobuf",
@@ -90,3 +92,15 @@ load("//tools:find_python.bzl", "new_system_python_headers_repository")
 new_system_python_headers_repository(
         name="python_headers",
 )
+
+git_repository(
+    name = "com_github_nelhage_rules_boost",
+    commit = "6d6fd834281cb8f8e758dd9ad76df86304bf1869",
+    remote = "https://github.com/nelhage/rules_boost",
+)
+
+#load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
+#boost_deps()
+
+load("//coroutines:coroutines.bzl", "boost_deps")
+boost_deps()

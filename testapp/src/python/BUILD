@@ -2,7 +2,7 @@ py_binary(
         name="testapp",
         visibility = ["//visibility:public"],
         deps=[
-                "//third_party/bottle:bottle",
+                "//fetch_teams/bottle:bottle",
                 "//testapp/src/python/mainfuncs:mainfuncs",
                 "//testapp/src/protos:py_testapp_pb",
                 "//network/src/python/async_socket:async_socket",

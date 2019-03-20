@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "dap_api/src/protos/dap_description.proto";
+
+message DapConfig {
+    string host = 1;
+    uint32 port = 2;
+    DapDescription description = 3;
+}
