@@ -59,7 +59,7 @@ public:
     read();
   }
 
-  void write(BufferPtr data, const std::string& path="") {
+  template <typename PROTO> void write(const PROTO& proto, const std::string& path="") {
     std::vector<boost::asio::const_buffer> buffers;
     auto path_size = static_cast<uint32_t>(path.size()+1);
     int32_t len = -static_cast<int32_t>(path_size);
@@ -68,7 +68,11 @@ public:
       buffers.emplace_back(boost::asio::buffer(&path, path_size));
     }
 
-    auto data_len = static_cast<uint32_t>(data->size());
+    std::size_t data_size = proto.ByteSize();
+    BufferPtr data = std::make_shared<Buffer>(data_size);
+    proto.SerializeWithCachedSizesToArray(data->data());
+
+    auto data_len = static_cast<uint32_t>(data_size);
     buffers.emplace_back(boost::asio::buffer(&data_len, sizeof(data_len)));
     buffers.emplace_back(boost::asio::buffer(data->data(), data_len));
 
@@ -183,15 +187,14 @@ private:
     auto data = read_buffer_.getBuffersToRead();
 
     uint8_t *vec = nullptr;
-    bool delete_needed = false;
+    uint8_t extra_store[INT_SIZE];
 
     if (data.size()==1) {
       vec = static_cast<uint8_t*>(data[0].data());
     } else if (data.size()==2) {
-      vec = new uint8_t[INT_SIZE];
-      std::memcpy(vec, data[0].data(), data[0].size());
-      std::memcpy(vec+data[0].size()-1, data[1].data(), data[1].size());
-      delete_needed = true;
+      std::memcpy(extra_store, data[0].data(), sizeof(uint8_t)*data[0].size());
+      std::memcpy(extra_store+data[0].size()-1, data[1].data(), sizeof(uint8_t)*data[1].size());
+      vec = extra_store;
     } else {
       std::cerr << "readHeader error! Got data.size=" << data.size() << "!" <<std::endl;
       return 0;
@@ -203,10 +206,6 @@ private:
         vec[1] << 8  |
         vec[0]
     );
-
-    if (delete_needed) {
-      delete vec;
-    }
 
     return len;
   }
@@ -227,7 +226,12 @@ private:
     char_array_buffer buffer(data);
     buffer.diagnostic();
     std::istream is(&buffer);
-    cb_store_[stateData_.path](&is);
+    auto cb_it = cb_store_.find(stateData_.path);
+    if (cb_it != cb_store_.end()){
+      cb_it->second(&is);
+    } else {
+      std::cerr << "Handler not registered for path: " <<stateData_.path << std::endl;
+    }
   }
 
 private:

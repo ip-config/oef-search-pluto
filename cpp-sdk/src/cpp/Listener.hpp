@@ -1,7 +1,7 @@
 #pragma once
 
 #include "cpp-sdk/src/cpp/Transport.hpp"
-#include "TransportFactory.hpp"
+#include "cpp-sdk/src/cpp/TransportFactory.hpp"
 
 #include "boost/asio.hpp"
 
@@ -14,12 +14,12 @@ using boost::asio::ip::tcp;
 class Listener : public std::enable_shared_from_this<Listener>, public IDestroyer
 {
 public:
-  Listener();
+  Listener(uint16_t, std::shared_ptr<TransportFactory>);
   virtual ~Listener();
 
   void start_accept();
   void run(){
-    io_context.run();
+    io_context_.run();
   }
 
   virtual void destroy(uint16_t id){
@@ -27,13 +27,12 @@ public:
     transports_.erase(id);
   }
 
-  std::shared_ptr<tcp::acceptor> acceptor;
+private:
+  std::shared_ptr<tcp::acceptor> acceptor_;
+  boost::asio::io_context io_context_;
 
-  boost::asio::io_context io_context;
+  std::shared_ptr<TransportFactory> transport_factory_;
 
   std::unordered_map<uint16_t, std::shared_ptr<Transport>> transports_;
   uint16_t curr_id_ = 0;
-
-  TransportFactory transportFactory_;
-
 };
