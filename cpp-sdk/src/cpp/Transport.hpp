@@ -139,8 +139,12 @@ public:
 
       case States::BODY_HEADER: {
         int32_t len = readHeader();
-        if (len<=0) {
-          std::cerr << "WRONG BODY HEADER, PATH ALREADY RECEIVED (" << stateData_.path << ")!" << std::endl;
+        if (len<0) {
+          std::cerr << "WRONG BODY HEADER (" << len << "), PATH ALREADY RECEIVED (" << stateData_.path << ")!" << std::endl;
+        } else if (len==0) {
+          gotBody();
+          state_ = States::HEADER;
+          stateData_.length = INT_SIZE;
         } else {
           stateData_.length = static_cast<uint32_t>(len);
           state_ = States::BODY;
