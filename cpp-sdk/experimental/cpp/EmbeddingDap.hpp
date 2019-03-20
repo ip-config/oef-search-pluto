@@ -1,17 +1,16 @@
-#include <list>
-#include <iostream>
-#include <functional>
+#pragma once
 
-#include "Listener.hpp"
 #include "cpp-sdk/src/cpp/DapInterface.hpp"
 
-class TestDap : public DapInterface {
+
+class EmbeddingDap : public DapInterface {
 public:
-  TestDap() = default;
-  virtual ~TestDap() = default;
+  EmbeddingDap() = default;
+  virtual ~EmbeddingDap() = default;
 
   virtual DapDescription describe() {
     DapDescription proto;
+    proto.set_name("Hello");
     return proto;
   }
 
@@ -40,19 +39,3 @@ public:
     return proto;
   }
 };
-
-
-int main(int argc, char *argv[])
-{
-  std::cout << "Hello"<< std::endl;
-
-  auto dap = std::make_shared<TestDap>();
-
-  auto dap_factory = std::make_shared<DapInterfaceTransportFactory>(std::dynamic_pointer_cast<DapInterface>(dap));
-
-  std::shared_ptr<Listener> listener = std::make_shared<Listener>(7600,
-      std::dynamic_pointer_cast<TransportFactory>(dap_factory));
-
-  listener->start_accept();
-  listener->run();
-}
