@@ -1,8 +1,10 @@
 import abc
 from abc import abstractmethod
 from typing import Callable
+from typing import List
 
 from dap_api.src.python import DapQueryRepn
+from dap_api.src.python import DapQueryResult
 from dap_api.src.python import SubQueryInterface
 from dap_api.src.protos import dap_interface_pb2
 from dap_api.src.protos import dap_description_pb2
@@ -128,7 +130,6 @@ class DapBadUpdateRow(Exception):
             )
         )
 
-
 def decodeConstraintValue(valueMessage):
     return {
         'bool':          lambda x: x.b,
@@ -145,6 +146,8 @@ def decodeConstraintValue(valueMessage):
         'int32_list':    lambda x: x.v_i32,
         'int64_list':    lambda x: x.v_i64,
 
+        'data_model':    lambda x: x.dm,
+
         'string_range':  lambda x: (x.v_s[0], x.v_s[1],),
         'float_range':   lambda x: (x.v_f[0], x.v_f[1],),
         'double_range':  lambda x: (x.v_d[0], x.v_d[1],),
@@ -157,13 +160,13 @@ def decodeConstraintValue(valueMessage):
 
     }[valueMessage.typecode](valueMessage)
 
-def coresToIdentifierSequence(cores):
+def coresToIdentifierSequence(cores: List[DapQueryResult.DapQueryResult]) -> dap_interface_pb2.IdentifierSequence:
     m = dap_interface_pb2.IdentifierSequence()
     if cores != None:
         m.originator = False
         for c in cores:
             ident = m.identifiers.add()
-            ident.core = c
+            ident.CopyFrom(c.asIdentifierProto())
     else:
         m.originator = True
     return m
@@ -187,6 +190,10 @@ def encodeConstraintValue(data, typecode):
     elif typecode == 'location':
         valueMessage.d.append(data[0])
         valueMessage.d.append(data[1])
+
+    elif typecode == 'data_model':
+        print("DATA MODEL")
+        print(data)
 
     elif typecode == 'string_list':
         valueMessage.v_s.extend(data)

@@ -1,5 +1,7 @@
 syntax = "proto2";
 
+import "fetch_teams/oef_core_protocol/query.proto";
+
 message NoInputParameter {
 }
 
@@ -21,6 +23,8 @@ message ValueMessage
         optional int32 i32 = 5;
         optional int64 i64 = 6;
         optional bool b    = 7;
+
+        optional fetch.oef.pb.Query.DataModel dm = 8;
 
         repeated string v_s  = 102;
         repeated float v_f   = 103;
@@ -57,7 +61,7 @@ message ConstructQueryMementoResponse
 message Identifier
 {
         required bytes core = 1;
-        repeated bytes agents = 2;
+        optional bytes agent = 2;
 }
 
 message IdentifierSequence
