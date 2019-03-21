@@ -1,9 +1,7 @@
 #pragma once
 
-#include "dap_api/src/protos/dap_description.pb.h"
-#include "dap_api/src/protos/dap_interface.pb.h"
-#include "dap_api/src/protos/dap_update.pb.h"
-#include "cpp-sdk/src/cpp/TransportFactory.hpp"
+#include "proto.hpp"
+#include "TransportFactory.hpp"
 
 
 class DapInterface {

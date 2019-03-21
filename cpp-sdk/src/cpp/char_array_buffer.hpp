@@ -1,10 +1,11 @@
 #pragma once
 
+#include "asio.hpp"
+
 #include <iostream>
 #include <list>
 #include <vector>
 #include <ctype.h>
-#include "boost/asio.hpp"
 
 class char_array_buffer : public std::streambuf
 {

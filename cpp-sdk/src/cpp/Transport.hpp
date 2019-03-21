@@ -1,13 +1,9 @@
 #pragma once
 
-#include "cpp-sdk/src/cpp/CircularBuffer.hpp"
-#include "cpp-sdk/src/cpp/char_array_buffer.hpp"
+#include "asio.hpp"
+#include "CircularBuffer.hpp"
+#include "char_array_buffer.hpp"
 
-#include "google/protobuf/message.h"
-#include "boost/asio.hpp"
-#include "boost/asio/ip/tcp.hpp"
-#include "boost/asio/write.hpp"
-#include "boost/asio/buffer.hpp"
 
 #include <iostream>
 #include <functional>
@@ -39,8 +35,6 @@ public:
   using SocketPtr    = std::shared_ptr<Socket>;
   using Buffer       = std::vector<uint8_t>;
   using BufferPtr    = std::shared_ptr<Buffer>;
-  using Message      = google::protobuf::Message;
-  using MessagePtr   = std::shared_ptr<Message>;
   using CbStore      = std::unordered_map<std::string, std::function<void(std::istream*)>>;
   using TransportPtr = std::shared_ptr<Transport>;
 

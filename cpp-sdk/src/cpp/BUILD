@@ -12,7 +12,9 @@ cc_library(
          "Listener.hpp",
          "CircularBuffer.hpp",
          "char_array_buffer.hpp",
-         "TransportFactory.hpp"
+         "TransportFactory.hpp",
+         "asio.hpp",
+         "proto.hpp"
          ],
     deps = [
         "@boost//:asio",
@@ -29,6 +31,7 @@ cc_binary(
     srcs = glob(["main.cpp"]),
     deps = [
         ":lib",
+        "@fetch_oef_search_language//:lib"
     ],
     #linkshared = True,
     #linkstatic = True,
