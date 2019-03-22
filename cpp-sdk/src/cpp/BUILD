@@ -13,7 +13,7 @@ cc_library(
          "CircularBuffer.hpp",
          "char_array_buffer.hpp",
          "TransportFactory.hpp",
-         "asio.hpp",
+         "asio_inc.hpp",
          "proto.hpp"
          ],
     deps = [

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "asio.hpp"
+#include "asio_inc.hpp"
 #include "CircularBuffer.hpp"
 #include "char_array_buffer.hpp"
 
@@ -70,7 +70,7 @@ public:
     buffers.emplace_back(boost::asio::buffer(&data_len, sizeof(data_len)));
     buffers.emplace_back(boost::asio::buffer(data->data(), data_len));
 
-    uint32_t total = -len+sizeof(len)+data_len+sizeof(data_len);
+    uint32_t total = static_cast<uint32_t>(-len+static_cast<int32_t>(sizeof(len)+data_len+sizeof(data_len)));
     boost::asio::async_write(socket_, buffers, [data, total](std::error_code ec,  std::size_t length){
       if (ec){
         std::cerr << "Failed to write to socket, because: " << ec.message() << "! "
@@ -91,7 +91,7 @@ public:
   void read(const boost::system::error_code& ec = boost::system::error_code(), std::size_t length = 0){
     std::cerr << "Called read: " << ec << ", " << ec.message() << ", length = " << length << std::endl;
 
-    if (ec != boost::system::errc::errc_t::success){
+    if (ec){
       if (ec==boost::asio::error::eof){ //close connection
         std::cerr << "CONNECTION CLOSED" << std::endl;
         auto ptr = destroyer_.lock();
@@ -253,7 +253,7 @@ private:
     BODY = 4
   };
 
-  const uint32_t INT_SIZE = sizeof(int32_t);
+  static constexpr const uint32_t INT_SIZE = sizeof(int32_t);
   States state_ = {States::START};
   StateData stateData_ = {INT_SIZE, ""};
   std::atomic<bool> active_{true};
