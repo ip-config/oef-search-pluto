@@ -27,7 +27,10 @@ py_library(
 py_library(
     name="network_dap_contract",
     visibility = ["//visibility:public"],
-    srcs = ["NetworkDapContract.py"]
+    srcs = ["NetworkDapContract.py"],
+    data = [
+            "//cpp-sdk/experimental/resources:dap_configs"
+    ]
 )
 
 py_binary(
@@ -40,5 +43,17 @@ py_binary(
         ":network_dap_contract",
         "//ai_search_engine/src/python:search_engine",
     ]
+)
+
+py_binary(
+    name="test_dap",
+    visibility = ["//visibility:public"],
+    srcs = ["TestDap.py"],
+    main="TestDap.py",
+    deps=[
+        ":experimental_lib",
+        ":network_dap_contract",
+        "//ai_search_engine/src/python:search_engine",
+    ],
 
 )

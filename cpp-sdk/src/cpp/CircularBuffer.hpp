@@ -1,10 +1,11 @@
 #pragma once
 
+#include "asio_inc.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <vector>
 #include <cstring>
-#include "boost/asio/buffer.hpp"
 #include <iostream>
 #include <list>
 #include <algorithm>
@@ -75,9 +76,11 @@ private:
     uint32_t s = (r_+1) % buff_size_;
     if (s<=w_){
       std::memcpy(new_buff, buff_+s, w_-s);
+      w_ = w_-s+1;
     } else {
       std::memcpy(new_buff, buff_+s, buff_size_-s);
       std::memcpy(new_buff+buff_size_-s, buff_, w_+1);
+      w_ = buff_size_-s+w_+1;
     }
     delete [] buff_;
     buff_ = new_buff;

@@ -1,10 +1,11 @@
 #pragma once
 
+#include "asio_inc.hpp"
+
 #include <iostream>
 #include <list>
 #include <vector>
 #include <ctype.h>
-#include "boost/asio.hpp"
 
 class char_array_buffer : public std::streambuf
 {
@@ -67,7 +68,7 @@ public:
 
     for(auto &b :  buffers)
     {
-      int c = boost::asio::buffer_size(b);
+      int c = static_cast<int>(boost::asio::buffer_size(b));
       if (pos >= c)
       {
         pos -= c;
@@ -78,7 +79,7 @@ public:
         auto r = boost::asio::buffer_cast<unsigned char*>(b)[pos];
         if (!silent)
           std::cout << "pos=" << pos << " c=" << int(r) << std::endl;
-        return r;
+        return static_cast<char>(r);
       }
     }
     if (!silent)

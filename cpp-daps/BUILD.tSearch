@@ -1,0 +1,56 @@
+print("Hi")
+
+print()
+
+cc_library(
+    name = "index_lib",
+    srcs = glob(["src/*/index/*.cpp"]),
+    hdrs = glob(["include/*/index/*.hpp"]),
+    copts = ["-Iinclude"],
+    deps = [
+    ],
+)
+
+cc_library(
+    name = "module_lib",
+    srcs = glob(["src/*/module/*.cpp"]),
+    hdrs = glob(["include/*/module/*.hpp"]),
+    copts = ["-Ieinclude"],
+    deps = [
+    ],
+)
+
+cc_library(
+    name = "query_lib",
+    srcs = glob(["src/*/query/*.cpp"]),
+    hdrs = glob(["include/*/query/*.hpp"]),
+    copts = ["-Iinclude"],
+    deps = [
+    ],
+)
+
+cc_library(
+    name = "schema_lib",
+    srcs = glob(["src/*/schema/*.cpp"]),
+    hdrs = glob(["include/*/schema/*.hpp"])+glob(["include/*/*.hpp"]),
+    copts = ["-Iexternal/fetch_oef_search_language/include"],
+    deps = [
+    ],
+    visibility = ["//visibility:public"],
+    #include_prefix="include/"
+)
+
+cc_library(
+    name = "lib",
+    visibility = [
+        "//visibility:public",
+    ],
+    srcs = glob(["src/*/*.cpp"]),
+    hdrs = glob(["include/*/*.hpp"]),
+    deps = [
+        #":index_lib",
+        #":module_lib",
+        #":query_lib",
+        ":schema_lib"
+    ],
+)
