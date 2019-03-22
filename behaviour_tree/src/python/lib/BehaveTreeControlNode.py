@@ -1,3 +1,4 @@
+import random
 from abc import ABC
 from abc import abstractmethod
 from utils.src.python.Logging import has_logger
@@ -16,6 +17,7 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
             'loop': BehaveTreeControlNode.tickLoop,
             'forever': BehaveTreeControlNode.tickForever,
             'yield': BehaveTreeControlNode.tickYield,
+            'maybe': BehaveTreeControlNode.maybe,
             'loop-until-success': BehaveTreeControlNode.tickLoopUntilSuccess,
         }[self.kind]
 
@@ -23,6 +25,7 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
          super().configure(definition)
          for k in {
              "yield": [ "result" ],
+             "maybe": [ "chance", "result" ],
          }.get(self.kind, []):
              setattr(self, k, definition.get(k, None))
 
@@ -56,6 +59,24 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
 
         if at >= len(self.children):
             return True
+
+        return self.children[at]
+
+    def maybe(self, context: 'BehaveTreeExecution.BehaveTreeExecution'=None, prev=None):
+        at = 0
+
+        if prev and prev[0] in self.children:
+            at = self.children.index(prev[0])
+            at += 1
+
+        if at == 0:
+            r = random.randint(0, self.chance)
+            print("R=",r,"  CHANCE=", self.chance)
+            if r != 0:
+                return self.result
+
+        if at >= len(self.children):
+            return self.result
 
         return self.children[at]
 
