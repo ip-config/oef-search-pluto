@@ -112,7 +112,6 @@ class DapGeo(DapInterface.DapInterface):
         def execute(self, agents: Sequence[str]=None):
             for location in self.locations:
                 for r in self.geo.search( location, self.radius ):
-                    print("EXECUTE: ", r)
                     yield r
 
         def toJSON(self):

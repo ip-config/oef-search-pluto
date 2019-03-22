@@ -89,7 +89,6 @@ class InMemoryDap(DapInterface.DapInterface):
         return None
 
     def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
-        print("EXECUTE---------------")
         input_idents = proto.input_idents
         query_memento = proto.query_memento
         j = json.loads(query_memento.memento.decode("utf-8"))

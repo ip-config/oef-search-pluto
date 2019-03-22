@@ -54,7 +54,6 @@ class GeoStore(object):
         return False
 
     def searchWithData(self, location, radius_in_m, bearing=None, bearing_width=None):
-        print("searchWithData", location, radius_in_m, bearing, bearing_width)
         left = None
         right = None
 
@@ -68,11 +67,6 @@ class GeoStore(object):
             d = self.EquirectangularDistance(location, loc)
             br = GeoStore.InitialBearing(location, loc)
             r = (entity, int(d), int(br))
-
-            print("~~~~~~~~~ d=", d)
-            print("~~~~~~~~ br=", br)
-            print("~~~~~~~~~ r=", r)
-
             if d > radius_in_m:
                 continue
             if left != None:

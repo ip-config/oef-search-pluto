@@ -52,8 +52,8 @@ class DapManager(object):
                 #print("Hello " + node.common_dap_name + ". Would you like to consume " + node.printable())
 
                 queryObject_pb = self.dapmanager.getInstance(node.common_dap_name).prepare(node.toProto())
-                print("NODE:", node.printable())
-                print("VISIT:", queryObject_pb)
+                #print("NODE:", node.printable())
+                #print("VISIT:", queryObject_pb)
                 if queryObject_pb.HasField('success') and queryObject_pb.success:
                     node.memento = queryObject_pb
                     return False
@@ -62,9 +62,9 @@ class DapManager(object):
 
         def visitLeaf(self, node, depth):
             pb = node.toProto()
-            print("LEAF:", node.printable())
+            #print("LEAF:", node.printable())
             node.memento = self.dapmanager.getInstance(node.dap_name).prepareConstraint(pb)
-            print("VISIT:", node.memento)
+            #print("VISIT:", node.memento)
 
     # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
     class EmbeddingInfo(object):
@@ -222,7 +222,7 @@ class DapManager(object):
 
     def execute(self, dapQueryRepn):
         v1 = DapManager.PopulateActionsVisitorDescentPass(self)
-        dapQueryRepn.print()
+        #dapQueryRepn.print()
         dapQueryRepn.visitDescending(v1)
         start = dap_interface_pb2.IdentifierSequence()
         start.originator = True
@@ -236,17 +236,16 @@ class DapManager(object):
             proto.query_memento.CopyFrom(node.memento)
             proto.input_idents.CopyFrom(cores)
             r = self.getInstance(node.common_dap_name).execute(proto)
-            print("cn=", node.common_dap_name)
         elif node.combiner == "any":
             r = self._executeOr(node, cores)
         elif node.combiner == "all":
             r = self._executeAnd(node, cores)
         else:
             raise Exception("Node combiner '{}' not handled.".format(node.combiner))
-        print("_executeNode")
-        print("Results;")
-        for ident in r.identifiers:
-            print(DapQueryResult.DapQueryResult(pb=ident).printable())
+#        print("_executeNode")
+#        print("Results;")
+#        for ident in r.identifiers:
+#            print(DapQueryResult.DapQueryResult(pb=ident).printable())
         return r
 
     def _executeLeaf(self, node, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
@@ -260,10 +259,10 @@ class DapManager(object):
             r = results
         else:
             raise Exception("Node didn't compile")
-        print("_executeLeaf")
-        print("Results;")
-        for ident in r.identifiers:
-            print(DapQueryResult.DapQueryResult(pb=ident).printable())
+#        print("_executeLeaf")
+#        print("Results;")
+#        for ident in r.identifiers:
+#            print(DapQueryResult.DapQueryResult(pb=ident).printable())
         return r
 
     def _executeOr(self, node, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:

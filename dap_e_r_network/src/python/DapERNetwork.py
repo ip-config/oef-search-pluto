@@ -163,7 +163,6 @@ class DapERNetwork(DapInterface.DapInterface):
             filter_distance_function = lambda move, total:  total < self.weight if self.weight != None else lambda move, total: True
 
             for origin in self.origins:
-                print("~~~~~~~~~~~~~~~~~~~~origin", origin)
                 yield from self.graph.explore(
                     origin,
                     filter_move_function=filter_move_function,
@@ -218,30 +217,24 @@ class DapERNetwork(DapInterface.DapInterface):
         return r
 
     def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
-        print("~~~~~~~~~~~~~~~~~~ execute")
         graphQuery = DapERNetwork.DapGraphQuery()
         input_idents = proto.input_idents
-        print("~~~~~~~~~~~~~~~~~~ execute")
         query_memento = proto.query_memento
         j = query_memento.memento.decode("utf-8")
         graphQuery.fromJSON(j)
         graphQuery.setGraph(self.graphs[graphQuery.tablename])
 
-        print("~~~~~~~~~~~~~~~~~~ execute")
         if input_idents.HasField('originator') and input_idents.originator:
             idents = None
         else:
             idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
 
-        print("~~~~~~~~~~~~~~~~~~ execute")
         reply = dap_interface_pb2.IdentifierSequence()
         reply.originator = False;
         for core in graphQuery.execute(idents):
             c = reply.identifiers.add()
-            print("!!!!RESULT")
             c.core = core[0].encode("utf-8")
             c.agent = core[1].encode("utf-8")
-        print("~~~~~~~~~~~~~~~~~~ execute")
         return reply
 
     def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
