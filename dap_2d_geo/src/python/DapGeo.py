@@ -1,5 +1,6 @@
 from typing import Callable
 from typing import Sequence
+import json
 
 from dap_api.src.protos import dap_description_pb2
 from dap_api.src.protos import dap_update_pb2
@@ -9,6 +10,8 @@ from dap_api.src.python import DapQueryRepn
 from dap_api.src.python import ProtoHelpers
 from dap_api.src.python import SubQueryInterface
 from dap_api.src.python.DapInterface import DapBadUpdateRow
+from dap_api.src.python.DapInterface import decodeConstraintValue
+from dap_api.src.python.DapInterface import encodeConstraintValue
 from dap_2d_geo.src.python import GeoStore
 from dap_api.src.protos import dap_interface_pb2
 
@@ -49,12 +52,20 @@ class DapGeo(DapInterface.DapInterface):
         return self.geos[table_name]
 
     class DapGeoQuery(SubQueryInterface.SubQueryInterface):
-        NAMES = [
-            "radius",
-            "locations",
-            "tablename",
-            "geo",
-        ]
+        NAMES = {
+            "radius" : {
+                "htoj": lambda x: x,
+                "jtoh": lambda x: x,
+            },
+            "tablename" : {
+                "htoj": lambda x: x,
+                "jtoh": lambda x: x,
+            },
+            "locations" : {
+                "htoj": lambda x: x,
+                "jtoh": lambda x: x,
+            },
+        }
 
         def __init__(self):
             self.radius = None
@@ -100,28 +111,39 @@ class DapGeo(DapInterface.DapInterface):
 
         def execute(self, agents: Sequence[str]=None):
             for location in self.locations:
-                yield from self.geo.search( location, self.radius )
+                for r in self.geo.search( location, self.radius ):
+                    print("EXECUTE: ", r)
+                    yield r
 
         def toJSON(self):
             r = {}
-            for k in DapGeoQuery.NAMES:
-                r[k] = getattr(self, k)
+            for k,funcs in DapGeo.DapGeoQuery.NAMES.items():
+                v = getattr(self, k)
+                encoded = funcs['htoj'](v)
+                r[k] = encoded
+                #print("TO JSON k=", k, "   v=", v,   " enc=", encoded)
             return json.dumps(r)
 
         def fromJSON(self, data):
             r = json.loads(data)
-            for k in DapGeoQuery.NAMES:
-                setattr(self, k, r.get(k, None))
+            for k,funcs in DapGeo.DapGeoQuery.NAMES.items():
+                setattr(self, k, funcs['jtoh'](r.get(k, None)))
+            return self
 
     def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
+        raise Exception("GeoQuery must be created from subtrees, not leaves")
+
+    def prepare(self, proto: dap_interface_pb2.ConstructQueryObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
         r = dap_interface_pb2.ConstructQueryMementoResponse()
+        #print("NOD NAAME:", proto.node_name)
 
         # We'll let someone else handle any bigger branching logic.
         if len(proto.constraints) == 0 or len(proto.children) > 0:
             r.success = False
             return r
         # We'll let someone else handle anything which isn't an ALL
-        if proto.combiner != ProtoHelpers.COMBINER_ALL:
+        if proto.operator != ProtoHelpers.COMBINER_ALL:
+            #print("Not doing because not ALL")
             r.success = False
             return r
 
@@ -145,20 +167,26 @@ class DapGeo(DapInterface.DapInterface):
                 r.success = False
                 return r
             else:
-                func(geoQuery, proto.query_field_value)
+                func(geoQuery, decodeConstraintValue(constraint.query_field_value))
 
         geoQuery.setGeo(self.getGeoByTableName(geoQuery.tablename))
 
         if geoQuery.sanity():
-            r.success = False
-            return r
-        else:
             r.success = True
-            r.memento = geoQuery.toJSON()
+            r.memento = geoQuery.toJSON().encode('utf8')
+        else:
+            r.success = False
 
-    def execute(self, proto: dap_interface_pb2.ConstructQueryMementoResponse, input_idents: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
+        return r
+
+    def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
         geoQuery = DapGeo.DapGeoQuery()
-        geoQuery.fromJSON(proto.memento.decode("utf-8"))
+        input_idents = proto.input_idents
+        query_memento = proto.query_memento
+        j = query_memento.memento.decode("utf-8")
+        geoQuery.fromJSON(j)
+
+        geoQuery.setGeo(self.getGeoByTableName(geoQuery.tablename))
 
         if input_idents.HasField('originator') and input_idents.originator:
             idents = None
@@ -169,7 +197,8 @@ class DapGeo(DapInterface.DapInterface):
         reply.originator = False;
         for core in geoQuery.execute(idents):
             c = reply.identifiers.add()
-            c.core = core()
+            c.core = core[0].encode("utf-8")
+            c.agent = core[1].encode("utf-8")
         return reply
 
     def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:

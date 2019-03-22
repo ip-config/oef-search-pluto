@@ -22,25 +22,25 @@ class DapQueryRepn(object):
             self.common_dap_name = None
             self.name = "?"
             self.query = None
+            self.memento = None
 
         def Clear(self):
             self.leaves = []
             self.subnodes = []
 
         def printable(self):
-            return "Branch {} -- {} over {}, {} ({} children, {} leaves)".format(
+            return "Branch {} -- \"{}\" over {}, {} ({} children, {} leaves)".format(
                 self.name,
                 self.combiner,
-                self.common_target_table_name,
-                self.common_dap_name,
+                self.common_target_table_name or "NO_TARGET_TABLE",
+                self.common_dap_name or "NO_COMMON_DAP",
+                len(self.subnodes),
                 len(self.leaves),
-                len(self.subnodes)
                 )
 
         def print(self, depth=0):
             print(depth*"  ", self.printable())
             for n in self.subnodes:
-                print("SUBNODE:")
                 n.print(depth+1)
             for leaf in self.leaves:
                 print((depth+1)*"  ", leaf.printable())
@@ -66,6 +66,7 @@ class DapQueryRepn(object):
         def toProto(self):
             pb = dap_interface_pb2.ConstructQueryObjectRequest()
             pb.operator = self.combiner
+            pb.node_name = self.name
 
             for leaf in self.leaves:
                 new_leaf = pb.constraints.add()
@@ -109,6 +110,7 @@ class DapQueryRepn(object):
                 v = DapInterface.encodeConstraintValue(self.query_field_value, self.query_field_type)
 
                 pb.query_field_value.CopyFrom(v)
+                pb.node_name = self.name
 
                 pb.operator          = self.operator
                 pb.query_field_type  = self.query_field_type 
@@ -157,7 +159,9 @@ class DapQueryRepn(object):
             pass
 
     def print(self):
+        print("DapQueryRepn_____________________________________")
         self.root.print()
+        print("_________________________________________________")
 
     def __init__(self):
         self.root = DapQueryRepn.Branch(combiner="all")

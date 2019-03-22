@@ -43,6 +43,7 @@ message ConstructQueryConstraintObjectRequest
         required string target_field_type = 5;
         required string target_table_name = 6;
         required string dap_name = 7;
+        optional string node_name = 8;
 }
 
 message ConstructQueryObjectRequest
@@ -50,12 +51,14 @@ message ConstructQueryObjectRequest
         optional string operator = 1;
         repeated ConstructQueryConstraintObjectRequest constraints = 2;
         repeated ConstructQueryObjectRequest children = 3;
+        optional string node_name = 4;
 }
 
 message ConstructQueryMementoResponse
 {
         optional bool success = 1;
         optional bytes memento = 2;
+        optional string node_name = 3;
 }
 
 message Identifier

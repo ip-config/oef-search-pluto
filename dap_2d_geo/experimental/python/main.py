@@ -64,7 +64,10 @@ class PlutoTest(unittest.TestCase):
                 if lat == 0.0 and lon == 0.0:
                     continue
 
-                g.place("{}/{}".format(airport, country), (lat, lon))
+                ident = ( "localhost",  "{}/{}".format(airport, country) )
+                loc = (lat, lon)
+
+                g.place(ident, loc)
 
     def test25KmAroundBirmingham(self):
         """Test case A. note that all test method names must begin with 'test.'"""
@@ -86,7 +89,8 @@ class PlutoTest(unittest.TestCase):
         q2.constraint.relation.val.d = 25000
 
         dapQuery = self.data.makeQuery(qm)
-        results = list(self.data.execute(dapQuery))
+        identifierSequence = self.data.execute(dapQuery)
+        results = [ x.agent.decode('utf8') for x in identifierSequence.identifiers ]
 
         assert sorted(results) == ['BHX/ENGLAND', 'CVT/ENGLAND']
 
@@ -110,7 +114,8 @@ class PlutoTest(unittest.TestCase):
         q2.constraint.relation.val.d = 200000
 
         dapQuery = self.data.makeQuery(qm)
-        results = list(self.data.execute(dapQuery))
+        identifierSequence = self.data.execute(dapQuery)
+        results = [ x.agent.decode('utf8') for x in identifierSequence.identifiers ]
 
         assert sorted(results) == [
             'BBS/ENGLAND',

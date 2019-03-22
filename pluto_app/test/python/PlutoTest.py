@@ -152,3 +152,28 @@ class PlutoTest(unittest.TestCase):
         results = self.pluto.dapManager.execute(dapQuery).identifiers
         assert len(results) == 1
         assert results[0].agent == "007/James/Bond/Weather".encode("utf-8")
+
+    def testDataModelOrAttributeQuery(self):
+        """Test case A. note that all test method names must begin with 'test.'"""
+
+        qm = query_pb2.Query.Model()
+
+        dmq = qm.model
+        dmq.name = "sunshine"
+        dmq.description = "Give me some weather data"
+        dmq.attributes.extend([
+            get_attr_b("wind_stuff", "Is windy outside?"),
+            get_attr_b("celsius", "Freezing or warm?"),
+            get_attr_b("pascal", "Under pressure")
+        ])
+
+        qc = qm.constraints.add()
+
+        qc.constraint.attribute_name = "country"
+        qc.constraint.relation.op = 0
+        qc.constraint.relation.val.s = "UK"
+
+        dapQuery = self.pluto.dapManager.makeQuery(qm)
+        results = self.pluto.dapManager.execute(dapQuery).identifiers
+        assert len(results) == 1
+        assert results[0].agent == "007/James/Bond/Weather".encode("utf-8")
