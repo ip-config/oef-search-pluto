@@ -20,6 +20,8 @@ class BehaveTreeLoader(object):
         ).addBuilder(
             'yield', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('yield',x)
         ).addBuilder(
+            'maybe', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('maybe',x)
+        ).addBuilder(
             'loop', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('loop',x)
         ).addBuilder(
             'loop-until-success', lambda x: BehaveTreeControlNode.BehaveTreeControlNode('loop-until-success',x)

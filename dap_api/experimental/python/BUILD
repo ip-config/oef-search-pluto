@@ -14,11 +14,7 @@ py_binary(
 py_library(
         name="experimental_lib",
         visibility = ["//visibility:public"],
-        srcs=[
-                "InMemoryDap.py",
-                "AddressRegistry.py",
-                "DataModelInstanceStore.py"
-        ],
+        srcs = [ x for x in glob(["*.py"]) if x[0] in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" ],
         deps=[
                 "//dap_api/src/protos:py_dap_api_pb",
                 "//dap_api/src/python:dap_api",

@@ -13,6 +13,7 @@ py_library(
         "//utils/src/python:py_utils",
         "//api/src/python:utils",
         "//api/src/python:communication_handler",
-        "//fake_oef/src/python/lib:lib"
+        "//fake_oef/src/python/lib:lib",
+        "//dap_api/experimental/python:network_dap_contract"
     ],
 )

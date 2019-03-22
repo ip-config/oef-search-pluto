@@ -15,21 +15,22 @@ class BehaveTreeExecution(object):
 
     def tick(self):
         prev=None
-        throttle = 7
+        throttle = 10
         while throttle > 0:
             foo = self.stack.pop()
             r = foo._execute(context=self, prev=prev)
 
-#            pp = prev
-#            if pp != None:
-#                if pp[1]:
-#                    pp = "({},{})".format(pp[0].printable(), pp[1])
-#                else:
-#                    pp = "({},{})".format(pp[0], pp[1])
-#            rp = r
-#            if hasattr(rp, "printable"):
-#                rp = rp.printable()
-#            print(self.name, "TICK: cycle=", throttle, "   step=", foo.printable(), "prev=", pp, " RESULT => ", rp)
+            # pp = prev
+            # if pp != None:
+            #     if pp[1]:
+            #         pp = "({},{})".format(pp[0].printable(), pp[1])
+            #     else:
+            #         pp = "({},{})".format(pp[0], pp[1])
+            # rp = r
+            # if hasattr(rp, "printable"):
+            #     rp = rp.printable()
+
+            # print(self.name, "TICK: cycle=", throttle, "   step=", foo.printable(), "prev=", pp, " RESULT => ", rp)
 
 
             prev=(foo, r)

@@ -82,6 +82,9 @@ class DapNetworkProxy(DapInterface):
         self.log.update_local_name(name+"@"+self.host+":"+str(self.port))
         self.client = ClientSocket(self.host, self.port)
 
+    def inject_w2v(self, *args, **kwargs):
+        pass
+
     def close(self):
         self.client.close()
 

@@ -15,3 +15,11 @@ py_proto_library(
     visibility = ["//visibility:public"],
     deps = ["//fetch_teams/oef_core_protocol:py_oef_protocol"]
 )
+
+cc_proto_library(
+    name = "cc_api_pb",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [":api_pb"],
+)

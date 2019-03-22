@@ -52,15 +52,19 @@ class DapManager(object):
                 #print("Hello " + node.common_dap_name + ". Would you like to consume " + node.printable())
 
                 queryObject_pb = self.dapmanager.getInstance(node.common_dap_name).prepare(node.toProto())
+                #print("NODE:", node.printable())
+                #print("VISIT:", queryObject_pb)
                 if queryObject_pb.HasField('success') and queryObject_pb.success:
-                    node.memento = queryObject_pb.memento
+                    node.memento = queryObject_pb
                     return False
             #print("Okes, we'll recurse.")
             return True
 
         def visitLeaf(self, node, depth):
             pb = node.toProto()
+            #print("LEAF:", node.printable())
             node.memento = self.dapmanager.getInstance(node.dap_name).prepareConstraint(pb)
+            #print("VISIT:", node.memento)
 
     # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
     class EmbeddingInfo(object):
@@ -109,7 +113,6 @@ class DapManager(object):
 
         for instance_name, instance in self.instances.items():
             structure_pb = instance.describe()
-
             for table_desc_pb in structure_pb.table:
                 for field_description_pb in table_desc_pb.field:
                     r[field_description_pb.name] = {
@@ -135,9 +138,10 @@ class DapManager(object):
 
     def update(self, update: dap_update_pb2.DapUpdate):
         success = True
-        for upd in update.update:
-            cls = self.getField(upd.fieldname)["dap"]
-            r = self.getInstance(cls).update(upd)
+        for tableFieldValue in update.update:
+            cls = self.getField(tableFieldValue.fieldname)["dap"]
+            print("UPDATE ", tableFieldValue.key.core, tableFieldValue.key.agent, " -> ", cls)
+            r = self.getInstance(cls).update(tableFieldValue)
             if r.success == False:
                 for m in r.narrative:
                     self.log.error(m)
@@ -218,68 +222,77 @@ class DapManager(object):
 
     def execute(self, dapQueryRepn):
         v1 = DapManager.PopulateActionsVisitorDescentPass(self)
+        #dapQueryRepn.print()
         dapQueryRepn.visitDescending(v1)
-        return list(self._execute(dapQueryRepn.root))
+        start = dap_interface_pb2.IdentifierSequence()
+        start.originator = True
+        return self._execute(dapQueryRepn.root, start)
 
-    def _execute(self, node, cores=None):
-        if node.combiner == "any":
-            yield from self._executeOr(node, cores)
-        elif node.combiner == "all":
-            yield from self._executeAnd(node, cores)
-        else:
-            raise Exception("Node combiner '{}' not handled.".format(node.combiner))
-
-    def _executeLeaf(self, node, cores=None):
+    def _execute(self, node, cores) -> dap_interface_pb2.IdentifierSequence:
         if node.query:
-            yield from node.query.execute(cores)
+            r = node.query.execute(cores)
         elif node.memento:
             proto = dap_interface_pb2.DapExecute()
             proto.query_memento.CopyFrom(node.memento)
-            proto.input_idents.CopyFrom(DapInterface.coresToIdentifierSequence(cores))
+            proto.input_idents.CopyFrom(cores)
+            r = self.getInstance(node.common_dap_name).execute(proto)
+        elif node.combiner == "any":
+            r = self._executeOr(node, cores)
+        elif node.combiner == "all":
+            r = self._executeAnd(node, cores)
+        else:
+            raise Exception("Node combiner '{}' not handled.".format(node.combiner))
+#        print("_executeNode")
+#        print("Results;")
+#        for ident in r.identifiers:
+#            print(DapQueryResult.DapQueryResult(pb=ident).printable())
+        return r
+
+    def _executeLeaf(self, node, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
+        if node.query:
+            r = node.query.execute(cores)
+        elif node.memento:
+            proto = dap_interface_pb2.DapExecute()
+            proto.query_memento.CopyFrom(node.memento)
+            proto.input_idents.CopyFrom(cores)
             results = self.getInstance(node.dap_name).execute(proto)
-            for identifier in results.identifiers:
-                if len(identifier.agents) == 0:
-                    yield DapQueryResult.DapQueryResult(identifier.core)
-                else:
-                    for agent in identifier.agents:
-                        yield DapQueryResult.DapQueryResult(identifier.core, agent)
+            r = results
         else:
             raise Exception("Node didn't compile")
+#        print("_executeLeaf")
+#        print("Results;")
+#        for ident in r.identifiers:
+#            print(DapQueryResult.DapQueryResult(pb=ident).printable())
+        return r
 
-    def _executeOr(self, node, cores=None):
+    def _executeOr(self, node, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
+        r = dap_interface_pb2.IdentifierSequence()
         for n in node.subnodes:
-            yield from self._execute(n, cores)
+            res = self._execute(n, cores)
+            for ident in res:
+                newid = r.add_identifiers()
+                newid.CopyFrom(ident)
         for n in node.leaves:
-            yield from self._executeLeaf(n, cores)
+            res = self._executeLeaf(n, cores)
+            for ident in res:
+                newid = r.add_identifiers()
+                newid.CopyFrom(ident)
+        return r
 
     # This is naive -- there's a functional way of making this more efficient.
-    def _executeAnd(self, node, cores=None):
+    def _executeAnd(self, node, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
         leafstart = 0
         nodestart = 0
 
-        if cores is None:
-            if len(node.leaves) > 0:
-                cores = list(self._executeLeaf(node.leaves[0]))
-                leafstart = 1
-
-        if cores is None:
-            if len(node.subnodes) > 0:
-                cores = self._execute(node.subnodes[0])
-                nodestart = 1
-
-        if cores is None or cores == []:
-            return []
-
-        cores = list(cores)
         for n in node.leaves[leafstart:]:
-            cores = list(self._executeLeaf(n, cores))
-            if len(cores) == 0:
-                return []
+            cores = self._executeLeaf(n, cores)
+            if len(cores.identifiers) == 0:
+                return dap_interface_pb2.IdentifierSequence()
 
         for n in node.subnodes[nodestart:]:
-            cores = list(self._execute(n, cores))
-            if len(cores) == 0:
-                return []
+            cores = self._execute(n, cores)
+            if len(cores.identifiers) == 0:
+                return dap_interface_pb2.IdentifierSequence()
 
         return cores
 
