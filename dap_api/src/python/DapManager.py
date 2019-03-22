@@ -217,8 +217,17 @@ class DapManager(object):
         return dapQueryRepn
 
     def execute(self, dapQueryRepn):
+        cloneQuery = dapQueryRepn.Copy()
+
         v1 = DapManager.PopulateActionsVisitorDescentPass(self)
         dapQueryRepn.visitDescending(v1)
+
+        print("-----------------------------------------------")
+        dapQueryRepn.print()
+        print("-----------------------------------------------")
+        cloneQuery.print()
+        print("-----------------------------------------------")
+
         return list(self._execute(dapQueryRepn.root))
 
     def _execute(self, node, cores=None):

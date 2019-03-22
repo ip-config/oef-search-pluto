@@ -27,6 +27,9 @@ class DapQueryRepn(object):
             self.leaves = []
             self.subnodes = []
 
+        def Copy(self):
+            return DapQueryRepn.Branch().fromProto(self.toProto())
+
         def printable(self):
             return "Branch {} -- {} over {}, {} ({} children, {} leaves)".format(
                 self.name,
@@ -63,9 +66,21 @@ class DapQueryRepn(object):
             else:
                 self.leaves.append(new_child)
 
+        def fromProto(self, pb):
+            self.combiner = pb.operator
+            self.common_target_table_name = pb.common_target_table_name
+            self.common_dap_name = pb.common_dap_name
+            self.name = pb.node_name
+
+            self.leaves = [ DapQueryRepn.Leaf().fromProto(x) for x in  pb.constraints ]
+            self.subnodes = [ DapQueryRepn.Branch().fromProto(x) for x in  pb.children ]
+
         def toProto(self):
             pb = dap_interface_pb2.ConstructQueryObjectRequest()
             pb.operator = self.combiner
+            pb.common_target_table_name = self.common_target_table_name
+            pb.common_dap_name = self.common_dap_name
+            pb.node_name = self.name
 
             for leaf in self.leaves:
                 new_leaf = pb.constraints.add()
@@ -161,6 +176,9 @@ class DapQueryRepn(object):
 
     def __init__(self):
         self.root = DapQueryRepn.Branch(combiner="all")
+
+    def Copy(self):
+        return self.root.Copy()
 
     def visit(self, visitor, node=None, depth=0):
         if not node:
