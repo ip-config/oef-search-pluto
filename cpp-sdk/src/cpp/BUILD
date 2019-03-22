@@ -14,7 +14,8 @@ cc_library(
          "char_array_buffer.hpp",
          "TransportFactory.hpp",
          "asio_inc.hpp",
-         "proto.hpp"
+         "proto.hpp",
+         "DapServer.hpp"
          ],
     deps = [
         "@boost//:asio",
