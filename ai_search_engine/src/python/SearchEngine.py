@@ -8,6 +8,7 @@ from nltk.stem import WordNetLemmatizer, PorterStemmer
 import numpy as np
 import scipy.spatial.distance as distance
 import json
+import base64
 
 from dap_api.src.protos import dap_description_pb2
 from dap_api.src.protos.dap_update_pb2 import DapUpdate
@@ -27,7 +28,7 @@ from utils.src.python.out import out
 
 class SearchEngine(DapInterface):
     @has_logger
-    @network_support
+    #@network_support
     def __init__(self, name, config):
         self._storage = {}
         nltk.download('stopwords')
@@ -42,10 +43,11 @@ class SearchEngine(DapInterface):
         self.name = name
         self.structure_pb = config["structure"]
 
-        host = config["host"]
-        port = config["port"]
+        host = config.get("host", None)
+        port = config.get("port", None)
 
-        self.start_network(self, host, port)
+        if host != None and port != None:
+            self.start_network(self, host, port)
 
         self.tablenames = []
         self.structure = {}
@@ -195,13 +197,24 @@ class SearchEngine(DapInterface):
         return self.store[self.tablenames[0]].pop(key, None) is not None
 
     class SubQuery(SubQueryInterface):
-        NAMES = [
-            "query_field_type",
-            "query_field_value",
-            "target_field_type",
-            "target_field_name",
-            "target_table_name",
-        ]
+        NAMES = {
+            "enc_query" : {
+                "htoj": lambda x: base64.b64encode(x.dumps()).decode("utf-8"),
+                "jtoh": lambda x: np.loads(base64.b64decode(x.encode("utf-8"))),
+            },
+            "target_field_type" : {
+                "htoj": lambda x: x,
+                "jtoh": lambda x: x,
+            },
+            "target_field_name" : {
+                "htoj": lambda x: x,
+                "jtoh": lambda x: x,
+            },
+            "target_table_name" : {
+                "htoj": lambda x: x,
+                "jtoh": lambda x: x,
+            },
+        }
 
         def __init__(self):
             pass
@@ -264,6 +277,8 @@ class SearchEngine(DapInterface):
                 dist = distance.cosine(data[self.target_field_name], self.enc_query)
                 result.append((*key, dist))
             ordered = sorted(result, key=lambda x: x[2])
+
+
             res = DapQueryResult(ordered[0][0], ordered[0][1])
             res.score = ordered[0][2]
             yield res
@@ -275,36 +290,40 @@ class SearchEngine(DapInterface):
 
         def toJSON(self):
             r = {}
-            for k in SearchEngine.SubQuery.NAMES:
-                r[k] = getattr(self, k)
+            for k,funcs in SearchEngine.SubQuery.NAMES.items():
+                r[k] = funcs['htoj'](getattr(self, k))
             return json.dumps(r)
 
         def fromJSON(self, data):
             r = json.loads(data)
-            for k in SearchEngine.SubQuery.NAMES:
-                setattr(self, k, r.get(k, None))
+            for k,funcs in SearchEngine.SubQuery.NAMES.items():
+                setattr(self, k, funcs['jtoh'](r.get(k, None)))
             return self
 
     def execute(self, proto:  dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
         input_idents = proto.input_idents
         query_memento = proto.query_memento
-        graphQuery = SearchEngine.SubQuery().setSearchSystem(self).fromJSON(query_memento.memento.decode("utf-8")).prepare()
+        graphQuery = SearchEngine.SubQuery().setSearchSystem(self).fromJSON(query_memento.memento.decode("utf-8"))
 
         if input_idents.HasField('originator') and input_idents.originator:
             idents = None
         else:
-            idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
+            idents = [ DapQueryResult(pb=x) for x in input_idents.identifiers ]
+
         reply = dap_interface_pb2.IdentifierSequence()
         reply.originator = False
-        for ident in graphQuery.execute(idents):
+
+        execute_results = graphQuery.execute(idents)
+
+        for ident in execute_results:
             c = reply.identifiers.add()
-            core, agent = ident(True)
-            c.core = core
-            c.agents.append(agent)
+            c.core = ident.core_id
+            c.agent = ident.agent_id
+            print("SUCCESS:", c.agent)
         return reply
 
     def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
-        q = SearchEngine.SubQuery().setSearchSystem(self).fromLeaf(DapQueryRepn.Leaf().fromProto(proto))
+        q = SearchEngine.SubQuery().setSearchSystem(self).fromLeaf(DapQueryRepn.Leaf().fromProto(proto)).prepare()
         r = dap_interface_pb2.ConstructQueryMementoResponse()
         r.memento = q.toJSON().encode('utf8')
         return r

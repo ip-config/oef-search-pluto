@@ -44,7 +44,10 @@ class Graph(object):
         visited_nodes = set([ origin ])
         current_nodes = set([ origin ])
 
+        print("ORIGIN=", origin)
+
         while len(current_nodes) > 0:
+            print("EXPLORE CYCLE")
             next_nodes = set()
 
             list_of_list_of_moves = [ self.store[x].keys() for x in current_nodes if x in self.store ]
