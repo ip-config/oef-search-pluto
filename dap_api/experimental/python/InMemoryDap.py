@@ -111,8 +111,11 @@ class InMemoryDap(DapInterface.DapInterface):
         j['query_field_type'] = proto.query_field_type
         j['query_field_value'] = DapInterface.decodeConstraintValue(proto.query_field_value)
 
+        print("CONSTRAINT: ", j)
+
         r = dap_interface_pb2.ConstructQueryMementoResponse()
         r.memento = json.dumps(j).encode('utf8')
+        r.success = True
         return r
 
     def print(self):

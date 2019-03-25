@@ -51,7 +51,10 @@ message ConstructQueryObjectRequest
         optional string operator = 1;
         repeated ConstructQueryConstraintObjectRequest constraints = 2;
         repeated ConstructQueryObjectRequest children = 3;
+
+// These three are used in internal representations.
         optional string node_name = 4;
+        repeated string dap_names = 5;
 }
 
 message ConstructQueryMementoResponse
