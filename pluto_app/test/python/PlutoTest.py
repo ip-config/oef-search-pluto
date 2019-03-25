@@ -97,7 +97,6 @@ class PlutoTest(unittest.TestCase):
     def _createUpdate(self, agent_name, fieldname, typename, data):
         update = dap_update_pb2.DapUpdate()
         newvalue = update.update.add()
-        f = self.pluto.getField(fieldname)
         newvalue.fieldname = fieldname
 
         newvalue.value.type = {

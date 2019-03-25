@@ -32,10 +32,15 @@ class DapQueryRepn(object):
             return DapQueryRepn.Branch().fromProto(self.toProto())
 
         def printable(self):
-            return "Branch {} -- \"{}\" over {} ({} children, {} leaves)".format(
+            tablenames = [
+                self.dap_field_candidates[x]['target_table_name']
+                for x in (self.dap_names or [])
+            ]
+            return "Branch {} -- \"{}\" over {} (tns={}) ({} children, {} leaves)".format(
                 self.name,
                 self.combiner,
                 self.dap_names or "NO_COMMON_DAPS",
+                tablenames,
                 len(self.subnodes),
                 len(self.leaves),
                 )
@@ -48,17 +53,38 @@ class DapQueryRepn(object):
                 print((depth+1)*"  ", leaf.printable())
 
         def MergeDaps(self):
+
             dap_names = [
                     x.dap_names for x in self.subnodes
                 ] + [
                     x.dap_names for x in self.leaves
                 ]
 
-            self.dap_names = dap_names[0]
+            self.dap_names = dap_names[0] if dap_names else []
             for n in dap_names[1:]:
                 if n != self.dap_names:
                     self.dap_names = None
                     break
+
+            if self.dap_names == None:
+                print("MergeDaps not possible:", self.printable())
+                return
+
+            merged_candidates = {}
+            for candidate_to_merge in [
+                    x.dap_field_candidates for x in self.subnodes
+                ] + [
+                    x.dap_field_candidates for x in self.leaves
+                ]:
+                merged_candidates.update(candidate_to_merge)
+
+            # This is part of the HANDLE_MULTIPLE_DAPS_SIMPLY hack.
+            self.dap_field_candidates = dict([
+                (k, merged_candidates[k]) for k in self.dap_names
+            ])
+
+            print("MergeDaps:", self.printable())
+
 
         def Add(self, new_child):
             if isinstance(new_child, DapQueryRepn.Branch):
@@ -76,7 +102,7 @@ class DapQueryRepn(object):
             self.subnodes = [ DapQueryRepn.Branch().fromProto(x) for x in  pb.children ]
             return self
 
-        def toProto(self):
+        def toProto(self, dap_name):
             pb = dap_interface_pb2.ConstructQueryObjectRequest()
             pb.operator = self.combiner
             pb.dap_names.extend(list(self.dap_names))
@@ -85,11 +111,11 @@ class DapQueryRepn(object):
 
             for leaf in self.leaves:
                 new_leaf = pb.constraints.add()
-                new_leaf.CopyFrom(leaf.toProto())
+                new_leaf.CopyFrom(leaf.toProto(dap_name))
 
             for child in self.subnodes:
                 new_child = pb.children.add()
-                new_child.CopyFrom(child.toProto())
+                new_child.CopyFrom(child.toProto(dap_name))
 
             return pb
 
@@ -99,9 +125,9 @@ class DapQueryRepn(object):
                 operator=None,
                 query_field_type=None,
                 query_field_value=None,
-                #target_field_type=None,
+                target_field_type=None,
                 target_field_name=None,
-                #target_table_name=None,
+                target_table_name=None,
                 dap_names=set(),
                 dap_field_candidates=set(),
                 **kwargs
@@ -112,15 +138,15 @@ class DapQueryRepn(object):
             self.query_field_type  = query_field_type
 
             self.target_field_name = target_field_name
-            #self.target_field_type = target_field_type
-            #self.target_table_name = target_table_name
+            self.target_field_type = target_field_type
+            self.target_table_name = target_table_name
 
             self.dap_names = dap_names # the set of names of all responding daps.
             self.dap_field_candidates = dap_field_candidates  # A map of name->field info for every responder.
             self.name = "?"
             self.memento = None
 
-        def toProto(self):
+        def toProto(self, dap_name):
             pb = dap_interface_pb2.ConstructQueryConstraintObjectRequest()
 
             v = DapInterface.encodeConstraintValue(self.query_field_value, self.query_field_type)
@@ -129,11 +155,14 @@ class DapQueryRepn(object):
             pb.node_name = self.name
 
             pb.operator          = self.operator
-            pb.query_field_type  = self.query_field_type 
+            pb.query_field_type  = self.query_field_type
             pb.target_field_name = self.target_field_name
-#            pb.target_field_type = self.target_field_type
-#            pb.target_table_name = self.target_table_name
-#            pb.dap_name          = self.dap_name
+
+            pb.target_field_type = self.dap_field_candidates[dap_name]['target_field_type']
+            pb.target_table_name = self.dap_field_candidates[dap_name]['target_table_name']
+
+            pb.dap_name          = dap_name
+
             if self.name != None:
                 pb.node_name = self.name
             return pb
@@ -143,20 +172,20 @@ class DapQueryRepn(object):
             self.operator          = pb.operator
             self.query_field_type  = pb.query_field_type
             self.target_field_name = pb.target_field_name
-#            self.target_field_type = pb.target_field_type
-#            self.target_table_name = pb.target_table_name
-#            self.dap_name          = pb.dap_name
+            self.target_field_type = pb.target_field_type
+            self.target_table_name = pb.target_table_name
+            self.dap_name          = pb.dap_name
             if pb.HasField('node_name'):
                 self.name = pb.node_name 
             return self
 
         def printable(self):
-            return "Leaf {} -- daps={} {} {}  ({}) memento={}".format(
+            return "Leaf {} -- daps={} {} {} {} (type={}) memento={}".format(
                 self.name,
                 self.dap_names,
                 self.target_field_name,
                 self.operator,
-                self.query_field_value,
+                self.query_field_value if self.query_field_type != 'data_model' else "DATA_MODEL",
                 self.query_field_type,
                 "MEM" if self.memento else "NO_MEM",
                 )
@@ -174,9 +203,7 @@ class DapQueryRepn(object):
             pass
 
     def print(self):
-        print("DapQueryRepn_____________________________________")
         self.root.print()
-        print("_________________________________________________")
 
     def __init__(self):
         self.root = DapQueryRepn.Branch(combiner="all")
