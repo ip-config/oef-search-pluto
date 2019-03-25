@@ -18,4 +18,5 @@ message DapDescription {
 
   string name = 1;
   repeated DapTableDescription table = 2;
+  repeated string options = 3;
 };
