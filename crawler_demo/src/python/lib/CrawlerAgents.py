@@ -1,4 +1,6 @@
 import random
+from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor
 
 from crawler_demo.src.python.lib import CrawlerAgentBehaviour
 from behaviour_tree.src.python.lib import BehaveTreeExecution
@@ -15,6 +17,8 @@ class CrawlerAgents(object):
     def __init__(self, connection_factory, grid):
         self.tree = CrawlerAgentBehaviour.CrawlerAgentBehaviour()
         self.grid = grid
+
+        self.threadpool = ThreadPoolExecutor(max_workers=1)
 
         randomisers = [
             self.createRandomiser(x)
@@ -35,14 +39,16 @@ class CrawlerAgents(object):
             agent.set("connection_factory", connection_factory)
             agent.set("locations", locations)
             agent.set("index", idx)
-            if idx % 2 == 0:
+            if idx % 2 == 0 and True:
                 agent.set("movement_type", CrawlerAgentBehaviour.MovementType.FOLLOW_PATH)
             else:
                 agent.set("movement_type", CrawlerAgentBehaviour.MovementType.CRAWL_ON_NODES)
             idx += 1
 
     def tick(self):
-        _ = [ x.tick() for x in self.agents ]
+        def ticker(x):
+            return x.tick()
+        _ = self.threadpool.map(ticker, self.agents )
 
     def createRandomiser(self, sequence):
         r = random.Random()
