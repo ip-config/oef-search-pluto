@@ -58,6 +58,8 @@ py_binary(
         ":experimental_lib",
         ":network_dap_contract",
         "//ai_search_engine/src/python:search_engine",
+        "//dap_api/src/protos:py_dap_api_pb",
+        "//api/src/proto:py_api_pb",
     ],
 
 )
