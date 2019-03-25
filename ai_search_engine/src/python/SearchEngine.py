@@ -327,6 +327,7 @@ class SearchEngine(DapInterface):
         q = SearchEngine.SubQuery().setSearchSystem(self).fromLeaf(DapQueryRepn.Leaf().fromProto(proto)).prepare()
         r = dap_interface_pb2.ConstructQueryMementoResponse()
         r.memento = q.toJSON().encode('utf8')
+        r.success = True
         return r
 
     def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.Branch) -> SubQueryInterface:

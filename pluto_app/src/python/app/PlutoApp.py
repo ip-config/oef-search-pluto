@@ -135,9 +135,6 @@ class PlutoApp:
         if com is not None:
             com.start(self.router)
 
-    def getField(self, fieldname):
-        return self.dapManager.getField(fieldname)
-
     def inject_w2v(self, w2v):
         search_engine = self.dapManager.getInstance("data_model_searcher")
         search_engine.inject_w2v(w2v)

@@ -149,6 +149,7 @@ class DapGeo(DapInterface.DapInterface):
         geoQuery = DapGeo.DapGeoQuery()
         for constraint in proto.constraints:
             geoQuery.setTablename(constraint.target_table_name)
+            print("@2 TARGET TABLE NAME:", constraint.target_table_name)
 
         processes = {
             (geoQuery.tablename + ".location", "location"):      lambda q,x: q.addLocation(x),
@@ -162,7 +163,8 @@ class DapGeo(DapInterface.DapInterface):
         for constraint in proto.constraints:
             func = processes.get((constraint.target_field_name, constraint.query_field_type), None)
             if func == None:
-                self.log.error("Geo Query cannot be made")
+                print(processes.keys())
+                print("Geo Query cannot be made from ", constraint.target_field_name, " & ", constraint.query_field_type)
                 r.success = False
                 return r
             else:
