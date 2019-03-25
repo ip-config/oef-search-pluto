@@ -28,11 +28,11 @@ def create_dm(name: str, description: str, attributes: list) -> query_pb2.Query.
     return dm
 
 def create_dm_updates(upd):
-    dm = create_dm("weather_data",
+    dm = create_dm("weatherdata",
                    "All possible weather data.", [
-                       get_attr_b("wind_speed", "Provides wind speed measurements.", 0),
+                       get_attr_b("windspeed", "Provides wind speed measurements.", 0),
                        get_attr_b("temperature", "Provides wind speed measurements.", 0),
-                       get_attr_b("air_pressure", "Provides wind speed measurements.", 0)
+                       get_attr_b("airpressure", "Provides wind speed measurements.", 0)
                    ])
     upd.tablename = "tablename"
     upd.fieldname = "fieldname"
@@ -43,12 +43,9 @@ def create_dm_updates(upd):
 
 
 def create_dap_updates() -> List[dap_update_pb2.DapUpdate]:
-
-
-
     update = dap_update_pb2.DapUpdate()
     upd = update.update.add()
-
+    create_dm_updates(upd)
     return [update]
 
 
@@ -74,6 +71,4 @@ for name, conf in config_contract.items():
         for upd in updates:
             print(upd)
             ss = upd.SerializeToString()
-            print(ss)
-            print(len(ss))
             print(dap.update(upd))
