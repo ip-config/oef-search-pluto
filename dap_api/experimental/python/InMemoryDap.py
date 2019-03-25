@@ -75,12 +75,12 @@ class InMemoryDap(DapInterface.DapInterface):
                         i.agent = agent_ident
             else:
                 for key in cores.identifiers:
-                    print("KEY=", key.core, key.ident)
-                    row = table[(key.core, key.ident)]
+                    print("KEY=", key.core, key.agent)
+                    row = table[(key.core, key.agent)]
                     if rowProcessor(row):
                         i = r.identifiers.add()
-                        i.core = core_ident
-                        i.agent = agent_ident
+                        i.core = key.core
+                        i.agent = key.agent
         return r
 
 
@@ -135,26 +135,24 @@ class InMemoryDap(DapInterface.DapInterface):
 
         for commit in [ False, True ]:
             upd = update_data
-            if upd:
+            k, v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
 
-                k, v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
+            if upd.fieldname not in self.fields:
+                r.narrative.append("No such field  key={} fname={}".format(upd.key, upd.fieldname))
+                r.success = False
+            else:
+                tbname = self.fields[upd.fieldname]["tablename"]
+                ftype = self.fields[upd.fieldname]["type"]
 
-                if upd.fieldname not in self.fields:
-                    r.narrative.append("No such field  key={} fname={}".format(upd.key, upd.fieldname))
-                    r.success = False
-                else:
-                    tbname = self.fields[upd.fieldname]["tablename"]
-                    ftype = self.fields[upd.fieldname]["type"]
+            if ftype != k:
+                r.narrative.append("Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, upd.key.core, upd.fieldname, ftype, k))
+                r.success = False
 
-                if ftype != k:
-                    r.narrative.append("Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, upd.key.core, upd.fieldname, ftype, k))
-                    r.success = False
+            if commit:
+                self.store.setdefault(tbname, {}).setdefault((upd.key.core, upd.key.agent), {})[upd.fieldname] = v
 
-                if commit:
-                    self.store.setdefault(tbname, {}).setdefault((upd.key.core, upd.key.agent), {})[upd.fieldname] = v
             if not r.success:
                 break
-
         return r
 
     def remove(self, remove_data: dap_update_pb2.DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:

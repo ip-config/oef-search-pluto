@@ -100,7 +100,7 @@ class QueryTest(unittest.TestCase):
             self.dap2.update(update.update[0])
 
 
-    def XtestQuery(self):
+    def testQuery(self):
         """Test case A. note that all test method names must begin with 'test.'"""
         self._setupAgents()
 

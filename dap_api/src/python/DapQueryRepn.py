@@ -242,17 +242,10 @@ class DapQueryRepn(object):
 
     # passing in the embedding system is part of the hack SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
     def fromQueryProto(self, pb, embeddingInfo: object=None):
-        try:
-            ce_pb = pb.constraints
-        except AttributeError:
-            ce_pb = pb
+        assert isinstance(pb, query_pb2.Query.Model)
 
         queryFromProto = DapQueryRepnFromProtoBuf.DapQueryRepnFromProtoBuf()
-        self.fromConstraintProtoList(queryFromProto, ce_pb)
-
-        # this is the SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY hack to
-        # put the global data_model into a constraint object.
-
+        self.fromConstraintProtoList(queryFromProto, pb.constraints)
         if pb.HasField('model'):
             x = queryFromProto.createEmbeddingMatchDataModel(embeddingInfo, pb.model)
             if x:
