@@ -19,11 +19,12 @@ class AddressRegistry(InMemoryDap.InMemoryDap):
         address = []
         try:
             for tblname in self.store:
-                if key in self.store[tblname]:
+                ckey = (key, b'')
+                if ckey in self.store[tblname]:
                     for field in self.structure[tblname]:
-                        address.append(self.store[tblname][key][field])
+                        address.append(self.store[tblname][ckey][field])
         except Exception as e:
-            self.log.warn("No address entry for key: "+key.decode("utf-8")+", details: "+str(e))
+            self.warning("No address entry for key: "+key.decode("utf-8")+", details: "+str(e))
             print(self.store)
         return address
 

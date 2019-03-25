@@ -1,4 +1,4 @@
-import scipy.spatial.distance as distance
+import utils.src.python.distance as distance
 
 from dap_api.src.python import ProtoHelpers
 

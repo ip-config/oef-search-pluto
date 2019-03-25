@@ -6,7 +6,6 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer, PorterStemmer
 import numpy as np
-import scipy.spatial.distance as distance
 import json
 import base64
 
@@ -25,10 +24,12 @@ from typing import List
 from dap_api.src.python.network.DapNetwork import network_support
 
 from utils.src.python.out import out
+import utils.src.python.distance as distance
+
 
 class SearchEngine(DapInterface):
     @has_logger
-    #@network_support
+    @network_support
     def __init__(self, name, config):
         self._storage = {}
         nltk.download('stopwords')
@@ -278,7 +279,6 @@ class SearchEngine(DapInterface):
                 result.append((*key, dist))
             ordered = sorted(result, key=lambda x: x[2])
 
-
             res = DapQueryResult(ordered[0][0], ordered[0][1])
             res.score = ordered[0][2]
             yield res
@@ -319,6 +319,7 @@ class SearchEngine(DapInterface):
             c = reply.identifiers.add()
             c.core = ident.core_id
             c.agent = ident.agent_id
+            c.score = ident.score
             print("SUCCESS:", c.agent)
         return reply
 
