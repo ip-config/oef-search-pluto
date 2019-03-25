@@ -5,5 +5,6 @@ py_library(
         deps=[
                 "@com_google_protobuf//:protobuf_python",
                 "//dap_api/src/protos:py_dap_api_pb",
+                "//utils/src/python:py_utils",
         ],
 )

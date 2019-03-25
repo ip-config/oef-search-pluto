@@ -28,7 +28,7 @@ http_archive(
     urls = ["https://github.com/bazelbuild/bazel-skylib/archive/2169ae1c374aab4a09aa90e65efe1a3aad4e279b.tar.gz"],
 )
 
-new_http_archive(
+http_archive(
     name = "pypi_six",
     url = "https://pypi.python.org/packages/16/d8/bc6316cf98419719bd59c91742194c111b6f2e85abac88e496adefaf7afe/six-1.11.0.tar.gz",
     build_file_content = """
@@ -41,7 +41,7 @@ py_library(
     strip_prefix = "six-1.11.0",
 )
 
-new_http_archive(
+http_archive(
     name = "protobuf_python",
     url = "https://files.pythonhosted.org/packages/1b/90/f531329e628ff34aee79b0b9523196eb7b5b6b398f112bb0c03b24ab1973/protobuf-3.6.1.tar.gz",
     build_file_content = """
@@ -99,8 +99,5 @@ git_repository(
     remote = "https://github.com/nelhage/rules_boost",
 )
 
-#load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
-#boost_deps()
-
-load("//coroutines:coroutines.bzl", "boost_deps")
+load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
 boost_deps()

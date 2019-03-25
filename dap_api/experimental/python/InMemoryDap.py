@@ -62,18 +62,26 @@ class InMemoryDap(DapInterface.DapInterface):
                 result_field.type = field_type
         return result
 
-    def processRows(self, rowProcessor, cores: List[DapQueryResult] = None):
+    def processRows(self, rowProcessor, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
+        r = dap_interface_pb2.IdentifierSequence()
         for table_name, table in self.store.items():
-            if cores is None:
-                for key, row in table.items():
+            if cores.originator:
+                for (core_ident, agent_ident), row in table.items():
+                    print("TRYING:", core_ident, agent_ident)
                     if rowProcessor(row):
-                        yield DapQueryResult(key)
+                        print("SUCCESS:", core_ident, agent_ident)
+                        i = r.identifiers.add()
+                        i.core = core_ident
+                        i.agent = agent_ident
             else:
-                for key in cores:
-                    print("KEY=", key)
-                    row = table[key()]
+                for key in cores.identifiers:
+                    print("KEY=", key.core, key.ident)
+                    row = table[(key.core, key.ident)]
                     if rowProcessor(row):
-                        yield key
+                        i = r.identifiers.add()
+                        i.core = core_ident
+                        i.agent = agent_ident
+        return r
 
 
     # returns an object with an execute(agents=None) -> [agent]
@@ -81,10 +89,10 @@ class InMemoryDap(DapInterface.DapInterface):
         return None
 
     def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
-        print("EXECUTE---------------")
         input_idents = proto.input_idents
         query_memento = proto.query_memento
         j = json.loads(query_memento.memento.decode("utf-8"))
+        print(j)
         rowProcessor = self.operatorFactory.createAttrMatcherProcessor(
             j['target_field_type'],
             j['operator'],
@@ -92,17 +100,8 @@ class InMemoryDap(DapInterface.DapInterface):
             j['query_field_value'])
         func = lambda row: rowProcessor(row.get(j['target_field_name'], None))
 
-        if input_idents.HasField('originator') and input_idents.originator:
-            idents = None
-        else:
-            idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
-
-        reply = dap_interface_pb2.IdentifierSequence()
-        reply.originator = False
-        for core in self.processRows(func, idents):
-            c = reply.identifiers.add()
-            c.core = core()
-        return reply
+        idents = input_idents
+        return self.processRows(func, idents)
 
     def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
         j = {}
@@ -149,7 +148,7 @@ class InMemoryDap(DapInterface.DapInterface):
                     r.success = False
 
                 if commit:
-                    self.store.setdefault(tbname, {}).setdefault(upd.key.core, {})[upd.fieldname] = v
+                    self.store.setdefault(tbname, {}).setdefault((upd.key.core, upd.key.agent), {})[upd.fieldname] = v
             if not r.success:
                 break
 

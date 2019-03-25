@@ -62,6 +62,8 @@ class Reset(BehaveTreeTaskNode.BehaveTreeTaskNode):
         target_id, source_id = keys
         target_loc, source_loc = locs
 
+        context.set("last-movement", time.time())
+
         self.warning("NEW TARGET: ", target_loc)
         context.set("target", target_loc)
         context.set('target-x', target_loc[0])
@@ -196,6 +198,29 @@ class QueryNodesToMoveTo(BehaveTreeTaskNode.BehaveTreeTaskNode):
         super().configure(definition=definition)
 
 
+class AreWeThereYet(BehaveTreeTaskNode.BehaveTreeTaskNode):
+    @has_logger
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def tick(self, context: 'BehaveTreeExecution.BehaveTreeExecution' = None,
+             prev: 'BehaveTreeBaseNode.BehaveTreeBaseNode' = None):
+        self.log.update_local_name(context.get("index"))
+
+        dx = context.get("target-x") - context.get("x")
+        dy = context.get("target-y") - context.get("y")
+        dist = math.sqrt(dx*dx + dy*dy)
+
+        if dist < 10:
+            print("AreWeThereYet, returning TRUE")
+            return True
+        context.set('delta-x', (dx/dist) * 5) #* context.randomiser().randint(2, 5))
+        context.set('delta-y', (dy/dist) * 5 ) #* context.randomiser().randint(2, 5))
+        return False
+
+    def configure(self, definition: dict = None):
+        super().configure(definition=definition)
+
 class QueryNearestNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
     @has_logger
     def __init__(self, *args, **kwargs):
@@ -212,28 +237,12 @@ class QueryNearestNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
 
         target_loc = context.get("target")
 
-        query = build_query([x, y], ttl=2)
+        query = build_query([x, y], ttl=1)
         result = best_oef_core(agent.search(query))
         if result is not None:
             self.info(result)
             agent.swap_core(result)
             context.set("connection", result.key.decode("UTF-8").replace("-core", ""))
-
-        dx = target_loc[0] - x
-        dy = target_loc[1] - y
-
-        context.set('moveto-x', target_loc[0])
-        context.set('moveto-y', target_loc[1])
-
-        dist = math.sqrt(dx*dx + dy*dy)
-
-        if dist < 10:
-            print("QueryNearestNode, returning TRUE")
-            return True
-
-        if dist != 0.0:
-            context.set('delta-x', (dx/dist) * 5) #* context.randomiser().randint(2, 5))
-            context.set('delta-y', (dy/dist) * 5 ) #* context.randomiser().randint(2, 5))
 
         return False
 
@@ -259,6 +268,12 @@ class DoMovement(BehaveTreeTaskNode.BehaveTreeTaskNode):
             return False # go back to QueryNodes
 
         # do some more movement.
+
+        now = time.time()
+        prev = context.get("last-movement")
+
+        delta = now - prev;
+        context.set("last-movement", now)
 
         context.set('x', context.get('x') + context.get('delta-x'))
         context.set('y', context.get('y') + context.get('delta-y'))
@@ -343,8 +358,20 @@ TREE = """
                     "name": "path follower moving loop",
                     "children": [
                         {
-                            "node": "QueryNearestNode",
-                            "name": "QueryNearestNode"
+                            "node": "AreWeThereYet",
+                            "name": "AreWeThereYet2"
+                        },
+                        {
+                            "node": "maybe",
+                            "name": "maybe",
+                            "chance": 5,
+                            "result": 0,
+                            "children": [
+                                {
+                                    "node": "QueryNearestNode",
+                                    "name": "QueryNearestNode"
+                                }
+                            ]
                         },
                         {
                             "node": "yield",
@@ -371,6 +398,8 @@ class CrawlerAgentBehaviour(BehaveTree.BehaveTree):
             'Reset', lambda x: Reset(x)
         ).addBuilder(
             'PickLocation', lambda x: PickLocation(x)
+        ).addBuilder(
+            'AreWeThereYet', lambda x: AreWeThereYet(x)
         ).addBuilder(
             'QueryNodesToMoveTo', lambda x: QueryNodesToMoveTo(x)
         ).addBuilder(
