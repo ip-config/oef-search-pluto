@@ -71,12 +71,6 @@ message Identifier
         optional float score = 3;
 }
 
-message IdentifierSequence
-{
-        required bool originator = 1;
-        repeated Identifier identifiers = 2;
-}
-
 message DapExecute {
     optional ConstructQueryMementoResponse query_memento = 1;
     optional IdentifierSequence input_idents = 2;
@@ -88,3 +82,11 @@ message Successfulness
         optional int32 errorcode = 2;
         repeated string narrative = 3;
 }
+
+message IdentifierSequence
+{
+        required bool originator = 1;
+        repeated Identifier identifiers = 2;
+        optional Successfulness status = 3;
+}
+

@@ -61,7 +61,7 @@ class DapManagerTest(unittest.TestCase):
         ]:
             update = self._createUpdate(agent_name)
             update.update[0].value.s = wibble_value
-            self.dap1.update(update.update[0])
+            self.dapManager.update(update.update[0])
 
         for agent_name, wobble_value in [
             ("007/James/Bond",   "apple2"),
@@ -73,7 +73,7 @@ class DapManagerTest(unittest.TestCase):
             update.update[0].tablename = "wobbles"
             update.update[0].fieldname = "wobble"
             update.update[0].value.s = wobble_value
-            self.dap2.update(update.update[0])
+            self.dapManager.update(update.update[0])
 
 
     def testQueryWriter(self):
