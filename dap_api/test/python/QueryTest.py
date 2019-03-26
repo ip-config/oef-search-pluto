@@ -39,6 +39,19 @@ class QueryTest(unittest.TestCase):
                     },
                 },
             },
+            "dap-early": {
+                "class": "EarlyInMemoryDap",
+                "config": {
+                    "structure": {
+#                        "wibbles": {
+#                            "wibble": "string"
+#                        },
+#                        "wobbles": {
+#                            "wobble": "string"
+#                        },
+                    },
+                },
+            },
             "dap2": {
                 "class": "InMemoryDap",
                 "config": {
@@ -84,7 +97,7 @@ class QueryTest(unittest.TestCase):
             update.update[0].key.core = b"localhost"
             update.update[0].key.agent = core_key.encode("utf-8")
             update.update[0].value.s = wibble_value
-            self.dap1.update(update.update[0])
+            self.dapManager.update(update.update[0])
 
         for core_key in [
             "007/James/Bond/apple",
@@ -97,7 +110,7 @@ class QueryTest(unittest.TestCase):
             update.update[0].fieldname = "wobble"
             update.update[0].key.core = b"localhost"
             update.update[0].key.agent = core_key.encode("utf-8")
-            self.dap2.update(update.update[0])
+            self.dapManager.update(update.update[0])
 
 
     def testQuery(self):
@@ -116,7 +129,7 @@ class QueryTest(unittest.TestCase):
 
         assert len(results) == 2
 
-    def testQueryOr(self):
+    def XtestQueryOr(self):
         """Test case A. note that all test method names must begin with 'test.'"""
         self._setupAgents()
 
@@ -136,5 +149,33 @@ class QueryTest(unittest.TestCase):
 
 
         dapQuery = self.dapManager.makeQuery(qm)
-        results = list(self.dapManager.execute(dapQuery).identifiers)
+        output = self.dapManager.execute(dapQuery)
+        results = list(output.identifiers)
         assert len(results) == 3
+        assert output.HasField("status") == False
+
+
+    def testQueryCanFail(self):
+        qm = query_pb2.Query.Model()
+        qOr = qm.constraints.add()
+
+        q1 = qOr.or_.expr.add()
+        q2 = qOr.or_.expr.add()
+
+        q1.constraint.attribute_name = "wibble"
+        q1.constraint.relation.op = 0
+        q1.constraint.relation.val.s = "carrot"
+
+        q2.constraint.attribute_name = "INVALID_FIELD_NAME"
+        q2.constraint.relation.op = 0
+        q2.constraint.relation.val.s = "apple"
+
+
+        dapQuery = self.dapManager.makeQuery(qm)
+        output = self.dapManager.execute(dapQuery)
+        results = list(output.identifiers)
+        assert len(results) == 0
+        assert output.status.success == False
+        assert len(output.status.narrative) == 1
+
+        print("ERROR REPORT -- ", output.status.narrative[0])

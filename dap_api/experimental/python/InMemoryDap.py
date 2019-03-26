@@ -17,9 +17,11 @@ from dap_api.src.protos import dap_update_pb2
 from dap_api.src.python.DapQueryResult import DapQueryResult
 from typing import List
 from dap_api.src.python.network.DapNetwork import network_support
+from utils.src.python.Logging import has_logger
 
 
 class InMemoryDap(DapInterface.DapInterface):
+    @has_logger
 
     # configuration is a JSON deserialised config object.
     # structure is a map of tablename -> { fieldname -> type}
@@ -28,6 +30,7 @@ class InMemoryDap(DapInterface.DapInterface):
         self.store = {}
         self.name = name
         self.structure_pb = configuration['structure']
+        self.log.update_local_name("InMemoryDap("+name+")")
 
         self.operatorFactory = DapOperatorFactory.DapOperatorFactory()
 
@@ -62,25 +65,29 @@ class InMemoryDap(DapInterface.DapInterface):
                 result_field.type = field_type
         return result
 
+    def processRow(self, rowProcessor, row_key, row, result: dap_interface_pb2.IdentifierSequence):
+        core_ident, agent_ident = row_key
+        if rowProcessor(row):
+            self.log.info("PASSING: core={}, agent={}".format(core_ident, agent_ident))
+            i = result.identifiers.add()
+            i.core = core_ident
+            i.agent = agent_ident
+        else:
+            self.log.info("FAILING: core={}, agent={}".format(core_ident, agent_ident))
+
     def processRows(self, rowProcessor, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
         r = dap_interface_pb2.IdentifierSequence()
         for table_name, table in self.store.items():
             if cores.originator:
                 for (core_ident, agent_ident), row in table.items():
-                    print("TRYING:", core_ident, agent_ident)
-                    if rowProcessor(row):
-                        print("SUCCESS:", core_ident, agent_ident)
-                        i = r.identifiers.add()
-                        i.core = core_ident
-                        i.agent = agent_ident
+                    self.log.info("TESTING ORIGINATED: core={}, agent={}".format(core_ident, agent_ident))
+                    self.processRow(rowProcessor, (core_ident, agent_ident), row, r)
             else:
                 for key in cores.identifiers:
-                    print("KEY=", key.core, key.agent)
+                    core_ident, agent_ident = key.core, key.agent
+                    self.log.info("TESTING SUPPLIED: core={}, agent={}".format(core_ident, agent_ident))
                     row = table[(key.core, key.agent)]
-                    if rowProcessor(row):
-                        i = r.identifiers.add()
-                        i.core = key.core
-                        i.agent = key.agent
+                    self.processRow(rowProcessor, (core_ident, agent_ident), row, r)
         return r
 
 
@@ -92,7 +99,7 @@ class InMemoryDap(DapInterface.DapInterface):
         input_idents = proto.input_idents
         query_memento = proto.query_memento
         j = json.loads(query_memento.memento.decode("utf-8"))
-        print(j)
+
         rowProcessor = self.operatorFactory.createAttrMatcherProcessor(
             j['target_field_type'],
             j['operator'],
@@ -110,8 +117,6 @@ class InMemoryDap(DapInterface.DapInterface):
         j['operator'] = proto.operator
         j['query_field_type'] = proto.query_field_type
         j['query_field_value'] = DapInterface.decodeConstraintValue(proto.query_field_value)
-
-        print("CONSTRAINT: ", j)
 
         r = dap_interface_pb2.ConstructQueryMementoResponse()
         r.memento = json.dumps(j).encode('utf8')

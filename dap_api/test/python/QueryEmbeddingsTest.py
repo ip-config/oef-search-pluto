@@ -126,7 +126,7 @@ class QueryEmbeddingsTest(unittest.TestCase):
             update.update[0].value.type = 6
             update.update[0].key.agent_name = agent_name
             update.update[0].value.embedding.v.extend(wibble_value)
-            self.dap1.update(update)
+            self.dapManager.update(update)
 
 
 

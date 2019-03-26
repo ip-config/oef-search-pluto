@@ -57,7 +57,7 @@ class UpdateTest(unittest.TestCase):
     def testUpdate(self):
         """Test case A. note that all test method names must begin with 'test.'"""
         update = self._createUpdate()
-        self.dap1.update(update.update[0])
+        self.dapManager.update(update.update[0])
 
     def testUpdateBadType(self):
         """Test case A. note that all test method names must begin with 'test.'"""
@@ -66,11 +66,11 @@ class UpdateTest(unittest.TestCase):
         update.update[0].value.i = 12345
 
         with self.assertRaises(Exception) as context:
-            self.dap1.update(update.update[0])
+            self.dapManager.update(update.update[0])
 
     def testNoTableUpdate(self):
         update = self._createUpdate()
 
         with self.assertRaises(Exception) as context:
-            self.dap2.update(update.update[0])
+            self.dapManager.update(update.update[0])
 

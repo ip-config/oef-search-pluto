@@ -14,16 +14,19 @@ from dap_api.src.python.DapInterface import decodeConstraintValue
 from dap_api.src.python.DapInterface import encodeConstraintValue
 from dap_2d_geo.src.python import GeoStore
 from dap_api.src.protos import dap_interface_pb2
+from utils.src.python.Logging import has_logger
 
 class DapGeo(DapInterface.DapInterface):
 
     # configuration is a JSON deserialised config object.
     # structure is a map of tablename -> { fieldname -> type}
 
+    @has_logger
     def __init__(self, name, configuration):
         self.name = name
         self.geos = {}
         self.structure_pb = configuration['structure']
+        self.log.update_local_name("DapGeo("+name+")")
 
         for table_name, fields in self.structure_pb.items():
             self.geos[table_name] = GeoStore.GeoStore()
@@ -120,7 +123,6 @@ class DapGeo(DapInterface.DapInterface):
                 v = getattr(self, k)
                 encoded = funcs['htoj'](v)
                 r[k] = encoded
-                #print("TO JSON k=", k, "   v=", v,   " enc=", encoded)
             return json.dumps(r)
 
         def fromJSON(self, data):
@@ -149,7 +151,6 @@ class DapGeo(DapInterface.DapInterface):
         geoQuery = DapGeo.DapGeoQuery()
         for constraint in proto.constraints:
             geoQuery.setTablename(constraint.target_table_name)
-            print("@2 TARGET TABLE NAME:", constraint.target_table_name)
 
         processes = {
             (geoQuery.tablename + ".location", "location"):      lambda q,x: q.addLocation(x),
@@ -163,8 +164,7 @@ class DapGeo(DapInterface.DapInterface):
         for constraint in proto.constraints:
             func = processes.get((constraint.target_field_name, constraint.query_field_type), None)
             if func == None:
-                print(processes.keys())
-                print("Geo Query cannot be made from ", constraint.target_field_name, " & ", constraint.query_field_type)
+                self.warning("Query cannot be made from ", constraint.target_field_name, " & ", constraint.query_field_type)
                 r.success = False
                 return r
             else:

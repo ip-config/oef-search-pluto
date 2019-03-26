@@ -50,8 +50,8 @@ class DapMatcher(object):
             return {
                 'early': True,
                 'dap_name': self.dap_name,
-                'target_field_name': None,
-                'target_table_name': None,
-                'target_field_type': None,
+                'target_field_name': target_field_name,
+                'target_table_name': "*",
+                'target_field_type': "*",
             }
         return self.fields.get(target_field_name, None)
