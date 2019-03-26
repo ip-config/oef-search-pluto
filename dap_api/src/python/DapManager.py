@@ -1,6 +1,7 @@
 import sys
 import inspect
 import json
+import re
 
 from utils.src.python.Logging import has_logger
 from dap_api.src.python import DapOperatorFactory
@@ -26,14 +27,9 @@ class DapManager(object):
             self.subn += 1
 
         def visitLeaf(self, node, depth):
-
-            #print("visitLeaf ", node.printable())
-            possible_matchers = self.manager.dap_matchers.items()
-            #print("possible_matchers:",possible_matchers )
-            can_matchers = [ (k, v.canMatch(node.target_field_name)) for k,v in possible_matchers ]
-            #print("can_matchers:", can_matchers)
+            matching_daps = self.manager.getDapsForAttributeName(node.target_field_name)
+            can_matchers = [ (k, self.manager.dap_matchers[k].canMatch(node.target_field_name)) for k in matching_daps ]
             valid_matchers = [ (k,v) for k,v in can_matchers if v != None ]
-            #print("valid_matchers=", valid_matchers)
 
             node.dap_field_candidates = dict(valid_matchers)
             node.dap_names = set(node.dap_field_candidates.keys())
@@ -51,34 +47,40 @@ class DapManager(object):
         def visitLeaf(self, node, depth):
             pass
 
+
+    class NoConstraintCompilerException(Exception):
+        def __init__(self, node, dapnames):
+            self.node = node
+            self.dapnames = dapnames
+
+        def __str__(self):
+            return "Node rejected by all daps {}, {}".format(self.dapnames, self.node.printable())
+
     class PopulateActionsVisitorDescentPass(DapQueryRepn.DapQueryRepn.Visitor):
         def __init__(self, dapmanager):
             self.dapmanager = dapmanager
 
         def visitNode(self, node, depth):
             for dap_name in node.dap_names or []:
-                print("Dear ", dap_name, " would you like to consume ", node.printable(), " ?")
+                self.dapmanager.info("Dear ", dap_name, " would you like to consume ", node.printable(), " ?")
                 queryObject_pb = self.dapmanager.getInstance(dap_name).prepare(node.toProto(dap_name))
-                
                 if queryObject_pb.HasField('success') and queryObject_pb.success:
                     node.memento = queryObject_pb
                     return False
-            print("Okes, we'll recurse.")
+            self.dapmanager.info("Okes, we'll recurse.")
             return True
 
         def visitLeaf(self, node, depth):
-            
-            #print("LEAF:", node.printable())
             for dap_name in node.dap_names:
                 matcher = node.dap_field_candidates[dap_name]
-                print("Dear ", dap_name, " would you write a constraint for ", node.printable(), " ?")
+                self.dapmanager.info("Dear ", dap_name, " would you write a constraint for ", node.printable(), " ?")
                 queryObject_pb = self.dapmanager.getInstance(dap_name).prepareConstraint(node.toProto(dap_name))
-                if queryObject_pb.HasField('success') and queryObject_pb.success:
+                if queryObject_pb.HasField('success') and queryObject_pb.success and node.memento == None:
                     node.memento = queryObject_pb
                     node.dap_name = dap_name
-                    return
-            print("Erk! No-one wanted this constraint")
-            
+            if node.memento == None:
+                raise DapManager.NoConstraintCompilerException(node, node.dap_names)
+
 
     # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
     class EmbeddingInfo(object):
@@ -97,6 +99,7 @@ class DapManager(object):
         self.embeddingFieldName = None # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
         self.embeddingTableName = None # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
         self.classmakers = {}
+        self.log.update_local_name("DapManager")
 
     def addClass(self, name, maker):
         self.classmakers[name] = maker
@@ -139,12 +142,41 @@ class DapManager(object):
     def getInstance(self, name):
         return self.instances[name]
 
+    def getDapsForAttributeName(self, attributeName):
+        r = set()
+        for k,v in self.attributes_to_daps.items():
+            match = False
+            if k == '*':
+                #self.info("getDapsForAttributeName", v, " because ",k, " == '*'")
+                match = True
+            if k[0] == '/' and k[-1:] == '/':
+                pat = k[1:-1]
+                if re.match(pat, attributeName):
+                    #self.info("getDapsForAttributeName", v, " because ",pat, " matches ", attributeName)
+                    match = True
+            if k == attributeName:
+                #self.info("getDapsForAttributeName", v, " because ",k, " == ", attributeName)
+                match = True
+            if match:
+                for dap in v:
+                    r.add(dap)
+        return r
+
     def update(self, update: dap_update_pb2.DapUpdate):
+        self.info("UPDATE:", self.attributes_to_daps)
         success = True
-        for tableFieldValue in update.update:
-            daps_to_update = self.attributes_to_daps.get(tableFieldValue.fieldname, [])
+
+        if isinstance(update, dap_update_pb2.DapUpdate.TableFieldValue):
+            update_list = [ update ]
+        else:
+            update_list = update.update
+
+        for tableFieldValue in update_list:
+            #self.info("UPDATE ATTR ", tableFieldValue.fieldname)
+            daps_to_update = self.getDapsForAttributeName(tableFieldValue.fieldname)
+            #self.info("UPDATE DAPS ", daps_to_update)
             for dap_to_update in daps_to_update:
-                print("UPDATE ", tableFieldValue.key.core, tableFieldValue.key.agent, " -> ", dap_to_update)
+                #self.info("UPDATE ", tableFieldValue.key.core, tableFieldValue.key.agent, " -> ", dap_to_update)
                 r = self.getInstance(dap_to_update).update(tableFieldValue)
                 if r.success == False:
                     for m in r.narrative:
@@ -186,6 +218,10 @@ class DapManager(object):
                 r[name]=obj
         return r
 
+    def printQuery(self, prefix, dapQueryRepn):
+        for x in dapQueryRepn.printable():
+            self.info("{}   {}".format(prefix, x))
+
     def makeQuery(self, query_pb):
         dapQueryRepn = DapQueryRepn.DapQueryRepn()
 
@@ -206,41 +242,29 @@ class DapManager(object):
 
         v = DapManager.PopulateFieldInformationVisitor(self)
         dapQueryRepn.visit(v)
-        print("--field info-----------------------------------")
-        dapQueryRepn.print()
-        print("-----------------------------------------------")
+        self.printQuery("FIELD_INFO_PASS ", dapQueryRepn)
 
-        print("-collect---------------------------------------")
         v = DapManager.CollectDapsVisitor()
         dapQueryRepn.visit(v)
-        dapQueryRepn.print()
-        print("-----------------------------------------------")
+        self.printQuery("COLLECT_PASS    ", dapQueryRepn)
 
         return dapQueryRepn
 
-    # def makeQueryFromConstraintProto(self, query_pb):
-    #     dapQueryRepn = DapQueryRepn.DapQueryRepn()
-    #     dapQueryRepn.fromQueryProto(query_pb)
+    def execute(self, dapQueryRepn) -> dap_interface_pb2.IdentifierSequence:
 
-    #     # now fill in all the types.
-    #     v = DapManager.PopulateFieldInformationVisitor(self.fields)
-    #     dapQueryRepn.visit(v)
+        self.printQuery("EXECUTE         ", dapQueryRepn)
 
-    #     v = DapManager.CollectDapsVisitor(self.fields)
-    #     dapQueryRepn.visit(v)
-
-    #     return dapQueryRepn
-
-    def execute(self, dapQueryRepn):
-        print("-on execute------------------------------------")
-        dapQueryRepn.print()
-        print("-----------------------------------------------")
-
-        print("--actions--------------------------------------")
         v1 = DapManager.PopulateActionsVisitorDescentPass(self)
-        dapQueryRepn.visitDescending(v1)
-        dapQueryRepn.print()
-        print("-----------------------------------------------")
+        try:
+            dapQueryRepn.visitDescending(v1)
+        except DapManager.NoConstraintCompilerException as ex:
+            r = dap_interface_pb2.IdentifierSequence()
+            failure = r.status
+            failure.success = False
+            failure.narrative.append(str(ex))
+            return r
+        self.printQuery("GEN_ACTIONS_PASS", dapQueryRepn)
+
         start = dap_interface_pb2.IdentifierSequence()
         start.originator = True
         return self._execute(dapQueryRepn.root, start)

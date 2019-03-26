@@ -46,11 +46,11 @@ class DapQueryRepn(object):
                 )
 
         def print(self, depth=0):
-            print(depth*"  ", self.printable())
+            yield depth*"  " + self.printable()
             for n in self.subnodes:
-                n.print(depth+1)
+                yield from n.print(depth+1)
             for leaf in self.leaves:
-                print((depth+1)*"  ", leaf.printable())
+                yield (depth+1)*"  " + leaf.printable()
 
         def MergeDaps(self):
 
@@ -67,7 +67,6 @@ class DapQueryRepn(object):
                     break
 
             if self.dap_names == None:
-                print("MergeDaps not possible:", self.printable())
                 return
 
             merged_candidates = {}
@@ -83,7 +82,7 @@ class DapQueryRepn(object):
                 (k, merged_candidates[k]) for k in self.dap_names
             ])
 
-            print("MergeDaps:", self.printable())
+            #print("MergeDaps:", self.printable())
 
 
         def Add(self, new_child):
@@ -202,8 +201,8 @@ class DapQueryRepn(object):
         def visitLeaf(self, leaf, depth):
             pass
 
-    def print(self):
-        self.root.print()
+    def printable(self):
+        yield from self.root.print()
 
     def __init__(self):
         self.root = DapQueryRepn.Branch(combiner="all")
