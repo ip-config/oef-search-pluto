@@ -141,10 +141,12 @@ class InMemoryDap(DapInterface.DapInterface):
         for commit in [ False, True ]:
             upd = update_data
             k, v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
-
+            key = upd.key
+            core_ident, agent_ident = key.core, key.agent
             if upd.fieldname not in self.fields:
-                r.narrative.append("No such field  key={} fname={}".format(upd.key, upd.fieldname))
+                r.narrative.append("No such field  key={},{} fname={}".format(core_ident, agent_ident, upd.fieldname))
                 r.success = False
+                break
             else:
                 tbname = self.fields[upd.fieldname]["tablename"]
                 ftype = self.fields[upd.fieldname]["type"]

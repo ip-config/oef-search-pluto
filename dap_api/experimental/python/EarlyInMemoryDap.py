@@ -63,7 +63,7 @@ class EarlyInMemoryDap(DapInterface.DapInterface):
         star_table.name = '*'
 
         star_field = star_table.field.add()
-        star_field.name = '*'
+        star_field.name = '/.*/'
         star_field.type = '*'
 
         return result

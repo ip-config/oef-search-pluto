@@ -1,6 +1,7 @@
 import sys
 import inspect
 import json
+import re
 
 from utils.src.python.Logging import has_logger
 from dap_api.src.python import DapOperatorFactory
@@ -26,8 +27,8 @@ class DapManager(object):
             self.subn += 1
 
         def visitLeaf(self, node, depth):
-            possible_matchers = self.manager.dap_matchers.items()
-            can_matchers = [ (k, v.canMatch(node.target_field_name)) for k,v in possible_matchers ]
+            matching_daps = self.manager.getDapsForAttributeName(node.target_field_name)
+            can_matchers = [ (k, self.manager.dap_matchers[k].canMatch(node.target_field_name)) for k in matching_daps ]
             valid_matchers = [ (k,v) for k,v in can_matchers if v != None ]
 
             node.dap_field_candidates = dict(valid_matchers)
@@ -141,6 +142,26 @@ class DapManager(object):
     def getInstance(self, name):
         return self.instances[name]
 
+    def getDapsForAttributeName(self, attributeName):
+        r = set()
+        for k,v in self.attributes_to_daps.items():
+            match = False
+            if k == '*':
+                #self.info("getDapsForAttributeName", v, " because ",k, " == '*'")
+                match = True
+            if k[0] == '/' and k[-1:] == '/':
+                pat = k[1:-1]
+                if re.match(pat, attributeName):
+                    #self.info("getDapsForAttributeName", v, " because ",pat, " matches ", attributeName)
+                    match = True
+            if k == attributeName:
+                #self.info("getDapsForAttributeName", v, " because ",k, " == ", attributeName)
+                match = True
+            if match:
+                for dap in v:
+                    r.add(dap)
+        return r
+
     def update(self, update: dap_update_pb2.DapUpdate):
         self.info("UPDATE:", self.attributes_to_daps)
         success = True
@@ -151,9 +172,11 @@ class DapManager(object):
             update_list = update.update
 
         for tableFieldValue in update_list:
-            daps_to_update = self.attributes_to_daps.get(tableFieldValue.fieldname, []) + self.attributes_to_daps.get('*', [])
+            #self.info("UPDATE ATTR ", tableFieldValue.fieldname)
+            daps_to_update = self.getDapsForAttributeName(tableFieldValue.fieldname)
+            #self.info("UPDATE DAPS ", daps_to_update)
             for dap_to_update in daps_to_update:
-                self.info("UPDATE ", tableFieldValue.key.core, tableFieldValue.key.agent, " -> ", dap_to_update)
+                #self.info("UPDATE ", tableFieldValue.key.core, tableFieldValue.key.agent, " -> ", dap_to_update)
                 r = self.getInstance(dap_to_update).update(tableFieldValue)
                 if r.success == False:
                     for m in r.narrative:

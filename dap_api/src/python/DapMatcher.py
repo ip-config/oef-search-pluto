@@ -46,12 +46,20 @@ class DapMatcher(object):
         }
 
     def canMatch(self, target_field_name) -> dict:
-        if "early" in self.options:
-            return {
-                'early': True,
-                'dap_name': self.dap_name,
+        r = {
+            "early": "early" in self.options,
+            'dap_name': self.dap_name,
+        }
+
+        if r["early"]:
+            r.update({
                 'target_field_name': target_field_name,
                 'target_table_name': "*",
                 'target_field_type': "*",
-            }
-        return self.fields.get(target_field_name, None)
+            })
+        else:
+            if target_field_name in self.fields:
+                r.update(self.fields.get(target_field_name))
+            else:
+                r = None
+        return r
