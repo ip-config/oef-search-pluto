@@ -63,7 +63,7 @@ class EarlyInMemoryDap(DapInterface.DapInterface):
         star_table.name = '*'
 
         star_field = star_table.field.add()
-        star_field.name = '/.*/'
+        star_field.name = '/[A-Za-z][-_A-Za-z0-9]*/'
         star_field.type = '*'
 
         return result
@@ -92,6 +92,7 @@ class EarlyInMemoryDap(DapInterface.DapInterface):
                 i = result.identifiers.add()
                 i.core = core_ident
                 i.agent = agent_ident
+        return result
 
 
     def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
@@ -101,6 +102,7 @@ class EarlyInMemoryDap(DapInterface.DapInterface):
 
         r = dap_interface_pb2.ConstructQueryMementoResponse()
         r.memento = json.dumps(j).encode('utf8')
+        r.success = True
         return r
 
     def print(self):

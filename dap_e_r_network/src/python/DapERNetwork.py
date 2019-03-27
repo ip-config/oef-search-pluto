@@ -173,11 +173,13 @@ class DapERNetwork(DapInterface.DapInterface):
         r = dap_interface_pb2.ConstructQueryMementoResponse()
 
         if len(proto.constraints) == 0 or len(proto.children) > 0:
+            self.info("No, I only want branches without branches.")
             r.success = False
             return r
 
         # We'll let someone else handle anything which isn't an ALL
         if proto.operator != ProtoHelpers.COMBINER_ALL:
+            self.info("No, I only want branches doing AND.")
             r.success = False
             return r
 
@@ -212,7 +214,9 @@ class DapERNetwork(DapInterface.DapInterface):
         if graphQuery.sanity():
             r.success = True
             r.memento = graphQuery.toJSON().encode('utf8')
+            self.info("Yeah, that'll be ok.")
         else:
+            self.info("No, the resultant query was not sane.")
             r.success = False
         return r
 

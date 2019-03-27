@@ -5,6 +5,7 @@ from dap_api.src.python import DapManager
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 from dap_api.src.python import ProtoHelpers
+from utils.src.python.Logging import has_logger
 
 from dap_api.src.python import DapQuery
 
@@ -171,4 +172,6 @@ class PlutoTest(unittest.TestCase):
             'john steed',
         ]
 
+from utils.src.python.Logging import configure as configure_logging
+configure_logging()
 unittest.main() # run all tests
