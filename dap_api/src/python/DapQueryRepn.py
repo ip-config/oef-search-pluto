@@ -19,7 +19,7 @@ class DapQueryRepn(object):
             self.type = None
             self.combiner = combiner
             self.name = "?"
-            self.memento = None
+            self.mementos = []
 
             self.dap_names = set() # the set of names of all responding daps.
             self.dap_field_candidates = {}  # A map of name->field info for every responder.
@@ -36,13 +36,14 @@ class DapQueryRepn(object):
                 self.dap_field_candidates[x]['target_table_name']
                 for x in (self.dap_names or [])
             ]
-            return "Branch {} -- \"{}\" over {} (tns={}) ({} children, {} leaves)".format(
+            return "Branch {} -- \"{}\" over {} (tns={}) ({} children, {} leaves) mementos={}".format(
                 self.name,
                 self.combiner,
                 self.dap_names or "NO_COMMON_DAPS",
                 tablenames,
                 len(self.subnodes),
                 len(self.leaves),
+                str(len(self.mementos))+" MEMS" if self.mementos else "NO_MEM",
                 )
 
         def print(self, depth=0):
@@ -143,7 +144,7 @@ class DapQueryRepn(object):
             self.dap_names = dap_names # the set of names of all responding daps.
             self.dap_field_candidates = dap_field_candidates  # A map of name->field info for every responder.
             self.name = "?"
-            self.memento = None
+            self.mementos = []
 
         def toProto(self, dap_name):
             pb = dap_interface_pb2.ConstructQueryConstraintObjectRequest()
@@ -179,14 +180,14 @@ class DapQueryRepn(object):
             return self
 
         def printable(self):
-            return "Leaf {} -- daps={} {} {} {} (type={}) memento={}".format(
+            return "Leaf {} -- daps={} {} {} {} (type={}) mementos={}".format(
                 self.name,
                 self.dap_names,
                 self.target_field_name,
                 self.operator,
                 self.query_field_value if self.query_field_type != 'data_model' else "DATA_MODEL",
                 self.query_field_type,
-                "MEM" if self.memento else "NO_MEM",
+                str(len(self.mementos))+" MEMS" if self.mementos else "NO_MEM",
                 )
 
     class Visitor(ABC):
