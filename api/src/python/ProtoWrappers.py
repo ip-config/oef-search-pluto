@@ -225,7 +225,7 @@ class UpdateData:
                 upd_list.append(self.updFromDataModel(key, dm_instance.model, dm_instance.key))
                 if len(dm_instance.values)>0:
                     upd_list.append(self.updFromDataModel(key, dm_instance.model, dm_instance.key, "dm_instance_model"))
-                    #upd_list.append(self.updFromDataModelValues(key, dm_instance.values, dm_instance.key))
+                    upd_list.append(self.updFromDataModelValues(key, dm_instance.values, dm_instance.key))
             for attr in origin.attributes:
                 upd_list.append(self.updFromAttribute(key, attr))
         upd = dap_update_pb2.DapUpdate()

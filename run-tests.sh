@@ -13,6 +13,8 @@ bazel build dap_e_r_network/experimental/python:app &&   bazel-bin/dap_e_r_netwo
 
 bazel build dap_2d_geo/experimental/python:app &&   bazel-bin/dap_2d_geo/experimental/python/app
 
+bazel test dap_attribute_store/test/python:tests
+
 bazel test pluto_app/test/python:tests
 
 set +x

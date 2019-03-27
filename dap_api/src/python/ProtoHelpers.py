@@ -51,19 +51,41 @@ def decodeAttributeValueToInfo(av):
         11: (TYPE_KEYVALUE, lambda x: x.kv)
     }.get(av.type, ( None, lambda x: None))
 
+def decodeKeyValuesToKVTs(kv_list):
+    r = []
+    for kv in kv_list:
+        result_value = None
+        key = kv.key
+        value = kv.value
+
+        if value.HasField("s"):
+            r.append(( key, "string", value.s))
+        elif value.HasField("d"):
+            r.append(( key, "float", value.d))
+        elif value.HasField("b"):
+            r.append(( key, "bool", value.b))
+        elif value.HasField("i"):
+            r.append(( key, "int64", value.i))
+        elif value.HasField("l"):
+            r.append(( key, "location", ( value.l.lat, value.l.lon )))
+        else:
+            r.append(( key, None, None ))
+    return r
+
 # Produce a value which can be fed into the operator factory system.
 def decodeAttributeValueInfoToPythonType(av):
     t, data = decodeAttributeValueToTypeValue(av)
     type_string, converter_function = {
-        TYPE_STRING     : ("string", lambda x: x),
-        TYPE_INT64      : ("int64", lambda x: x),
-        TYPE_FLOAT      : ("float", lambda x: x),
-        TYPE_DOUBLE     : ("double", lambda x: x),
+        TYPE_STRING     : ("string",   lambda x: x),
+        TYPE_INT64      : ("int64",    lambda x: x),
+        TYPE_FLOAT      : ("float",    lambda x: x),
+        TYPE_DOUBLE     : ("double",   lambda x: x),
         #TYPE_DATA_MODEL : (None, lambda x: None), # not impl yet
-        TYPE_INT32      : ("int32", lambda x: x),
-        TYPE_BOOL       : ("bool", lambda x: x),
+        TYPE_INT32      : ("int32",    lambda x: x),
+        TYPE_BOOL       : ("bool",     lambda x: x),
         TYPE_LOCATION   : ("location", lambda x: (x.lat, x.lon)),
-    }.get(av.type, ( None, lambda x: None))
+        TYPE_KEYVALUE   : ("key-type-value_list", lambda x: decodeKeyValuesToKVTs(x))
+    }.get(t, ( None, lambda x: None))
     return type_string, converter_function(data)
 
 def decodeAttributeValueToTypeValue(av):

@@ -29,12 +29,21 @@ class DapManager(object):
 
         def visitLeaf(self, node, depth):
             matching_daps = self.manager.getDapsForAttributeName(node.target_field_name)
-            can_matchers = [ (k, self.manager.dap_matchers[k].canMatch(node.target_field_name)) for k in matching_daps ]
-            valid_matchers = [ (k,v) for k,v in can_matchers if v != None ]
-
-            node.dap_field_candidates = dict(valid_matchers)
+            matching_daps_and_configs = [
+                (k, self.manager.dap_matchers.get(k, None) )
+                for k
+                in matching_daps
+            ]
+            matching_daps_and_configuration_outputs = [
+                (k, v.canMatch(node.target_field_name) if v else {} )
+                for k,v in matching_daps_and_configs
+            ]
+            null_safed_matching_daps_and_configuration_outputs = [
+                (k, v if v != None else {} )
+                for k,v in matching_daps_and_configuration_outputs
+            ]
+            node.dap_field_candidates = dict(null_safed_matching_daps_and_configuration_outputs)
             node.dap_names = set(node.dap_field_candidates.keys())
-
             node.name = "leaf" + str(self.leaf)
             self.leaf += 1
 
@@ -75,7 +84,6 @@ class DapManager(object):
 
         def visitLeaf(self, node, depth):
             for dap_name in node.dap_names:
-                matcher = node.dap_field_candidates[dap_name]
                 self.dapmanager.info("Dear ", dap_name, " would you write a constraint for ", node.printable(), " ?")
                 queryObject_pb = self.dapmanager.getInstance(dap_name).prepareConstraint(node.toProto(dap_name))
 
@@ -86,7 +94,7 @@ class DapManager(object):
                     node.mementos.extend([
                         (dap_name, queryObject_pb)
                     ])
-            if not node.mementos:
+            if len(node.mementos) == 0:
                 raise DapManager.NoConstraintCompilerException(node, node.dap_names)
 
 

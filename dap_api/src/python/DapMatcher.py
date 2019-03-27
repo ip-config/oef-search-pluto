@@ -48,6 +48,7 @@ class DapMatcher(object):
     def canMatch(self, target_field_name) -> dict:
         r = {
             "early": "early" in self.options,
+            "wild": "wild" in self.options,
             'dap_name': self.dap_name,
         }
 
