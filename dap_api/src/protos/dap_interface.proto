@@ -68,6 +68,7 @@ message Identifier
 {
         required bytes core = 1;
         optional bytes agent = 2;
+        optional float score = 3;
 }
 
 message DapExecute {

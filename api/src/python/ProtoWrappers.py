@@ -180,7 +180,7 @@ class UpdateData:
     def updFromDataModelValues(self, key, values, agent_id=None, db_key="dm_instance_values"):
         upd = dap_update_pb2.DapUpdate.TableFieldValue()
         upd.tablename = self.db_structure[db_key]["table"]
-        upd.fieldname = self.db_structure[db_key]["field"]
+        upd.fieldname = "them."+self.db_structure[db_key]["field"]
         upd.key.core = key
         if not agent_id is None:
             upd.key.agent = agent_id
@@ -225,7 +225,7 @@ class UpdateData:
                 upd_list.append(self.updFromDataModel(key, dm_instance.model, dm_instance.key))
                 if len(dm_instance.values)>0:
                     upd_list.append(self.updFromDataModel(key, dm_instance.model, dm_instance.key, "dm_instance_model"))
-                    upd_list.append(self.updFromDataModelValues(key, dm_instance.values, dm_instance.key))
+                    #upd_list.append(self.updFromDataModelValues(key, dm_instance.values, dm_instance.key))
             for attr in origin.attributes:
                 upd_list.append(self.updFromAttribute(key, attr))
         upd = dap_update_pb2.DapUpdate()

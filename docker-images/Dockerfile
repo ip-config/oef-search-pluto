@@ -17,6 +17,7 @@ ADD project.tar.gz /app
 WORKDIR /app/project
 
 RUN rm -f .bazelrc && \
+    apk add git && \
     bazel build pluto_app/src/python:pluto --force_python=PY3 && \
     cp testapp/src/resources/ssl/* /build  && \
     cp -Lr bazel-bin /build

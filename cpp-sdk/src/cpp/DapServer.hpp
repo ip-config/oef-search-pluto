@@ -1,11 +1,7 @@
 #pragma once
 
-#include "cpp-sdk/src/cpp/Listener.hpp"
-#include "cpp-sdk/src/cpp/DapInterface.hpp"
-
-#include "cpp-sdk/experimental/protos/dap_config.pb.h"
-
-#include "google/protobuf/util/json_util.h"
+#include "Listener.hpp"
+#include "DapInterface.hpp"
 
 #include <iostream>
 #include <fstream>

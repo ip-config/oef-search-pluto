@@ -46,8 +46,8 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
         query = self._proto_wrapper.get_instance(msg.model)
         result = self._dap_manager.execute(query.toDapQuery())
         items = {}
-        for element in result:
-            core, agent_id = element(True)
+        for element in result.identifiers:
+            core, agent_id = element.core, element.agent
             if core not in items:
                 item = response_pb2.SearchResponse.Item()
                 addresses = self._address_registry.resolve(core)
