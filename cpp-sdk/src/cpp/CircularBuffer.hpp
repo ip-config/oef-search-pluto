@@ -27,7 +27,7 @@ public:
 
   std::vector<boost::asio::mutable_buffer> getBuffersToWrite(uint32_t size){
     uint32_t available = ((r_+buff_size_)-w_)%buff_size_;
-    std::cout << "GETBUFFERSTOWRITE: " << buff_size_ << ", " << available  << ", r_=" << r_<<", w_=" << w_<< std::endl;
+    //std::cout << "GETBUFFERSTOWRITE: " << buff_size_ << ", " << available  << ", r_=" << r_<<", w_=" << w_<< ", requested="<<size<<std::endl;
     if (available<size){
       resize(buff_size_*2);
       return getBuffersToWrite(size);
@@ -38,22 +38,23 @@ public:
     uint32_t size1 = std::min(w_+available, buff_size_)-w_;
     uint32_t s = std::min(size1, size);
     buffers.push_back(boost::asio::buffer(buff_+w1, s));
+    //std::cout << "CIRCBUF: w1=<<"<<w1<<", size="<<s << std::endl;
     w_ = (w1+s)%buff_size_;
     if (size1<size){
       uint32_t size2 = std::max(static_cast<uint32_t>(0), available-size1);
-      std::cout << "CIRCBUF: r2=0, size="<<size2 << std::endl;
-      buffers.push_back(boost::asio::buffer(buff_, size2));
-      w_ = size2-1;
+      uint32_t s2 = std::min(size2, size-s);
+      //std::cout << "CIRCBUF: r2=0, size="<<s2 << std::endl;
+      buffers.push_back(boost::asio::buffer(buff_, s2));
+      w_ = s2;
     }
-    std::cout << "CIRCBUF: w1=" << w1 << ", size="<<s <<  "(size1=" << size1<< ") w_=" << w_<< std::endl;
+    //std::cout << "CIRCBUF: w1=" << w1 << ", size="<<s <<  "(size1=" << size1<< ") w_=" << w_<< std::endl;
 
     return buffers;
   }
 
   std::vector<boost::asio::mutable_buffer> getBuffersToRead(){
     uint32_t data_len = buff_size_- ((r_+buff_size_)-w_+1)%buff_size_;
-    std::cout << "GETBUFFERSTOREAD: " << buff_size_ << ", " << data_len  << ", r_=" << r_<<", w_=" << w_<< std::endl;
-
+    //std::cout << "GETBUFFERSTOREAD: " << buff_size_ << ", " << data_len  << ", r_=" << r_<<", w_=" << w_<< std::endl;
     uint32_t r1 = (r_+1)%buff_size_;
    uint32_t size1 = std::min(r1+data_len, buff_size_)-r1;
 
@@ -65,7 +66,7 @@ public:
      buffers.push_back(boost::asio::buffer(buff_, size2));
      r_ = size2-1;
    }
-    std::cout << "CIRCBUF: r1=" << r1 <<" , size1=" << size1 << " r_=" << r_ <<", w_" <<w_ << std::endl;
+    //std::cout << "CIRCBUF: r1=" << r1 <<" , size1=" << size1 << " r_=" << r_ <<", w_" <<w_ << std::endl;
 
     return buffers;
   }
