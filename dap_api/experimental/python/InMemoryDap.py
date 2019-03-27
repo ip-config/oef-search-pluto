@@ -86,8 +86,12 @@ class InMemoryDap(DapInterface.DapInterface):
                 for key in cores.identifiers:
                     core_ident, agent_ident = key.core, key.agent
                     self.log.info("TESTING SUPPLIED: core={}, agent={}".format(core_ident, agent_ident))
-                    row = table[(key.core, key.agent)]
-                    self.processRow(rowProcessor, (core_ident, agent_ident), row, r)
+                    row = table.get((core_ident, agent_ident), None)
+                    if row == None:
+                        self.log.error("{} not found".format((core_ident, agent_ident)))
+                        self.log.error("table keys = {}".format(table.keys()))
+                    else:
+                        self.processRow(rowProcessor, (core_ident, agent_ident), row, r)
         return r
 
 
