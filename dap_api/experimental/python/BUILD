@@ -28,8 +28,12 @@ py_library(
     name="network_dap_contract",
     visibility = ["//visibility:public"],
     srcs = ["NetworkDapContract.py"],
+    deps = [
+         "//dap_api/src/python/network:dap_network"
+    ],
     data = [
-            "//cpp-sdk/experimental/resources:dap_configs"
+            "//cpp-sdk/experimental/resources:dap_configs",
+            "//ai_search_engine/src/resources:dap_config"
     ]
 )
 

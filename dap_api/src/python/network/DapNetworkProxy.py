@@ -3,6 +3,7 @@ from dap_api.src.protos import dap_interface_pb2, dap_update_pb2, dap_descriptio
 from utils.src.python.Logging import has_logger
 import struct
 import socket
+import json
 
 
 class Transport:
@@ -155,3 +156,37 @@ class DapNetworkProxy(DapInterface):
 
     def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
         return self._call("execute", proto, dap_interface_pb2.IdentifierSequence)
+
+
+def _config_from_dap_json(file, cls = "DapNetworkProxy"):
+    f = open(file)
+    j = json.load(f)
+
+    config = dict()
+    c = config[j["description"]["name"]] = dict()
+
+    if cls is None:
+        cls = j["class"]
+
+    c["class"] = cls
+    c["config"] = dict()
+    c["config"]["host"] = j["host"]
+    c["config"]["port"] = j["port"]
+    c["config"]["structure"] = dict()
+
+    cs = c["config"]["structure"]
+
+    tb = j["description"]["table"]
+    if tb:
+        cs[tb["name"]] = dict()
+        for f in tb["field"]:
+            cs[tb["name"]][f["name"]] = f["type"]
+    return config
+
+
+def proxy_config_from_dap_json(file):
+    return _config_from_dap_json(file)
+
+
+def config_from_dap_json(file):
+    return _config_from_dap_json(file, None)

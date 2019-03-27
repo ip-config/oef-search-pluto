@@ -1,14 +1,14 @@
 {
   "host": "127.0.0.1",
-  "port": 7600,
-  "class": "CppInMemoryDap",
+  "port": 15000,
+  "class": "SearchEngine",
   "description": {
-    "name": "embedding_dap",
+    "name": "data_model_searcher",
     "table": {
-      "name": "embedding_dap_table",
+      "name": "data_model_table",
       "field": [
         {
-          "name": "dm_field",
+          "name": "data_model",
           "type": "embedding"
         }
       ]

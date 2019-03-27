@@ -16,6 +16,10 @@ def lookup(clss, name):
 configure_logging()
 classes = inspect.getmembers(sys.modules[__name__])
 daps = []
+
 for name, conf in config.items():
     cls = lookup(classes, conf["class"])
+    if cls is None:
+        print("Class not found: ", conf["class"])
+        continue
     daps.append(cls(name, conf["config"]))
