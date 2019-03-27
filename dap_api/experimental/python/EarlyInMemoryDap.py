@@ -68,10 +68,6 @@ class EarlyInMemoryDap(DapInterface.DapInterface):
 
         return result
 
-    # returns an object with an execute(agents=None) -> [agent]
-    def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
-        return None
-
     def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
         result = dap_interface_pb2.IdentifierSequence()
         cores = proto.input_idents

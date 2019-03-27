@@ -71,20 +71,6 @@ class DapInterface(abc.ABC):
     def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
         pass
 
-
-    """This function will be called with parts of the query's AST. If
-    the interface can construct a unified query for the whole subtree
-    it may do so.
-
-    Args:
-      update (DapUpdate): The update for this DAP.
-
-    Returns:
-      Either a suitable SubQueryInterface object, or None to let the DapManager handle things.
-    """
-    #def constructQueryObject(self, dapQueryRepnBranch: DapQueryRepn.DapQueryRepn.Branch) -> SubQueryInterface:
-    #    return None
-
     """This function will be called with leaf nodes of the query's
     AST.  The result should be a SubQueryInterface for the constraint object
     object OR None if the constraint cannot be matched.

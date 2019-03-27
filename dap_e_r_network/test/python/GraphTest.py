@@ -20,7 +20,7 @@ class GraphTest(unittest.TestCase):
         assert len(r) == 1
         assert sorted(r) == [ "B" ]
 
-    def xtestDoubleLinks(self):
+    def testDoubleLinks(self):
         self.g.addLink("A", "B", label="bus")
         self.g.addLink("A", "B", label="train")
 
