@@ -1,13 +1,9 @@
 #pragma once
 
-#include "cpp-sdk/src/cpp/CircularBuffer.hpp"
-#include "cpp-sdk/src/cpp/char_array_buffer.hpp"
+#include "asio_inc.hpp"
+#include "CircularBuffer.hpp"
+#include "char_array_buffer.hpp"
 
-#include "google/protobuf/message.h"
-#include "boost/asio.hpp"
-#include "boost/asio/ip/tcp.hpp"
-#include "boost/asio/write.hpp"
-#include "boost/asio/buffer.hpp"
 
 #include <iostream>
 #include <functional>
@@ -39,8 +35,6 @@ public:
   using SocketPtr    = std::shared_ptr<Socket>;
   using Buffer       = std::vector<uint8_t>;
   using BufferPtr    = std::shared_ptr<Buffer>;
-  using Message      = google::protobuf::Message;
-  using MessagePtr   = std::shared_ptr<Message>;
   using CbStore      = std::unordered_map<std::string, std::function<void(std::istream*)>>;
   using TransportPtr = std::shared_ptr<Transport>;
 
@@ -76,7 +70,7 @@ public:
     buffers.emplace_back(boost::asio::buffer(&data_len, sizeof(data_len)));
     buffers.emplace_back(boost::asio::buffer(data->data(), data_len));
 
-    uint32_t total = -len+sizeof(len)+data_len+sizeof(data_len);
+    uint32_t total = static_cast<uint32_t>(-len+static_cast<int32_t>(sizeof(len)+data_len+sizeof(data_len)));
     boost::asio::async_write(socket_, buffers, [data, total](std::error_code ec,  std::size_t length){
       if (ec){
         std::cerr << "Failed to write to socket, because: " << ec.message() << "! "
@@ -97,7 +91,7 @@ public:
   void read(const boost::system::error_code& ec = boost::system::error_code(), std::size_t length = 0){
     std::cerr << "Called read: " << ec << ", " << ec.message() << ", length = " << length << std::endl;
 
-    if (ec != boost::system::errc::errc_t::success){
+    if (ec){
       if (ec==boost::asio::error::eof){ //close connection
         std::cerr << "CONNECTION CLOSED" << std::endl;
         auto ptr = destroyer_.lock();
@@ -139,8 +133,12 @@ public:
 
       case States::BODY_HEADER: {
         int32_t len = readHeader();
-        if (len<=0) {
-          std::cerr << "WRONG BODY HEADER, PATH ALREADY RECEIVED (" << stateData_.path << ")!" << std::endl;
+        if (len<0) {
+          std::cerr << "WRONG BODY HEADER (" << len << "), PATH ALREADY RECEIVED (" << stateData_.path << ")!" << std::endl;
+        } else if (len==0) {
+          gotBody();
+          state_ = States::HEADER;
+          stateData_.length = INT_SIZE;
         } else {
           stateData_.length = static_cast<uint32_t>(len);
           state_ = States::BODY;
@@ -255,7 +253,7 @@ private:
     BODY = 4
   };
 
-  const uint32_t INT_SIZE = sizeof(int32_t);
+  static constexpr const uint32_t INT_SIZE = sizeof(int32_t);
   States state_ = {States::START};
   StateData stateData_ = {INT_SIZE, ""};
   std::atomic<bool> active_{true};

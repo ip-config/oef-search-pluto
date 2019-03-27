@@ -57,6 +57,7 @@ class ClientSocket:
 
     def connect(self):
         self._socket = socket.socket(socket.AF_INET)
+        print("Connecting to DAP: "+self.host+":"+str(self.port))
         self._socket.connect((self.host, self.port))
         self.transport = Transport(self._socket)
 
@@ -97,7 +98,7 @@ class DapNetworkProxy(DapInterface):
             try:
                 sproto = dap_interface_pb2.Successfulness()
                 sproto.ParseFromString(resp)
-                if not sproto.successfull:
+                if not sproto.success:
                     self.error("Dap failure: code %d, message: %s", sproto.errorcode, sproto.narrative)
                 else:
                     self.error("Unknown failure! Message: %s", sproto.message)
