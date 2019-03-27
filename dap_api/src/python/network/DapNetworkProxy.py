@@ -98,7 +98,7 @@ class DapNetworkProxy(DapInterface):
             try:
                 sproto = dap_interface_pb2.Successfulness()
                 sproto.ParseFromString(resp)
-                if not sproto.successfull:
+                if not sproto.success:
                     self.error("Dap failure: code %d, message: %s", sproto.errorcode, sproto.narrative)
                 else:
                     self.error("Unknown failure! Message: %s", sproto.message)
