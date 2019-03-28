@@ -23,9 +23,10 @@ class DapAttributeStore(DapInterface.DapInterface):
         def match(self, operatorFactory, query_settings):
             f = operatorFactory.lookup(self.field_type, query_settings['operator'], query_settings['query_field_type'])
             if not f:
-                return False
-            return f(query_settings['query_field_value'], self.field_value)
-            return True
+                return -2
+            if f(self.field_value, query_settings['query_field_value']):
+                return 0
+            return -1
 
         def printable(self):
             return "{} ({})".format(
@@ -47,17 +48,17 @@ class DapAttributeStore(DapInterface.DapInterface):
         star_table.name = '*'
 
         star_field = star_table.field.add()
-        star_field.name = '/them\\..*/'
+        star_field.name = '/them\\.[A-Za-z][-_A-Za-z0-9]*/'
         star_field.type = '*'
 
         return result
 
     def print(self):
         for k in self.table.keys():
-            self.error("{},{}:".format(k[0],k[1]))
+            self.log.info("{},{}:".format(k[0],k[1]))
             for kk in self.table[k].keys():
-                self.error("    "+kk+":")
-                self.error("        " + self.table[k][kk].printable())
+                self.log.info("    "+kk+":")
+                self.log.info("        " + self.table[k][kk].printable())
 
     def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
         query_settings = {}
@@ -78,28 +79,49 @@ class DapAttributeStore(DapInterface.DapInterface):
         return r
 
     def test(self, row: dict, query_settings: dict) -> bool:
+        if row == None:
+            #self.log.info("REJECT no such row")
+            return False
         target_field = row.get(query_settings['target_field_name'], None)
-        if target_field:
-            return target_field.match(self.operatorFactory, query_settings)
+        if not target_field:
+            #self.log.info("REJECT no such field")
+            return False
+        r = target_field.match(self.operatorFactory, query_settings)
+        if r == 0:
+            return True
+#        elif r == -1:
+#            self.log.info("REJECT by value {} does not match {}".format(target_field.printable(), query_settings['query_field_value']))
+#        elif r == -2:
+#            self.log.info("REJECT by value {} type mismatch".format(target_field.printable()))
+#        else:
+#            self.log.info("REJECT by value {} ??".format(target_field.printable()))
+        return False
 
     def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
         input_idents = proto.input_idents
         query_memento = proto.query_memento
         query_settings = json.loads(query_memento.memento.decode("utf-8"))
 
+        for k,v in query_settings.items():
+            self.log.info(" execute settings    {} = {}".format(k,v))
+
         result = dap_interface_pb2.IdentifierSequence()
         if input_idents.originator:
             for row_key, row in self.table.items():
                 core_ident, agent_ident = row_key
+                #self.log.info("TESTING ORIGINATED: core={}, agent={}".format(core_ident, agent_ident))
                 if self.test(row, query_settings):
+                    #self.log.info("PASSING: core={}, agent={}".format(core_ident, agent_ident))
                     i = result.identifiers.add()
                     i.core = core_ident
                     i.agent = agent_ident
         else:
             for key in input_idents.identifiers:
                 core_ident, agent_ident = key.core, key.agent
-                row = table.get((core_ident, agent_ident), None)
+                row = self.table.get((core_ident, agent_ident), None)
+                #self.log.info("TESTING SUPPLIED: core={}, agent={}".format(core_ident, agent_ident))
                 if row != None and self.test(row, query_settings):
+                    #self.log.info("PASSING: core={}, agent={}".format(core_ident, agent_ident))
                     i = result.identifiers.add()
                     i.core = core_ident
                     i.agent = agent_ident

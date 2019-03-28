@@ -32,14 +32,6 @@ class DapQueryRepn(object):
             return DapQueryRepn.Branch().fromProto(self.toProto())
 
         def printable(self):
-            print("--------self.dap_field_candidates----------------------------")
-            print("fc=", self.dap_field_candidates)
-            print("dn=", self.dap_names)
-            assert self.dap_field_candidates != None
-            for x in (self.dap_names or []):
-                print("x=", x)
-                print("x => ", self.dap_field_candidates.get(x, {}))
-                          #.get('target_table_name', '<NONE>'))
             tablenames = [
                 self.dap_field_candidates.get(x, {}).get('target_table_name', '<NONE>')
                 for x in (self.dap_names or [])

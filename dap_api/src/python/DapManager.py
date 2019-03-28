@@ -86,9 +86,6 @@ class DapManager(object):
             for dap_name in node.dap_names:
                 self.dapmanager.info("Dear ", dap_name, " would you write a constraint for ", node.printable(), " ?")
                 queryObject_pb = self.dapmanager.getInstance(dap_name).prepareConstraint(node.toProto(dap_name))
-
-        # KLL -- somewhere in here, we need to store both the EARLY and then the LATE mementos along with the DAP to run them on.
-
                 if queryObject_pb.HasField('success') and queryObject_pb.success:
                     self.dapmanager.info("Gotcha!")
                     node.mementos.extend([
@@ -164,17 +161,18 @@ class DapManager(object):
         r = set()
         for k,v in self.attributes_to_daps.items():
             match = False
-            if k == '*':
-                #self.info("getDapsForAttributeName", v, " because ",k, " == '*'")
-                match = True
-            if k[0] == '/' and k[-1:] == '/':
-                pat = k[1:-1]
-                if re.match(pat, attributeName):
-                    #self.info("getDapsForAttributeName", v, " because ",pat, " matches ", attributeName)
+            for atname in [ attributeName, "them." + attributeName ]:
+                if k == '*':
+                    self.log.info("getDapsForAttributeName {} because {} == *".format(v, k))
                     match = True
-            if k == attributeName:
-                #self.info("getDapsForAttributeName", v, " because ",k, " == ", attributeName)
-                match = True
+                if k[0] == '/' and k[-1:] == '/':
+                    pat = k[1:-1]
+                    if re.match('^'+pat+'$', atname):
+                        self.log.info("getDapsForAttributeName {} because {}  matches {} ".format(v, pat, atname))
+                        match = True
+                if k == atname:
+                    self.log.info("getDapsForAttributeName {} because {} == {} ".format(v, k, atname))
+                    match = True
             if match:
                 for dap in v:
                     r.add(dap)
@@ -192,9 +190,11 @@ class DapManager(object):
             update_list = update.update
 
         for tableFieldValue in update_list:
-            #self.info("UPDATE ATTR ", tableFieldValue.fieldname)
             daps_to_update = self.getDapsForAttributeName(tableFieldValue.fieldname)
-            #self.info("UPDATE DAPS ", daps_to_update)
+
+            if len(daps_to_update) == 0:
+                self.log.error("NO DAPS CLAIMED THIS VALUE -- {}".format(tableFieldValue.fieldname))
+
             for dap_to_update in daps_to_update:
                 tfv = dap_update_pb2.DapUpdate.TableFieldValue()
                 tfv.CopyFrom(tableFieldValue)
@@ -241,7 +241,7 @@ class DapManager(object):
 
     def printQuery(self, prefix, dapQueryRepn):
         for x in dapQueryRepn.printable():
-            self.info("{}   {}".format(prefix, x))
+            self.log.info("{}   {}".format(prefix, x))
 
     def makeQuery(self, query_pb):
         dapQueryRepn = DapQueryRepn.DapQueryRepn()
@@ -320,6 +320,7 @@ class DapManager(object):
 
         self.warning("_executeMementoChain working on ", node.printable())
         self.warning("_executeMementoChain will run: ", [ m[0] for m in ordered_mementos ])
+        self.warning("_executeMementoChain input count ", len(cores.identifiers))
 
         current = cores
         for dap_name, memento in ordered_mementos:
@@ -327,23 +328,23 @@ class DapManager(object):
             proto.query_memento.CopyFrom(memento)
             proto.input_idents.CopyFrom(current)
             current = self.getInstance(dap_name).execute(proto)
+        self.warning("_executeMementoChain output count ", len(current.identifiers))
         return current
 
     def _executeLeaf(self, node, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
         self.warning("_executeLeaf working on ", node.printable())
-        print("_executeLeaf working on ", node.printable())
         if len(node.mementos) > 0:
             r = self._executeMementoChain(node, node.mementos, cores)
         else:
-            
             raise Exception("Node didn't compile")
-#        print("_executeLeaf")
-#        print("Results;")
-#        for ident in r.identifiers:
-#            print(DapQueryResult.DapQueryResult(pb=ident).printable())
+        #self.log.info("_executeLeaf")
+        #self.log.info("Results;")
+        #for ident in r.identifiers:
+        #    self.log.info(DapQueryResult.DapQueryResult(pb=ident).printable())
         return r
 
     def _executeOr(self, node, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
+        self.warning("_executeOr ", node.printable())
         r = dap_interface_pb2.IdentifierSequence()
         for n in node.subnodes:
             res = self._execute(n, cores)
@@ -359,6 +360,7 @@ class DapManager(object):
 
     # This is naive -- there's a functional way of making this more efficient.
     def _executeAnd(self, node, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
+        self.warning("_executeAnd ", node.printable())
         leafstart = 0
         nodestart = 0
 

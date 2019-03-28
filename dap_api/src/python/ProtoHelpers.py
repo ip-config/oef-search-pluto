@@ -34,6 +34,21 @@ def listOf(x):
 def rangeOf(x):
     return("{}_range".format(x))
 
+def populateUpdateTFV(tfv, fieldname, data):
+    tfv.fieldname = fieldname
+    if isinstance(data, str):
+        tfv.value.type = 2
+        tfv.value.s = data
+        return
+    if isinstance(data, int):
+        tfv.value.type = 3
+        tfv.value.i = data
+        return
+    if isinstance(data, float):
+        tfv.value.type = 5
+        tfv.value.d = data
+        return
+    raise ValueError("TFV type bad")
 
 def decodeAttributeValueToInfo(av):
     return {
@@ -61,11 +76,11 @@ def decodeKeyValuesToKVTs(kv_list):
         if value.HasField("s"):
             r.append(( key, "string", value.s))
         elif value.HasField("d"):
-            r.append(( key, "float", value.d))
+            r.append(( key, "float",  value.d))
         elif value.HasField("b"):
-            r.append(( key, "bool", value.b))
+            r.append(( key, "bool",   value.b))
         elif value.HasField("i"):
-            r.append(( key, "int64", value.i))
+            r.append(( key, "int",    value.i))
         elif value.HasField("l"):
             r.append(( key, "location", ( value.l.lat, value.l.lon )))
         else:
@@ -77,11 +92,11 @@ def decodeAttributeValueInfoToPythonType(av):
     t, data = decodeAttributeValueToTypeValue(av)
     type_string, converter_function = {
         TYPE_STRING     : ("string",   lambda x: x),
-        TYPE_INT64      : ("int64",    lambda x: x),
-        TYPE_FLOAT      : ("float",    lambda x: x),
+        TYPE_INT64      : ("int",      lambda x: x),
+        TYPE_FLOAT      : ("double",   lambda x: x),
         TYPE_DOUBLE     : ("double",   lambda x: x),
         #TYPE_DATA_MODEL : (None, lambda x: None), # not impl yet
-        TYPE_INT32      : ("int32",    lambda x: x),
+        TYPE_INT32      : ("int",      lambda x: x),
         TYPE_BOOL       : ("bool",     lambda x: x),
         TYPE_LOCATION   : ("location", lambda x: (x.lat, x.lon)),
         TYPE_KEYVALUE   : ("key-type-value_list", lambda x: decodeKeyValuesToKVTs(x))
