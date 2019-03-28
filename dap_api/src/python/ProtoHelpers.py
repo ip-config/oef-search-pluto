@@ -34,14 +34,29 @@ def listOf(x):
 def rangeOf(x):
     return("{}_range".format(x))
 
+def populateUpdateTFV(tfv, fieldname, data):
+    tfv.fieldname = fieldname
+    if isinstance(data, str):
+        tfv.value.type = 2
+        tfv.value.s = data
+        return
+    if isinstance(data, int):
+        tfv.value.type = 3
+        tfv.value.i = data
+        return
+    if isinstance(data, float):
+        tfv.value.type = 5
+        tfv.value.d = data
+        return
+    raise ValueError("TFV type bad")
 
 def decodeAttributeValueToInfo(av):
     return {
         0: ( None, lambda x: None),
         1: ( None, lambda x: None),
         2: ( TYPE_STRING,lambda x: x.s),
-        3: ( TYPE_INT64,lambda x: x.s),
-        4: ( TYPE_FLOAT,lambda x: x.i),
+        3: ( TYPE_INT64,lambda x: x.i),
+        4: ( TYPE_FLOAT,lambda x: x.f),
         5: ( TYPE_DOUBLE,lambda x: x.d),
         6: ( TYPE_DATA_MODEL, lambda x: x.dm), # not impl yet
         7: ( TYPE_INT32,lambda x: x.i32),
@@ -51,6 +66,42 @@ def decodeAttributeValueToInfo(av):
         11: (TYPE_KEYVALUE, lambda x: x.kv)
     }.get(av.type, ( None, lambda x: None))
 
+def decodeKeyValuesToKVTs(kv_list):
+    r = []
+    for kv in kv_list:
+        result_value = None
+        key = kv.key
+        value = kv.value
+
+        if value.HasField("s"):
+            r.append(( key, "string", value.s))
+        elif value.HasField("d"):
+            r.append(( key, "float",  value.d))
+        elif value.HasField("b"):
+            r.append(( key, "bool",   value.b))
+        elif value.HasField("i"):
+            r.append(( key, "int",    value.i))
+        elif value.HasField("l"):
+            r.append(( key, "location", ( value.l.lat, value.l.lon )))
+        else:
+            r.append(( key, None, None ))
+    return r
+
+# Produce a value which can be fed into the operator factory system.
+def decodeAttributeValueInfoToPythonType(av):
+    t, data = decodeAttributeValueToTypeValue(av)
+    type_string, converter_function = {
+        TYPE_STRING     : ("string",   lambda x: x),
+        TYPE_INT64      : ("int",      lambda x: x),
+        TYPE_FLOAT      : ("double",   lambda x: x),
+        TYPE_DOUBLE     : ("double",   lambda x: x),
+        #TYPE_DATA_MODEL : (None, lambda x: None), # not impl yet
+        TYPE_INT32      : ("int",      lambda x: x),
+        TYPE_BOOL       : ("bool",     lambda x: x),
+        TYPE_LOCATION   : ("location", lambda x: (x.lat, x.lon)),
+        TYPE_KEYVALUE   : ("key-type-value_list", lambda x: decodeKeyValuesToKVTs(x))
+    }.get(t, ( None, lambda x: None))
+    return type_string, converter_function(data)
 
 def decodeAttributeValueToTypeValue(av):
     t, func = decodeAttributeValueToInfo(av)

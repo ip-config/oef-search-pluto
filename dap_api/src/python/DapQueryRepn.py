@@ -33,7 +33,7 @@ class DapQueryRepn(object):
 
         def printable(self):
             tablenames = [
-                self.dap_field_candidates[x]['target_table_name']
+                self.dap_field_candidates.get(x, {}).get('target_table_name', '<NONE>')
                 for x in (self.dap_names or [])
             ]
             return "Branch {} -- \"{}\" over {} (tns={}) ({} children, {} leaves) mementos={}".format(
@@ -141,8 +141,8 @@ class DapQueryRepn(object):
             self.target_field_type = target_field_type
             self.target_table_name = target_table_name
 
-            self.dap_names = dap_names # the set of names of all responding daps.
             self.dap_field_candidates = dap_field_candidates  # A map of name->field info for every responder.
+            self.dap_names = dap_names # the set of names of all responding daps.
             self.name = "?"
             self.mementos = []
 
@@ -158,8 +158,8 @@ class DapQueryRepn(object):
             pb.query_field_type  = self.query_field_type
             pb.target_field_name = self.target_field_name
 
-            pb.target_field_type = self.dap_field_candidates[dap_name]['target_field_type']
-            pb.target_table_name = self.dap_field_candidates[dap_name]['target_table_name']
+            pb.target_field_type = self.dap_field_candidates.get(dap_name, {}).get('target_field_type', "")
+            pb.target_table_name = self.dap_field_candidates.get(dap_name, {}).get('target_table_name', "")
 
             pb.dap_name          = dap_name
 
