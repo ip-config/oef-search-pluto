@@ -151,8 +151,9 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         self._cache = {}
         self._cache_lifetime = cache_lifetime
         if cleaner_pool is None:
-            cleaner_pool = ThreadPoolExecutor(1)
-        self._executor = cleaner_pool
+            self._executor = ThreadPoolExecutor(1)
+        else:
+            self._executor = cleaner_pool
         self._last_clean = 0
         self._search_coms = {}
         self._attributes = {
@@ -160,6 +161,8 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         }
         PlutoApp.PlutoApp.__init__(self)
         NodeAttributeInterface.__init__(self)
+        self.log.update_local_name(self._id)
+        self._loop = asyncio.get_event_loop()
 
     def init(self, node_ip: str, node_port: int, network_dap_config: dict, http_port: int = -1, ssl_certificate: str = None, html_dir: str = None):
         for name, conf in network_dap_config.items():
@@ -174,6 +177,7 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
     def connect_to_search_node(self, host: str, port: int, search_node_id=None):
         if search_node_id is None:
             search_node_id = host + ":" + str(port)
+        self.info("Create search network link with search node {} @ {}:{}".format(search_node_id, host, port))
         self._search_coms[search_node_id] = Connection(host, port)
 
     def disconnect(self):
@@ -241,7 +245,7 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
             return False
 
     async def broadcast(self, path: str, data):
-        return
+        self.info("Broadcasting started: path=", path, ", data=", data)
         source = None
         if isinstance(data, query_pb2.Query):
             if data.ttl <= 0:
@@ -250,6 +254,8 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
             data.ttl -= 1
             source = data.source_key
             data.source_key = self._bin_id
+        else:
+            self.warning("query is not api query (missing TTL)")
         cos = []
         #proto = data.SerializeToString()
         proto_model = data.model.SerializeToString()
@@ -259,11 +265,29 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
             h = hash(path + ":" + str(proto_model) + ":" + str(data.directed_search.target.geo)  + ":" + str(target_search_node_id))
             c = self._cache.get(h, t - 2 * self._cache_lifetime)
             if (t - c) < self._cache_lifetime:
+                self.info("Skip broadcast to {} because last broadcast was @ {} (current time = {})".format(target_search_node_id, c, t))
                 continue
             self._cache[h] = t
             if source is None or source != target_search_node_id.encode("utf-8"):
+                self.info("Broadcasted search to ", target_search_node_id)
                 cos.append(self._search_coms[target_search_node_id].call_node(path, data.SerializeToString()))
-        self._executor.submit(SearchNode._cache_cleaner, self)
+            else:
+                self.info("Skip broadcast to {} because last broadcast was source ({}) is the same".format(
+                    target_search_node_id, source))
+        self.info("Active co-routines: ", cos)
+        try:
+            self._executor.submit(SearchNode._cache_cleaner, self)
+        except Exception as e:
+            self.warning("Failed to schedule cache cleaner, because: ", str(e))
         if len(cos) > 0:
-            return await asyncio.gather(*cos)
+            self.info("Await gather")
+            resp = await asyncio.gather(*cos)
+            self.info("Response to broadcast: ", resp)
+            return resp
         return []
+
+    def block(self):
+        if hasattr(self, "_com"):
+            self._com.wait()
+        else:
+            time.sleep(1e6)

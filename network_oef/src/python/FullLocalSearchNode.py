@@ -29,6 +29,8 @@ class FullSearchNone:
         self.daps = []
         tmp_dict = {}
         for conf in network_dap_config:
+            if not conf["run_py_dap"]:
+                continue
             cs = config_from_dap_json(conf["file"])
             for ckey, c in cs.items():
                 c["config"]["host"] = "127.0.0.1"
@@ -42,12 +44,15 @@ class FullSearchNone:
             for cpkey, cp in cps.items():
                 cp["config"]["port"] = conf["port"]
                 tmp_dict[cpkey] = cp
-
+        time.sleep(1)
         self.search_node = SearchNode(5, node_name)
         self.search_node.init("127.0.0.1", node_port, tmp_dict, http_port, ssl_certificate, html_dir)
 
-    def add_remote_peer(self, host: str, port: int):
-        self.search_node.connect_to_search_node(host, port)
+    def add_remote_peer(self, host: str, port: int, node_id: str):
+        self.search_node.connect_to_search_node(host, port, node_id)
 
     def disconnect_fom_search_network(self):
         self.search_node.disconnect()
+
+    def block(self):
+        self.search_node.block()

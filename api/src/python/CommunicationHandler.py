@@ -10,6 +10,9 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 
+_loop = asyncio.new_event_loop()
+
+
 def socket_handler(router: BackendRouter):
     log = get_logger("SocketConnectionHandler")
 
@@ -27,9 +30,10 @@ def http_json_handler(router):
     log = get_logger("HttpJsonRequestHandler")
 
     def on_request(path=""):
+        global _loop
         log.info("Got json request over http")
         try:
-            response = asyncio.run(router.route(path, bottle.request.json))
+            response = _loop.run_until_complete(router.route(path, bottle.request.json))
             bottle.response.headers['Content-Type'] = 'application/json'
             return response
         except bottle.HTTPError as e:
@@ -38,7 +42,8 @@ def http_json_handler(router):
 
 
 def socket_server(host: str, port: str, router: BackendRouter):
-    asyncio.run(run_server(socket_handler(router), host, port))
+    global _loop
+    _loop.create_task(run_server(socket_handler(router), host, port))
 
 
 def serve_site(html_dir: str, path: str):
