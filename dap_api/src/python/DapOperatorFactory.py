@@ -82,9 +82,3 @@ class DapOperatorFactory(object):
         k = (field_type, comparator, constant_type)
         self.log.info("Operator lookup for: {}".format(k))
         return self.store.get(k, None)
-
-#    def createAttrMatcherProcessor(self, field_type, comparator, constant_type, constant_value):
-#        f = self.lookup(field_type, comparator, constant_type)
-#        if not f:
-#            raise TypeError("Cannot handle {} {} {}".format(field_type, comparator, constant_type, " is not a known operation."))
-#        return lambda field_value: f(field_value, constant_value)
