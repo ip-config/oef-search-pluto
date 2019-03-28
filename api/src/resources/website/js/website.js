@@ -10,6 +10,7 @@ var website = function (_, Kotlin) {
   var Kind_CLASS = Kotlin.Kind.CLASS;
   var toShort = Kotlin.toShort;
   var print = Kotlin.kotlin.io.print_s8jyv4$;
+  var println = Kotlin.kotlin.io.println_s8jyv4$;
   function SearchEventHandler() {
   }
   SearchEventHandler.$metadata$ = {
@@ -96,7 +97,7 @@ var website = function (_, Kotlin) {
     interfaces: [SearchEventHandler]
   };
   function main(args) {
-    var networkCom = new NetworkCom('https://localhost:7500/json/search');
+    var networkCom = new NetworkCom(document.URL + 'json/search');
     var mainPage = new MainSearchSite('container', 'OEF Search', networkCom);
     mainPage.assemble();
   }
