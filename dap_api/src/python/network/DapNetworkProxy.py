@@ -48,18 +48,18 @@ class Transport:
 
 
 class ClientSocket:
-    @has_logger
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int, logger):
         self.transport = None
         self.host = host
         self.port = port
         self._socket = None
+        self.log = logger
         self.connect()
 
     def connect(self):
         self._socket = socket.socket(socket.AF_INET)
-        print("Connecting to DAP: "+self.host+":"+str(self.port))
         self._socket.connect((self.host, self.port))
+        self.log.info("Connected to network dap!")
         self.transport = Transport(self._socket)
 
     def close(self):
@@ -82,7 +82,8 @@ class DapNetworkProxy(DapInterface):
         self.host = configuration["host"]
         self.port = configuration["port"]
         self.log.update_local_name(name+"@"+self.host+":"+str(self.port))
-        self.client = ClientSocket(self.host, self.port)
+        self.info("Opening connection...")
+        self.client = ClientSocket(self.host, self.port, self.log)
 
     def inject_w2v(self, *args, **kwargs):
         pass

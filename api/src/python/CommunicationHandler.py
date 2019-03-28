@@ -49,13 +49,14 @@ def serve_site(html_dir: str, path: str):
     return resources.textfile(os.path.join(html_dir, path))
 
 
-def http_server(host: str, port: int, crt_file: str, html_dir: str, router: BackendRouter):
+def http_server(host: str, port: int, crt_file: str, *, router: BackendRouter, html_dir: str = None):
     resources.initialise(__package__)
     app = bottle.Bottle()
     srv = SSLWSGIRefServer.SSLWSGIRefServer(host=host, port=port, certificate_file=crt_file)
     app.route(path="/json/<path:path>", method="POST", callback=http_json_handler(router))
-    app.route(path="/website/<path:path>", method="GET", callback=partial(serve_site, html_dir))
-    app.route(path="/", method="GET", callback=partial(serve_site, html_dir, "index.html"))
+    if html_dir is not None:
+        app.route(path="/website/<path:path>", method="GET", callback=partial(serve_site, html_dir))
+        app.route(path="/", method="GET", callback=partial(serve_site, html_dir, "index.html"))
     bottle.run(server=srv, app=app)
 
 

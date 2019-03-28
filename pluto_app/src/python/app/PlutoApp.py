@@ -88,7 +88,6 @@ class PlutoApp:
             else:
                 for name, config in self._network_dap_config.items():
                     dapManagerConfig[name] = config
-            print(dapManagerConfig)
 
         self.dapManager.setup(
             sys.modules[__name__],
