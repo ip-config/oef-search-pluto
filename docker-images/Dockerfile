@@ -18,17 +18,16 @@ WORKDIR /app/project
 
 RUN rm -f .bazelrc && \
     apk add git && \
-    bazel build pluto_app/src/python:pluto --force_python=PY3 && \
-    cp testapp/src/resources/ssl/* /build  && \
-    cp -Lr bazel-bin /build
+    bazel build network_oef/experimental/python:node --force_python=PY3 && \
+    cp certificates/src/makefiles/oef-search/oef-search.pem /build/server.pem  && \
+    cp -Lr bazel-bin /build && \
+    cp network_oef/experimental/sh/oef.sh /build/
 
 FROM qati/python3alpine_nlp
 
 WORKDIR /app
 
-COPY --from=builder /build/bazel-bin/pluto_app/src/python/ /app/
+COPY --from=builder /build/bazel-bin/network_oef/experimental/python/ /app/
 COPY --from=builder /build/server.pem /app/
+COPY --from=builder /build/oef.sh /app/
 
-EXPOSE 7500-7501
-
-ENTRYPOINT ["./pluto", "7500", "server.pem"]
