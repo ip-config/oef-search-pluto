@@ -5,7 +5,7 @@ from utils.src.python.Logging import has_logger
 from api.src.python.ProtoWrappers import ProtoWrapper
 from api.src.proto import query_pb2
 from dap_api.src.python.DapManager import DapManager
-from dap_api.experimental.python.AddressRegistry import AddressRegistry
+from dap_in_memory.src.python.AddressRegistry import AddressRegistry
 from typing import List
 
 
