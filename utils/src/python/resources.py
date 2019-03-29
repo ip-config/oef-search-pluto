@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, io
 from pkgutil import get_loader
 
 # https://stackoverflow.com/questions/5003755/how-to-use-pkgutils-get-data-with-csv-reader-in-python
@@ -76,7 +76,7 @@ def resource(package, resourceName, as_string=False, as_file=True):
                 poss_path = os.path.join(inside_bazel, resourceName)
                 if os.path.exists(poss_path):
                     if as_file:
-                        return open(resourceName, "rb")
+                        return open(poss_path, "rb")
                     with open(poss_path, "rb") as binary_file:
                         return binary_file.read()
             raise ValueError("Can't load resource {}::{}".format(package, resourceName))

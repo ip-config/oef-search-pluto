@@ -22,9 +22,9 @@ class Connection(object):
             self._transport.close()
         self._transport = None
 
-    async def call_node(self, path: str, data: bytes, loop) -> bytes:
+    async def call_node(self, path: str, data: bytes) -> bytes:
         if self._transport is None:
-            await self.connect(loop)
+            await self.connect()
         await self._transport.write(data, path)
         await self._transport.drain()
         path, data = await self._transport.read()

@@ -48,7 +48,7 @@ class FullSearchNone:
         self.search_node = SearchNode(5, node_name)
         self.search_node.init("127.0.0.1", node_port, tmp_dict, http_port, ssl_certificate, html_dir)
 
-    def add_remote_peer(self, host: str, port: int, node_id: str):
+    def add_remote_peer(self, host: str, port: int, node_id: str = None):
         self.search_node.connect_to_search_node(host, port, node_id)
 
     def disconnect_fom_search_network(self):
