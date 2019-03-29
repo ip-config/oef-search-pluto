@@ -3,7 +3,7 @@ import sys
 from dap_api.src.python import DapManager
 from dap_api.src.python.network import DapNetworkProxy
 from ai_search_engine.src.python import SearchEngine
-from dap_api.experimental.python import InMemoryDap
+from dap_in_memory.src.python import InMemoryDap
 from dap_api.experimental.python import AddressRegistry
 from dap_api.experimental.python import DataModelInstanceStore
 import api.src.python.ProtoWrappers as ProtoWrappers

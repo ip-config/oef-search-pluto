@@ -41,6 +41,7 @@ public:
   Transport(Socket socket, uint16_t id)
   : socket_(std::move(socket))
   , read_buffer_(128) // 32KB
+  , write_buffer_(128) // 32KB
   , id_{id}
   {}
 
@@ -235,6 +236,7 @@ private:
 private:
   Socket socket_;
   CircularBuffer read_buffer_;
+  CircularBuffer write_buffer_;
   CbStore cb_store_;
   std::weak_ptr<IDestroyer> destroyer_;
   uint16_t id_;
