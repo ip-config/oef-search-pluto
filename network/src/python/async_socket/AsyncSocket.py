@@ -2,6 +2,7 @@ import asyncio
 from inspect import signature
 import struct
 import functools
+from network.src.proto import message_pb2
 
 
 class Transport:
@@ -11,17 +12,21 @@ class Transport:
         self._int_size = len(struct.pack("i", 0))
 
     async def write(self, data: bytes, path: str = ""):
-        if len(path) > 0:
-            set_path_cmd = struct.pack("i", -len(path))
-            await self.drain()
-            self._writer.write(set_path_cmd)
-            await self.drain()
-            self._writer.write(path.encode())
-        size_packed = struct.pack("i", len(data))
+        msg = message_pb2.Message()
+        msg.uri = path
+        msg.body = data
+        #if len(path) > 0:
+        #    set_path_cmd = struct.pack("i", -len(path))
+        #    await self.drain()
+        #    self._writer.write(set_path_cmd)
+        #    await self.drain()
+        #    self._writer.write(path.encode())
+        smsg = msg.SerializeToString()
+        size_packed = struct.pack("i", len(smsg))
         await self.drain()
         self._writer.write(size_packed)
         await self.drain()
-        self._writer.write(data)
+        self._writer.write(smsg)
 
     async def drain(self):
         return await self._writer.drain()
@@ -38,13 +43,16 @@ class Transport:
             size = await self._read_size()
             if size == 0:
                 return "", []
-            path = ""
-            if size < 0:
-                path = await self._reader.read(-size)
-                path = path.decode()
-                path = path.replace("\f", "")
-                size = await self._read_size()
-            return path, await self._reader.read(size)
+            #path = ""
+            #if size < 0:
+            #    path = await self._reader.read(-size)
+            #    path = path.decode()
+            #    path = path.replace("\f", "")
+            #    size = await self._read_size()
+            data = await self._reader.read(size)
+            msg = message_pb2.Message()
+            msg.ParseFromString(data)
+            return msg.uri, msg.body
         except ConnectionResetError:
             return "", []
 

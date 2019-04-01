@@ -4,6 +4,8 @@ from utils.src.python.Logging import has_logger
 import struct
 import socket
 import json
+from network.src.proto import message_pb2
+
 
 
 class Transport:
@@ -12,13 +14,17 @@ class Transport:
         self._int_size = len(struct.pack("i", 0))
 
     def write(self, data: bytes, path: str = ""):
-        if len(path) > 0:
-            set_path_cmd = struct.pack("i", -len(path))
-            self._socket.sendall(set_path_cmd)
-            self._socket.sendall(path.encode())
-        size_packed = struct.pack("i", len(data))
+        #if len(path) > 0:
+        #    set_path_cmd = struct.pack("i", -len(path))
+        #    self._socket.sendall(set_path_cmd)
+        #    self._socket.sendall(path.encode())
+        msg = message_pb2.Message()
+        msg.uri = path
+        msg.body = data
+        smsg = msg.SerializeToString()
+        size_packed = struct.pack("i", len(smsg))
         self._socket.sendall(size_packed)
-        self._socket.sendall(data)
+        self._socket.sendall(smsg)
 
     def _read_size(self) -> int:
         size_packed = self._socket.recv(self._int_size)
@@ -33,12 +39,15 @@ class Transport:
             if size == 0:
                 return "", []
             path = ""
-            if size < 0:
-                path = self._socket.recv(-size)
-                path = path.decode()
-                path = path.replace("\f", "")
-                size = self._read_size()
-            return path, self._socket.recv(size)
+            #if size < 0:
+            #    path = self._socket.recv(-size)
+            #    path = path.decode()
+            #    path = path.replace("\f", "")
+            #    size = self._read_size()
+            data = self._socket.recv(size)
+            msg = message_pb2.Message()
+            msg.ParseFromString(data)
+            return msg.uri, msg.body
         except ConnectionResetError:
             return "", []
 
