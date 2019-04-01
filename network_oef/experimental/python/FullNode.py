@@ -68,6 +68,10 @@ if __name__ == "__main__":
         while len(args.search_peers) != 0:
             for target in args.search_peers:
                 host, port = target.split(":")
+                try:
+                    host = socket.gethostbyname(host)
+                except Exception as e:
+                    print("Resolution failed, because: "+str(e))
                 port = int(port)
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 if sock.connect_ex((host, port)) != 0:
