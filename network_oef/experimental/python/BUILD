@@ -12,6 +12,5 @@ py_binary(
             "//ai_search_engine/src/resources:dap_config",
             "//api/src/resources:website",
             "//fetch_teams:oef-core",
-            "//certificates/src/makefiles/oef-search:oef_search_cert",
     ]
 )

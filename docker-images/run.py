@@ -29,7 +29,7 @@ cmd = [
     "--rm",
     "-it",
     "--name",
-    "FullNode"+name,
+    "node_"+name,
     "--network=oef_search_net",
     "-p",
     search_port+":"+search_port,
