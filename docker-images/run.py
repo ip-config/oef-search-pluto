@@ -23,6 +23,7 @@ print("Ports to expose: search={}, core={} for node={}".format(search_port, core
 cmd = [
     "docker",
     "run",
+    "--rm",
     "-it",
     "--name",
     "FullNode"+name,

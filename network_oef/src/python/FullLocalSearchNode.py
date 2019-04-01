@@ -18,7 +18,7 @@ def _lookup(clss, name):
 class FullSearchNone:
 
     @has_logger
-    def __init__(self, node_name: str, node_port: int, network_dap_config: List[dict], http_port: int = -1, ssl_certificate: str = None, html_dir: str = None):
+    def __init__(self, node_name: str, ip: str, node_port: int, network_dap_config: List[dict], http_port: int = -1, ssl_certificate: str = None, html_dir: str = None):
         """
 
         :param node_port: search node port
@@ -33,7 +33,7 @@ class FullSearchNone:
                 continue
             cs = config_from_dap_json(conf["file"])
             for ckey, c in cs.items():
-                c["config"]["host"] = "127.0.0.1"
+                c["config"]["host"] =  ip
                 c["config"]["port"] = conf["port"]
                 cls = _lookup(classes, c["class"])
                 if cls is None:
@@ -46,7 +46,7 @@ class FullSearchNone:
                 tmp_dict[cpkey] = cp
         time.sleep(1)
         self.search_node = SearchNode(5, node_name)
-        self.search_node.init("127.0.0.1", node_port, tmp_dict, http_port, ssl_certificate, html_dir)
+        self.search_node.init(ip, node_port, tmp_dict, http_port, ssl_certificate, html_dir)
 
     def add_remote_peer(self, host: str, port: int, node_id: str = None):
         self.search_node.connect_to_search_node(host, port, node_id)

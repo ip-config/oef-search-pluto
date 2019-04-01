@@ -8,12 +8,12 @@ import time
 import socket
 
 
-def run_node(name: str, node_port: int, dap_port_start: int, http_port: int, ssl_certificate: str, q: multiprocessing.Queue):
+def run_node(name: str, node_ip: str, node_port: int, dap_port_start: int, http_port: int, ssl_certificate: str, q: multiprocessing.Queue):
     from network_oef.src.python.FullLocalSearchNode import FullSearchNone
     from utils.src.python.Logging import configure as configure_logging
     configure_logging(id_flag="_"+name)
 
-    node = FullSearchNone(name, node_port, [{
+    node = FullSearchNone(name, node_ip, node_port, [{
         "run_py_dap": True,
         "file": "ai_search_engine/src/resources/dap_config.json",
         "port": dap_port_start
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     search_name = args.name+"-search"
 
     search_queue = multiprocessing.Queue()
-    search_process = multiprocessing.Process(target=run_node, args=(search_name, args.search_port, args.dap_port,
+    search_process = multiprocessing.Process(target=run_node, args=(search_name, args.ip, args.search_port, args.dap_port,
                                                                     args.http_port, args.ssl_certificate, search_queue))
     search_process.start()
 
@@ -64,8 +64,8 @@ if __name__ == "__main__":
     added_peers = 0
 
     if args.search_peers is not None:
-        print("SEARCH PEERS: ", args.search_peers)
         while len(args.search_peers) != 0:
+            print("SEARCH PEERS: ", args.search_peers)
             for target in args.search_peers:
                 host, port = target.split(":")
                 try:
