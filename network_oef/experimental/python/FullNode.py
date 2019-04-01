@@ -64,6 +64,7 @@ if __name__ == "__main__":
     added_peers = 0
 
     if args.search_peers is not None:
+        print("SEARCH PEERS: ", args.search_peers)
         while len(args.search_peers) != 0:
             for target in args.search_peers:
                 host, port = target.split(":")
