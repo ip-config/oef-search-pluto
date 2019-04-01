@@ -11,22 +11,28 @@ class Transport:
         self._writer = writer
         self._int_size = len(struct.pack("i", 0))
 
-    async def write(self, data: bytes, path: str = ""):
-        msg = message_pb2.Message()
-        msg.uri = path
-        msg.body = data
-        #if len(path) > 0:
-        #    set_path_cmd = struct.pack("i", -len(path))
-        #    await self.drain()
-        #    self._writer.write(set_path_cmd)
-        #    await self.drain()
-        #    self._writer.write(path.encode())
+    async def write_msg(self, msg: message_pb2.Message):
         smsg = msg.SerializeToString()
         size_packed = struct.pack("i", len(smsg))
         await self.drain()
         self._writer.write(size_packed)
         await self.drain()
         self._writer.write(smsg)
+
+    async def write(self, data: bytes, path: str = ""):
+        msg = message_pb2.Message()
+        msg.uri = path
+        msg.body = data
+        msg.status.success = True
+        await self.write_msg(msg)
+
+    async def write_error(self, error_code: int, narrative: str, path: str = ""):
+        msg = message_pb2.Message()
+        msg.uri = path
+        msg.status.success = False
+        msg.status.error_code = error_code
+        msg.status.narrative = narrative
+        await self.write_msg(msg)
 
     async def drain(self):
         return await self._writer.drain()
@@ -43,16 +49,13 @@ class Transport:
             size = await self._read_size()
             if size == 0:
                 return "", []
-            #path = ""
-            #if size < 0:
-            #    path = await self._reader.read(-size)
-            #    path = path.decode()
-            #    path = path.replace("\f", "")
-            #    size = await self._read_size()
             data = await self._reader.read(size)
             msg = message_pb2.Message()
             msg.ParseFromString(data)
-            return msg.uri, msg.body
+            if msg.status.success:
+                return msg.uri, msg.body
+            else:
+                return msg.uri, (msg.status.error_code, msg.status.narrative)
         except ConnectionResetError:
             return "", []
 

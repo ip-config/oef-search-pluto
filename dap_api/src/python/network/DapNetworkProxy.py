@@ -7,24 +7,31 @@ import json
 from network.src.proto import message_pb2
 
 
-
 class Transport:
     def __init__(self, socket: socket.socket):
         self._socket = socket
         self._int_size = len(struct.pack("i", 0))
 
-    def write(self, data: bytes, path: str = ""):
-        #if len(path) > 0:
-        #    set_path_cmd = struct.pack("i", -len(path))
-        #    self._socket.sendall(set_path_cmd)
-        #    self._socket.sendall(path.encode())
-        msg = message_pb2.Message()
-        msg.uri = path
-        msg.body = data
+    def write_msg(self, msg: message_pb2.Message):
         smsg = msg.SerializeToString()
         size_packed = struct.pack("i", len(smsg))
         self._socket.sendall(size_packed)
         self._socket.sendall(smsg)
+
+    def write(self, data: bytes, path: str = ""):
+        msg = message_pb2.Message()
+        msg.uri = path
+        msg.body = data
+        msg.status.success = True
+        self.write_msg(msg)
+
+    def write_error(self, error_code: int, narrative: str, path: str = ""):
+        msg = message_pb2.Message()
+        msg.uri = path
+        msg.status.success = False
+        msg.status.error_code = error_code
+        msg.status.narrative = narrative
+        self.write_msg(msg)
 
     def _read_size(self) -> int:
         size_packed = self._socket.recv(self._int_size)
@@ -38,16 +45,13 @@ class Transport:
             size = self._read_size()
             if size == 0:
                 return "", []
-            path = ""
-            #if size < 0:
-            #    path = self._socket.recv(-size)
-            #    path = path.decode()
-            #    path = path.replace("\f", "")
-            #    size = self._read_size()
             data = self._socket.recv(size)
             msg = message_pb2.Message()
             msg.ParseFromString(data)
-            return msg.uri, msg.body
+            if msg.status.success:
+                return msg.uri, msg.body
+            else:
+                return msg.uri, (msg.status.error_code, msg.status.narrative)
         except ConnectionResetError:
             return "", []
 
