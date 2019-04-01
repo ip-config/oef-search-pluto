@@ -33,7 +33,7 @@ class FullSearchNone:
                 continue
             cs = config_from_dap_json(conf["file"])
             for ckey, c in cs.items():
-                c["config"]["host"] =  ip
+                c["config"]["host"] = "127.0.0.1"
                 c["config"]["port"] = conf["port"]
                 cls = _lookup(classes, c["class"])
                 if cls is None:

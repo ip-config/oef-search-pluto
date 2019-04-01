@@ -8,7 +8,7 @@ def run_node(id: int, q: multiprocessing.Queue):
     from utils.src.python.Logging import configure as configure_logging
     configure_logging(id_flag=str(id))
 
-    node = FullSearchNone("search{}".format(id), 10000+id, [{
+    node = FullSearchNone("search{}".format(id), "127.0.0.1", 10000+id, [{
         "run_py_dap": True,
         "file": "ai_search_engine/src/resources/dap_config.json",
         "port": 20000+id
