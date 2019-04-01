@@ -28,12 +28,15 @@ public:
   {
     for(int i=0;i<size;i++)
     {
-      char c = get_char_at(i,true);
+      char c = get_char_at(i);
 
       switch(c)
       {
         case 10:
           std::cout << "\\n";
+          break;
+        case 9:
+          std::cout << "\\t";
           break;
         default:
           if (::isprint(c))
@@ -46,7 +49,7 @@ public:
             std::cout << "\\x";
             for(int j=0;j<2;j++)
             {
-              std::cout << "0123456789ABCDEF"[((cc&0xF0) >> 4)];
+              std::cout << "0123456789abcdef"[((cc&0xF0) >> 4)];
               cc <<= 4;
             }
           }
@@ -55,14 +58,12 @@ public:
     std::cout << std::endl;
   }
 
-  char get_char_at(int pos, bool silent = false)
+  char get_char_at(int pos)
   {
     int buf = 0;
 
     if (pos >= size)
     {
-      if (!silent)
-        std::cout << "pos=" << pos << " c=eof" << std::endl;
       return traits_type::eof();
     }
 
@@ -77,13 +78,9 @@ public:
       else
       {
         auto r = boost::asio::buffer_cast<unsigned char*>(b)[pos];
-        if (!silent)
-          std::cout << "pos=" << pos << " c=" << int(r) << std::endl;
         return static_cast<char>(r);
       }
     }
-    if (!silent)
-      std::cout << "pos=" << pos << " c=eof" << std::endl;
     return traits_type::eof();
   }
 

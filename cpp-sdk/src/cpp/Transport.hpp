@@ -62,7 +62,7 @@ public:
       buffers.emplace_back(boost::asio::buffer(&path, path_size));
     }
 
-    std::size_t data_size = proto.ByteSize();
+    int data_size = proto.ByteSize();
     BufferPtr data = std::make_shared<Buffer>(data_size);
     proto.SerializeWithCachedSizesToArray(data->data());
 
@@ -84,12 +84,12 @@ public:
       PROTO proto;
       proto.ParseFromIstream(is_ptr);
       //TODO THREADPOOL DISPATCH here
-      readCb(std::move(proto), shared_from_this());
+      readCb(proto, shared_from_this());
     };
   }
 
   void read(const boost::system::error_code& ec = boost::system::error_code(), std::size_t length = 0){
-    std::cerr << "Called read: " << ec << ", " << ec.message() << ", length = " << length << std::endl;
+    //std::cerr << "Called read: " << ec << ", " << ec.message() << ", length = " << length << std::endl;
 
     if (ec){
       if (ec==boost::asio::error::eof){ //close connection
@@ -214,15 +214,15 @@ private:
     std::istream is(&buffer);
     std::string path((std::istream_iterator<char>(is)), std::istream_iterator<char>());
 
-    std::cout << "-->PATH: " << path << std::endl;
+    //std::cout << "-->PATH: " << path << std::endl;
     stateData_.path = path;
   }
 
   void gotBody() {
-    std::cerr << std::endl << "GOT BODY " << std::endl;
+    //std::cerr << std::endl << "GOT BODY " << std::endl;
     auto data = read_buffer_.getBuffersToRead();
     char_array_buffer buffer(data);
-    buffer.diagnostic();
+
     std::istream is(&buffer);
     auto cb_it = cb_store_.find(stateData_.path);
     if (cb_it != cb_store_.end()){
