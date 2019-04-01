@@ -21,10 +21,10 @@ cmd = [
     "docker",
     "run",
     "-it",
-    "--expose",
-    search_port,
-    "--expose",
-    core_port,
+    "--network=host",
+    #"-p",
+    #search_port+":"+search_port,
+    #"--expose="+core_port,
     img,
 ]
 
