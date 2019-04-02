@@ -7,9 +7,13 @@ from network.src.python.async_socket.AsyncSocket import handler, run_client, Tra
 async def client(transport: Transport):
     msg = query_pb2.Query()
     msg.name = "Client"
-    transport.write(msg.SerializeToString())
+    await transport.write(msg.SerializeToString())
     response = await transport.read()
-    msg.ParseFromString(response)
+    if not response.success:
+        print("Error response for uri %s , code: %d, reason: %s", response.path, response.error_code,
+              response.narrative)
+        return
+    msg.ParseFromString(response.body)
     print("Response from server: ", msg.name)
     transport.close()
 

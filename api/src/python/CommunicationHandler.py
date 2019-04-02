@@ -19,8 +19,12 @@ def socket_handler(router: BackendRouter):
     @handler
     async def on_connection(transport: Transport):
         log.info("Got socket client")
-        path, data = await transport.read()
-        response = await router.route(path, data)
+        request = await transport.read()
+        if not request.success:
+            log.error("Error response for uri %s, code: %d, reason: %s", request.path, request.error_code,
+                      request.narrative)
+            return
+        response = await router.route(request.path, request.body)
         await transport.write(response)
         transport.close()
     return on_connection

@@ -85,13 +85,16 @@ async def client(transport: ClientTransport):
     msg = create_blk_update("1")
     await transport.write(msg.SerializeToString(), "blk_update")
     response = await transport.read()
+    if not response.success:
+        print("Error response for uri %s, code: %d, reason: %s", response.path, response.error_code, response.narrative)
+        return
     resp = response_pb2.UpdateResponse()
-    resp.ParseFromString(response)
+    resp.ParseFromString(response.body)
     print("Response from server: ", resp.status)
     transport.close()
 
 loop = asyncio.get_event_loop()
 try:
-    loop.run_until_complete(run_client(client, "127.0.0.1", 10000))
+    loop.run_until_complete(run_client(client, "127.0.0.1", 20000))
 finally:
     loop.close()

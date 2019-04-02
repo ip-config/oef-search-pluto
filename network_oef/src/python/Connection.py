@@ -27,10 +27,8 @@ class Connection(object):
             await self.connect()
         await self._transport.write(data, path)
         await self._transport.drain()
-        path, data = await self._transport.read()
-        if path == "" and len(data) == 0:
-            self.warning("Empty response!")
-            return b''
-        return data
-
-
+        response = await self._transport.read()
+        if not response.success:
+            self.error("Error response for uri %s (%s), code: %d, reason: %s", response.path, path,
+                       response.error_code, response.narrative)
+        return response.body

@@ -5,6 +5,16 @@ import functools
 from network.src.proto import message_pb2
 
 
+# POSIX error codes: http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html
+class TransportReadResponse:
+    def __init__(self, path: str, success: bool, body: bytes, error_code: int = 0, narrative: str = ""):
+        self.path = path
+        self.success = success
+        self.body = body
+        self.error_code = error_code
+        self.narrative = narrative
+
+
 class Transport:
     def __init__(self, reader, writer):
         self._reader = reader
@@ -44,20 +54,20 @@ class Transport:
         size = struct.unpack("i", size_packed)[0]
         return size
 
-    async def read(self) -> tuple:
+    async def read(self) -> TransportReadResponse:
         try:
             size = await self._read_size()
             if size == 0:
-                return "", []
+                return TransportReadResponse("", False, b'', 104, "Connection closed by peer (got 0 size)")
             data = await self._reader.read(size)
             msg = message_pb2.Message()
             msg.ParseFromString(data)
             if msg.status.success:
-                return msg.uri, msg.body
+                return TransportReadResponse(msg.uri, True, msg.body)
             else:
-                return msg.uri, (msg.status.error_code, msg.status.narrative)
-        except ConnectionResetError:
-            return "", []
+                return TransportReadResponse(msg.uri, False, b'', msg.status.error_code, msg.status.narrative)
+        except ConnectionResetError as e:
+            return TransportReadResponse("", False, b'', 104, str(e))
 
     def close(self):
         self._writer.close()
@@ -70,9 +80,8 @@ class ClientTransport:
     async def write(self, data: bytes, path: str = ""):
         return await self.__transport.write(data, path)
 
-    async def read(self) -> bytes:
-        res = await self.__transport.read()
-        return res[1]
+    async def read(self) -> TransportReadResponse:
+        return await self.__transport.read()
 
     async def drain(self):
         return await self.__transport.drain()

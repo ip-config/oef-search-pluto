@@ -18,13 +18,15 @@ def socket_handler(router: BackendRouter):
         log.info("Got socket client")
         while True:
             try:
-                path, data = await transport.read()
-                if path == "close" or (path == "" and data == []):
+                request = await transport.read()
+                if not request.success:
+                    log.error("Error response for uri %s, code: %d, reason: %s", request.path, request.error_code,
+                              request.narrative)
                     break
-                response = await router.route(path, data)
+                response = await router.route(request.path, request.body)
                 await transport.write(response)
             except Exception as e:
-                log.error("Failed to process request: ", path, ", because: ", str(e), ", with data: ")
+                log.error("Failed to process request: ", request.path if request else "", ", because: ", str(e))
         log.info("Connection lost")
         transport.close()
     return on_connection
