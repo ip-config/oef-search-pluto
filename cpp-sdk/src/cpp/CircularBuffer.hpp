@@ -71,6 +71,15 @@ public:
     return buffers;
   }
 
+  std::size_t getSpaceSize() const
+  {
+    return ((r_+buff_size_)-w_)%buff_size_;
+  }
+  std::size_t getDataSize() const
+  {
+    return buff_size_- ((r_+buff_size_)-w_+1)%buff_size_;
+  }
+
 private:
   void resize(uint32_t new_size) {
     Byte *new_buff = new Byte[new_size];

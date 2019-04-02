@@ -54,7 +54,39 @@ public:
     read();
   }
 
+  int get_id() { return id_; }
+
   template <typename PROTO> void write(const PROTO& proto, const std::string& path="") {
+    std::int32_t message_byte_count = proto.ByteSize();
+    std::int32_t path_byte_count = path.size(); //include a null term.
+    std::int32_t path_length_byte_count = sizeof(std::uint32_t);
+    std::int32_t message_length_byte_count = sizeof(std::uint32_t);
+    std::uint32_t total_space_needed = path_byte_count + path_length_byte_count + message_byte_count + message_length_byte_count;
+
+    auto buffers = write_buffer_.getBuffersToWrite(total_space_needed);
+
+    char_array_buffer serialised_message(buffers);
+
+    serialised_message
+      .write(-1 * path_byte_count)
+      .write(path)
+      .write(message_byte_count)
+      ;
+
+    std::ostream os(&serialised_message);
+    if (!proto.SerializeToOstream(&os))
+    {
+      std::cerr << "Failed to write proto." << std::endl;
+    }
+
+    boost::asio::async_write(socket_, buffers, [total_space_needed](std::error_code ec,  std::size_t length){
+      if (ec){
+        std::cerr << "Failed to write to socket, because: " << ec.message() << "! "
+                  << length <<" bytes written out of " << total_space_needed << std::endl;
+      }
+    });
+
+    /*
     std::vector<boost::asio::const_buffer> buffers;
     auto path_size = static_cast<uint32_t>(path.size()+1);
     int32_t len = -static_cast<int32_t>(path_size);
@@ -78,6 +110,7 @@ public:
                   << length <<" bytes written out of " << total << std::endl;
       }
     });
+    */
   }
 
   template <class PROTO> void AddReadCallback(const std::string& path, std::function<void(PROTO, TransportPtr)> readCb){
@@ -85,12 +118,15 @@ public:
       PROTO proto;
       proto.ParseFromIstream(is_ptr);
       //TODO THREADPOOL DISPATCH here
-      readCb(proto, shared_from_this());
+      readCb(std::move(proto), shared_from_this());
     };
   }
 
   void read(const boost::system::error_code& ec = boost::system::error_code(), std::size_t length = 0){
-    //std::cerr << "Called read: " << ec << ", " << ec.message() << ", length = " << length << std::endl;
+    if (ec)
+    {
+      std::cerr << "Called read: " << ec << ", " << ec.message() << ", length = " << length << std::endl;
+    }
 
     if (ec){
       if (ec==boost::asio::error::eof){ //close connection
@@ -161,6 +197,7 @@ public:
 
     //issue read
     auto self(shared_from_this());
+
     boost::asio::async_read(socket_,read_buffer_.getBuffersToWrite(stateData_.length),
         [self](boost::system::error_code ec, std::size_t length){
       self->read(ec, length);
@@ -215,22 +252,22 @@ private:
     std::istream is(&buffer);
     std::string path((std::istream_iterator<char>(is)), std::istream_iterator<char>());
 
-    //std::cout << "-->PATH: " << path << std::endl;
     stateData_.path = path;
   }
 
   void gotBody() {
-    //std::cerr << std::endl << "GOT BODY " << std::endl;
     auto data = read_buffer_.getBuffersToRead();
     char_array_buffer buffer(data);
-
     std::istream is(&buffer);
+
     auto cb_it = cb_store_.find(stateData_.path);
-    if (cb_it != cb_store_.end()){
-      cb_it->second(&is);
-    } else {
-      std::cerr << "Handler not registered for path: " <<stateData_.path << std::endl;
+    if (cb_it == cb_store_.end())
+    {
+      std::cerr << id_ << "Handler not registered for path: '" <<stateData_.path << "'" << std::endl;
+      return;
     }
+
+    cb_it->second(&is);
   }
 
 private:
