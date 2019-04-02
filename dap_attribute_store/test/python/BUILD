@@ -27,6 +27,7 @@ py_test(
     deps = [
         "//dap_attribute_store/src/python:dap_attribute_store",
         "//dap_api/experimental/python:experimental_lib",
+        "//dap_in_memory/src/python:dap_in_memory",
         ":classes",
     ]
 )

@@ -20,6 +20,7 @@ py_test(
         "//dap_api/src/python:dap_api",
         "//ai_search_engine/src/python:search_engine",
         "//dap_api/experimental/python:experimental_lib",
+        "//dap_in_memory/src/python:dap_in_memory",
         "//dap_api/src/protos:py_dap_api_pb",
         ":classes",
         "@com_google_protobuf//:protobuf_python",

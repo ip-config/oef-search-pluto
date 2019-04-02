@@ -11,6 +11,7 @@ py_binary(
         "//pluto_app/src/python/app:app",
         "//utils/src/python:py_utils",
         "//dap_api/experimental/python:network_dap_contract",
+        "//dap_in_memory/src/python:dap_in_memory",
         "//dap_api/src/python/network:dap_network"
     ],
 )

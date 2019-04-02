@@ -1,7 +1,7 @@
 import unittest
 
 from ai_search_engine.src.python import SearchEngine
-from dap_api.experimental.python import InMemoryDap
+from dap_in_memory.src.python import InMemoryDap
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 
