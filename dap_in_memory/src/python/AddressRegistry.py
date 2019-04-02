@@ -7,7 +7,7 @@ from dap_api.src.python.DapInterface import DapBadUpdateRow
 from dap_api.src.python import DapQueryRepn
 from dap_api.src.protos import dap_update_pb2
 from utils.src.python.Logging import has_logger
-from dap_api.experimental.python import InMemoryDap
+from dap_in_memory.src.python import InMemoryDap
 
 
 class AddressRegistry(InMemoryDap.InMemoryDap):
