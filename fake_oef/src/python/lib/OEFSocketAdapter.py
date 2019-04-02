@@ -130,10 +130,10 @@ def socket_message_handler(adapter: OEFSocketAdapter):
         while True:
             response = await transport.read()
             if not response.success:
-                log.error("Error response for uri %s, code: %d, reason: %s", response.path, response.error_code,
-                          response.narrative)
+                log.error("Error response for uri %s, code: %d, reason: %s", response.uri, response.error_code,
+                          response.msg())
                 break
-            response = await adapter.handle_message(response.body, session)
+            response = await adapter.handle_message(response.data, session)
             await transport.write(response)
         transport.close()
     return on_connection

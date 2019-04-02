@@ -8,11 +8,11 @@ async def on_connection(transport: Transport):
     print("Got client")
     response = await transport.read()
     if not response.success:
-        print("Error response for uri %s, code: %d, reason: %s", response.path, response.error_code,
-              response.narrative)
+        print("Error response for uri %s, code: %d, reason: %s", response.uri, response.error_code,
+              response.msg())
         return
     msg = query_pb2.Query()
-    msg.ParseFromString(response.body)
+    msg.ParseFromString(response.data)
     print("Got message from client: ", msg.name)
     msg.name = "Server"
     await transport.write(msg.SerializeToString())

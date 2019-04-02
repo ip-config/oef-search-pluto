@@ -21,11 +21,14 @@ def socket_handler(router: BackendRouter):
         log.info("Got socket client")
         request = await transport.read()
         if not request.success:
-            log.error("Error response for uri %s, code: %d, reason: %s", request.path, request.error_code,
-                      request.narrative)
+            log.error("Error response for uri %s, code: %d, reason: %s", request.uri, request.error_code,
+                      request.msg())
             return
-        response = await router.route(request.path, request.body)
-        await transport.write(response)
+        response = await router.route(request.uri, request.data)
+        if response.success:
+            await transport.write(response.data, request.uri)
+        else:
+            await transport.write_error(response.error_code, response.narrative, request.uri)
         transport.close()
     return on_connection
 
@@ -39,7 +42,7 @@ def http_json_handler(router):
         try:
             response = _loop.run_until_complete(router.route(path, bottle.request.json))
             bottle.response.headers['Content-Type'] = 'application/json'
-            return response
+            return response.data
         except bottle.HTTPError as e:
             log.error("Not valid JSON request: ", e)
     return on_request

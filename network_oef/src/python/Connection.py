@@ -29,6 +29,6 @@ class Connection(object):
         await self._transport.drain()
         response = await self._transport.read()
         if not response.success:
-            self.error("Error response for uri %s (%s), code: %d, reason: %s", response.path, path,
-                       response.error_code, response.narrative)
-        return response.body
+            self.error("Error response for uri %s (%s), code: %d, reason: %s", response.uri, path,
+                       response.error_code, response.msg())
+        return response

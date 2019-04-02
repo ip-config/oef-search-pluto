@@ -2,7 +2,7 @@ from pluto_app.src.python.app import PlutoApp
 from network_oef.src.python.Connection import Connection
 from api.src.proto import response_pb2
 from api.src.proto import query_pb2, update_pb2
-from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer
+from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, DataWrapper
 from api.src.python.Serialization import serializer, deserializer
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
@@ -45,7 +45,14 @@ class BroadcastFromNode(HasMessageHandler):
         if type(response) != list:
             response = [response]
         response = self.__flatten_list(response)
-        return await asyncio.gather(*[self._serializer.deserialize(serialized) for serialized in response])
+        transformed = []
+        for r in response:
+            if len(r.data) < 1:
+                deserialized = None
+            else:
+                deserialized = await self._serializer.deserialize(r.data)
+            transformed.append(DataWrapper(r.success, r.uri, deserialized, r.error_code, "", r.narrative))
+        return transformed
 
 
 class LazyW2V:
@@ -282,7 +289,10 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         if len(cos) > 0:
             self.info("Await gather")
             resp = await asyncio.gather(*cos)
-            self.info("Response to broadcast: ", resp)
+            self.info("Response to broadcast: num = ", len(resp))
+            for r in resp:
+                if not r.success:
+                    self.info("Response to broadcast is error: code=", r.error_code, ", message: ", r.msg())
             return resp
         return []
 

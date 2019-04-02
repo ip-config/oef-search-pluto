@@ -3,17 +3,11 @@ from inspect import signature
 import struct
 import functools
 from network.src.proto import message_pb2
+from typing import List
+from api.src.python.Interfaces import DataWrapper
 
 
 # POSIX error codes: http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html
-class TransportReadResponse:
-    def __init__(self, path: str, success: bool, body: bytes, error_code: int = 0, narrative: str = ""):
-        self.path = path
-        self.success = success
-        self.body = body
-        self.error_code = error_code
-        self.narrative = narrative
-
 
 class Transport:
     def __init__(self, reader, writer):
@@ -36,12 +30,12 @@ class Transport:
         msg.status.success = True
         await self.write_msg(msg)
 
-    async def write_error(self, error_code: int, narrative: str, path: str = ""):
+    async def write_error(self, error_code: int, narrative: List[str], path: str = ""):
         msg = message_pb2.Message()
         msg.uri = path
         msg.status.success = False
         msg.status.error_code = error_code
-        msg.status.narrative = narrative
+        msg.status.narrative.extend(narrative)
         await self.write_msg(msg)
 
     async def drain(self):
@@ -54,20 +48,20 @@ class Transport:
         size = struct.unpack("i", size_packed)[0]
         return size
 
-    async def read(self) -> TransportReadResponse:
+    async def read(self) -> DataWrapper[bytes]:
         try:
             size = await self._read_size()
             if size == 0:
-                return TransportReadResponse("", False, b'', 104, "Connection closed by peer (got 0 size)")
+                return DataWrapper(False, "", b'', 104, "Connection closed by peer (got 0 size)")
             data = await self._reader.read(size)
             msg = message_pb2.Message()
             msg.ParseFromString(data)
             if msg.status.success:
-                return TransportReadResponse(msg.uri, True, msg.body)
+                return DataWrapper(True, msg.uri, msg.body)
             else:
-                return TransportReadResponse(msg.uri, False, b'', msg.status.error_code, msg.status.narrative)
+                return DataWrapper(False, msg.uri, b'', msg.status.error_code, "", msg.status.narrative[:])
         except ConnectionResetError as e:
-            return TransportReadResponse("", False, b'', 104, str(e))
+            return DataWrapper(False, "", b'', 104, str(e))
 
     def close(self):
         self._writer.close()
@@ -80,7 +74,7 @@ class ClientTransport:
     async def write(self, data: bytes, path: str = ""):
         return await self.__transport.write(data, path)
 
-    async def read(self) -> TransportReadResponse:
+    async def read(self) -> DataWrapper[bytes]:
         return await self.__transport.read()
 
     async def drain(self):

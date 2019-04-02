@@ -11,7 +11,7 @@ import utils.src.python.resources as resources
 
 
 def socket_handler(router: BackendRouter):
-    log = get_logger("SocketConnectionHandler")
+    log = get_logger("DAPSocketConnectionHandler")
 
     @handler
     async def on_connection(transport: Transport):
@@ -20,13 +20,19 @@ def socket_handler(router: BackendRouter):
             try:
                 request = await transport.read()
                 if not request.success:
-                    log.error("Error response for uri %s, code: %d, reason: %s", request.path, request.error_code,
-                              request.narrative)
+                    log.error("Error response for uri %s, code: %d, reason: %s", request.uri, request.error_code,
+                              request.msg())
                     break
-                response = await router.route(request.path, request.body)
-                await transport.write(response)
+                response = await router.route(request.uri, request.data)
+                if response.success:
+                    await transport.write(response.data)
+                else:
+                    await transport.write_error(response.error_code, response.narrative, request.uri)
             except Exception as e:
-                log.error("Failed to process request: ", request.path if request else "", ", because: ", str(e))
+                path = request.uri if request else ""
+                msg = "Failed to process request for path: " + path + ", because: " + str(e)
+                log.error(msg)
+                await transport.write_error(response.error_code, [msg], path)
         log.info("Connection lost")
         transport.close()
     return on_connection

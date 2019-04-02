@@ -3,11 +3,11 @@ from pluto_app.src.python.app import PlutoApp
 from fake_oef.src.python.lib.ConnectionFactory import SupportsConnectionInterface
 from api.src.proto import response_pb2
 from api.src.proto import query_pb2, update_pb2
-from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer
+from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, DataWrapper
 from api.src.python.Serialization import serializer, deserializer
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
+from typing import List, Any
 import time
 import gensim
 import abc
@@ -41,7 +41,7 @@ class BroadcastFromNode(HasMessageHandler):
             result.extend(flatten)
         return result
 
-    async def handle_message(self, msg):
+    async def handle_message(self, msg) -> DataWrapper[Any]:
         response = await self._node.broadcast(self._path, msg)
         if type(response) != list:
             response = [response]

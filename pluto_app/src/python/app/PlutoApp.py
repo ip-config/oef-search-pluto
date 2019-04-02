@@ -14,9 +14,11 @@ from api.src.python.BackendRouter import BackendRouter
 from dap_2d_geo.src.python import DapGeo
 from dap_e_r_network.src.python import DapERNetwork
 from dap_api.experimental.python.NetworkDapContract import config_contract
+from utils.src.python.Logging import has_logger
 
 
 class PlutoApp:
+    @has_logger
     def __init__(self):
         self.router = BackendRouter()
         self.dapManager = DapManager.DapManager()
@@ -149,5 +151,8 @@ class PlutoApp:
         search_engine.inject_w2v(w2v)
 
     async def callMe(self, path, data):
-        return await self.router.route(path, data)
+        response = await self.router.route(path, data)
+        if not response.success:
+            self.error("callMe error: code=", response.error_code, ", narrative=", response.narrative)
+        return response.data
 

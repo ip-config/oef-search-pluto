@@ -5,8 +5,9 @@ import struct
 import socket
 import json
 from network.src.proto import message_pb2
-from network.src.python.async_socket.AsyncSocket import TransportReadResponse
+from network.src.python.async_socket.AsyncSocket import DataWrapper
 import time
+from typing import List
 
 
 class Transport:
@@ -27,12 +28,12 @@ class Transport:
         msg.status.success = True
         self.write_msg(msg)
 
-    def write_error(self, error_code: int, narrative: str, path: str = ""):
+    def write_error(self, error_code: int, narrative: List[str], path: str = ""):
         msg = message_pb2.Message()
         msg.uri = path
         msg.status.success = False
         msg.status.error_code = error_code
-        msg.status.narrative = narrative
+        msg.status.narrative.extend(narrative)
         self.write_msg(msg)
 
     def _read_size(self) -> int:
@@ -42,20 +43,20 @@ class Transport:
         size = struct.unpack("i", size_packed)[0]
         return size
 
-    def read(self) -> TransportReadResponse:
+    def read(self) -> DataWrapper[bytes]:
         try:
             size = self._read_size()
             if size == 0:
-                return TransportReadResponse("", False, b'', 104, "Connection reset (got 0 size)")
+                return DataWrapper(False, "", b'', 104, "Connection reset (got 0 size)")
             data = self._socket.recv(size)
             msg = message_pb2.Message()
             msg.ParseFromString(data)
             if msg.status.success:
-                return TransportReadResponse(msg.uri, True, msg.body)
+                return DataWrapper(True, msg.uri, msg.body)
             else:
-                return TransportReadResponse(msg.uri, False, b'', msg.status.error_code, msg.status.narrative)
+                return DataWrapper(False, msg.uri, b'', msg.status.error_code, "", msg.status.narrative[:])
         except ConnectionResetError as e:
-            return TransportReadResponse("", False, b'', 104, str(e))
+            return DataWrapper(False, DataWrapper, b'', 104, str(e))
 
     def close(self):
         self.write(b'', "close")
@@ -88,7 +89,7 @@ class ClientSocket:
         except BrokenPipeError as e:
             self.warning("Connection lost with host %s:%d, reconnecting...", self.host, self.port)
             if depth > self._call_max_depth:
-                return TransportReadResponse("", False, b'', 111, str(e))
+                return DataWrapper(False, func, b'', 32, str(e))
             time.sleep(0.5*depth)
             self.connect()
             return self.call(func, in_data, depth+1)
@@ -113,15 +114,15 @@ class DapNetworkProxy(DapInterface):
         response = self.client.call(path, data_in.SerializeToString())
         proto = output_type()
         if not response.success:
-            self.error("Error response for uri %s, code: %d, reason: %s", response.path, response.error_code,
-                       response.narrative)
+            self.error("Error response for uri %s, code: %d, reason: %s", response.uri, response.error_code,
+                       response.msg())
             return proto
         try:
-            proto.ParseFromString(response.body)
+            proto.ParseFromString(response.data)
         except:
             try:
                 sproto = dap_interface_pb2.Successfulness()
-                sproto.ParseFromString(response.body)
+                sproto.ParseFromString(response.data)
                 if not sproto.success:
                     self.error("Dap failure: code %d, message: %s", sproto.errorcode, sproto.narrative)
                 else:

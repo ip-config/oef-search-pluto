@@ -1,10 +1,11 @@
-from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer
+from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, DataWrapper
 from api.src.python.Serialization import serializer, deserializer
 from utils.src.python.Logging import has_logger
 from dap_api.src.protos import dap_interface_pb2
 from dap_api.src.python.DapInterface import DapInterface
 from api.src.python.BackendRouter import BackendRouter
 from inspect import signature, Parameter
+from typing import Any
 
 
 class DapInterfaceFuncEndpointBase(HasMessageHandler, HasProtoSerializer):
@@ -25,21 +26,25 @@ class DapInterfaceFuncEndpointBase(HasMessageHandler, HasProtoSerializer):
     def deserialize(self, data: bytes):
         pass
 
-    async def handle_message(self, msg):
-        error = None
-        response = None
+    async def handle_message(self, msg: Any) -> DataWrapper[Any]:
+        response = DataWrapper(False, "", None)
         try:
             if isinstance(msg, dap_interface_pb2.NoInputParameter):
-                response = self._dap_call()
+                proto = self._dap_call()
             else:
-                response = self._dap_call(msg)
+                proto = self._dap_call(msg)
+            response.success = True
+            response.data = proto
         except Exception as e:
             error = dap_interface_pb2.Successfulness()
             error.success = False
             error.errorcode = 503
             error.narrative.append(str(e))
             self.exception("Exception during DAP call: ", e)
-        return error, response
+            response.error_code = 503
+            response.add_narrative(str(e))
+            response.data = error
+        return response
 
 
 def DapInterfaceFuncEndpointFactory(dap, method):

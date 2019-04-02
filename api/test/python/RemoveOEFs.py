@@ -83,10 +83,10 @@ async def client(transport: ClientTransport):
     await transport.write(msgs[4].SerializeToString(), "remove")
     response = await transport.read()
     if not response.success:
-        print("Error response for uri %s, code: %d, reason: %s", response.path, response.error_code, response.narrative)
+        print("Error response for uri %s, code: %d, reason: %s", response.uri, response.error_code, response.msg())
         return
     resp = response_pb2.RemoveResponse()
-    resp.ParseFromString(response.body)
+    resp.ParseFromString(response.data)
     print("Response from server: ", resp.status)
     print("Response: ", resp.message)
     transport.close()

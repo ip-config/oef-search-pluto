@@ -86,10 +86,10 @@ async def client(transport: ClientTransport):
     await transport.write(msg.SerializeToString(), "blk_update")
     response = await transport.read()
     if not response.success:
-        print("Error response for uri %s, code: %d, reason: %s", response.path, response.error_code, response.narrative)
+        print("Error response for uri %s, code: %d, reason: %s", response.uri, response.error_code, response.msg())
         return
     resp = response_pb2.UpdateResponse()
-    resp.ParseFromString(response.body)
+    resp.ParseFromString(response.data)
     print("Response from server: ", resp.status)
     transport.close()
 
