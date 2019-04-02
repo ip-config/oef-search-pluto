@@ -1,8 +1,24 @@
 import utils.src.python.distance as distance
+from utils.src.python.Logging import has_logger
 
 from dap_api.src.python import ProtoHelpers
 
+IMPLICIT_TYPE_CONVERSIONS = {
+    "int64": "int",
+    "int64_list": "int_list",
+    "int64_range": "int_range",
+
+    "int32": "int",
+    "int32_list": "int_list",
+    "int32_range": "int_range",
+
+    "double": "float",
+    "double_list": "float_list",
+    "double_range": "float_range",
+}
+
 class DapOperatorFactory(object):
+    @has_logger
     def __init__(self):
         self.store = {}
 
@@ -20,10 +36,10 @@ class DapOperatorFactory(object):
         self.add("location", ProtoHelpers.OPERATOR_NE, "location", lambda a,b: a != b)
 
         self.add("int", ProtoHelpers.OPERATOR_EQ, "int", lambda a,b: a == b)
-        self.add("int", ProtoHelpers.OPERATOR_NE, "int", lambda a,b: a == b)
-        self.add("int", ProtoHelpers.OPERATOR_LT, "int", lambda a,b: a == b)
-        self.add("int", ProtoHelpers.OPERATOR_GT, "int", lambda a,b: a == b)
-        self.add("int", ProtoHelpers.OPERATOR_LE, "int", lambda a,b: a == b)
+        self.add("int", ProtoHelpers.OPERATOR_NE, "int", lambda a,b: a != b)
+        self.add("int", ProtoHelpers.OPERATOR_LT, "int", lambda a,b: a < b)
+        self.add("int", ProtoHelpers.OPERATOR_GT, "int", lambda a,b: a > b)
+        self.add("int", ProtoHelpers.OPERATOR_LE, "int", lambda a,b: a <= b)
         self.add("int", ProtoHelpers.OPERATOR_GE, "int", lambda a,b: a >= b)
 
         self.add("float", ProtoHelpers.OPERATOR_EQ, "float", lambda a,b: a == b)
@@ -59,11 +75,10 @@ class DapOperatorFactory(object):
         self.store[k] = truth_function
 
     def lookup(self, field_type, comparator, constant_type):
-        k = (field_type, comparator, constant_type)
-        return self.store.get(k, None)
 
-    def createAttrMatcherProcessor(self, field_type, comparator, constant_type, constant_value):
-        f = self.lookup(field_type, comparator, constant_type)
-        if not f:
-            raise BadValue("{} {} {}".format(field_type, comparator, constant_type, " is not known operation."))
-        return lambda field_value: f(field_value, constant_value)
+        field_type = IMPLICIT_TYPE_CONVERSIONS.get(field_type, field_type)
+        constant_type = IMPLICIT_TYPE_CONVERSIONS.get(constant_type,constant_type)
+
+        k = (field_type, comparator, constant_type)
+        self.log.info("Operator lookup for: {}".format(k))
+        return self.store.get(k, None)
