@@ -117,6 +117,7 @@ ConstructQueryMementoResponse InMemoryDap::prepareConstraint(const ConstructQuer
 
 IdentifierSequence InMemoryDap::execute(const DapExecute &execute) {
   IdentifierSequence result;
+  result.set_originator(false);
 
   auto query_memento = execute.query_memento();
   auto memento = query_memento.memento();
@@ -139,5 +140,19 @@ IdentifierSequence InMemoryDap::execute(const DapExecute &execute) {
                     constraint.operator_(), constraint.query_field_value(),
                     from, to);
   }
+
+  for(auto const &ident : output)
+  {
+    auto r = result.add_identifiers();
+    if (ident.first.length() > 0)
+    {
+      r -> set_core(ident.first);
+    }
+    if (ident.second.length() > 0)
+    {
+      r -> set_agent(ident.second);
+    }
+  }
+
   return result;
 }
