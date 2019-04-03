@@ -17,7 +17,7 @@ class Transport:
 
     def write_msg(self, msg: transport_pb2.TransportHeader, data: bytes):
         smsg = msg.SerializeToString()
-        size_packed = struct.pack("!ii", len(smsg), len(data))
+        size_packed = struct.pack("!II", len(smsg), len(data))
         self._socket.sendall(size_packed)
         self._socket.sendall(smsg)
         self._socket.sendall(data)
@@ -40,7 +40,7 @@ class Transport:
         size_packed = self._socket.recv(2*self._int_size)
         if len(size_packed) == 0:
             return 0, 0
-        sizes = struct.unpack("!ii", size_packed)
+        sizes = struct.unpack("!II", size_packed)
         return sizes
 
     def read(self) -> DataWrapper[bytes]:

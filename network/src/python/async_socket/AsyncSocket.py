@@ -17,7 +17,7 @@ class Transport:
 
     async def write_msg(self, msg: transport_pb2.TransportHeader, data: bytes):
         smsg = msg.SerializeToString()
-        size_packed = struct.pack("!ii", len(smsg), len(data))
+        size_packed = struct.pack("!II", len(smsg), len(data))
         await self.drain()
         self._writer.write(size_packed)
         await self.drain()
@@ -46,7 +46,7 @@ class Transport:
         size_packed = await self._reader.read(2*self._int_size)
         if len(size_packed) == 0:
             return 0, 0
-        hsize, bsize = struct.unpack("!ii", size_packed)
+        hsize, bsize = struct.unpack("!II", size_packed)
         return hsize, bsize
 
     async def read(self) -> DataWrapper[bytes]:
