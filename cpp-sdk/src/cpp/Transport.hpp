@@ -3,7 +3,7 @@
 #include "asio_inc.hpp"
 #include "CircularBuffer.hpp"
 #include "char_array_buffer.hpp"
-
+#include "network/src/proto/transport.pb.h"
 
 #include <iostream>
 #include <functional>
@@ -56,27 +56,30 @@ public:
 
   int get_id() { return id_; }
 
-  template <typename PROTO> void write(const PROTO& proto, const std::string& path="") {
-    std::int32_t message_byte_count = proto.ByteSize();
-    std::int32_t path_byte_count = path.size(); //include a null term.
-    std::int32_t path_length_byte_count = sizeof(std::uint32_t);
-    std::int32_t message_length_byte_count = sizeof(std::uint32_t);
-    std::uint32_t total_space_needed = path_byte_count + path_length_byte_count + message_byte_count + message_length_byte_count;
+  template <typename PROTO> void write_message(const TransportHeader& header, const PROTO& body)
+  {
+    std::uint32_t header_byte_count = static_cast<uint32_t>(header.ByteSize());
+    std::uint32_t body_byte_count   = static_cast<uint32_t>(body.ByteSize());
+    std::uint32_t message_length_byte_count = sizeof(std::uint32_t);
+    std::uint32_t total_space_needed = header_byte_count + body_byte_count + 2*message_length_byte_count;
 
     auto buffers = write_buffer_.getBuffersToWrite(total_space_needed);
 
     char_array_buffer serialised_message(buffers);
 
     serialised_message
-      .write(-1 * path_byte_count)
-      .write(path)
-      .write(message_byte_count)
-      ;
+        .write(header_byte_count)
+        .write(body_byte_count);
 
     std::ostream os(&serialised_message);
-    if (!proto.SerializeToOstream(&os))
+    if (!header.SerializeToOstream(&os))
     {
-      std::cerr << "Failed to write proto." << std::endl;
+      std::cerr << "Failed to write header proto." << std::endl;
+    }
+
+    if (!body.SerializeToOstream(&os))
+    {
+      std::cerr << "Failed to write body proto." << std::endl;
     }
 
     boost::asio::async_write(socket_, buffers, [total_space_needed](std::error_code ec,  std::size_t length){
@@ -85,33 +88,30 @@ public:
                   << length <<" bytes written out of " << total_space_needed << std::endl;
       }
     });
-
-    /*
-    std::vector<boost::asio::const_buffer> buffers;
-    auto path_size = static_cast<uint32_t>(path.size()+1);
-    int32_t len = -static_cast<int32_t>(path_size);
-    if (path.size()>1){
-      buffers.emplace_back(boost::asio::buffer(&len, sizeof(len)));
-      buffers.emplace_back(boost::asio::buffer(&path, path_size));
-    }
-
-    int data_size = proto.ByteSize();
-    BufferPtr data = std::make_shared<Buffer>(data_size);
-    proto.SerializeWithCachedSizesToArray(data->data());
-
-    auto data_len = static_cast<uint32_t>(data_size);
-    buffers.emplace_back(boost::asio::buffer(&data_len, sizeof(data_len)));
-    buffers.emplace_back(boost::asio::buffer(data->data(), data_len));
-
-    uint32_t total = static_cast<uint32_t>(-len+static_cast<int32_t>(sizeof(len)+data_len+sizeof(data_len)));
-    boost::asio::async_write(socket_, buffers, [data, total](std::error_code ec,  std::size_t length){
-      if (ec){
-        std::cerr << "Failed to write to socket, because: " << ec.message() << "! "
-                  << length <<" bytes written out of " << total << std::endl;
-      }
-    });
-    */
   }
+
+  template <typename PROTO> void write(const PROTO& proto, const std::string& path="") {
+    TransportHeader header;
+    header.set_uri(path);
+    header.mutable_status()->set_success(true);
+    std::string data;
+    proto.SerializeToString(&data);
+
+    write_message(header, proto);
+  }
+
+  void write_error(int32_t error_code, const std::vector<std::string>& narrative, const std::string& path="") {
+    TransportHeader header;
+    header.set_uri(path);
+    auto* status = header.mutable_status();
+    status->set_success(false);
+    status->set_error_code(error_code);
+    for(const auto& n : narrative) {
+      status->add_narrative(n);
+    }
+    write_message(header, TransportHeader());
+  }
+
 
   template <class PROTO> void AddReadCallback(const std::string& path, std::function<void(PROTO, TransportPtr)> readCb){
     cb_store_[path] = [readCb, this](std::istream* is_ptr){
@@ -142,43 +142,16 @@ public:
     switch(state_){
       case States::START: {
         state_ = States::HEADER;
-        stateData_.length = INT_SIZE;
+        stateData_.length = 2*INT_SIZE;
         break;
       }
 
       case States::HEADER: {
-        int32_t len = readHeader();
-        if (len<0) {
-          stateData_.length = static_cast<uint32_t>(-len);
-          state_ = States::PATH;
-        } else if (len>0) {
-          stateData_.length = static_cast<uint32_t>(len);
+        if (readHeader()) {
           state_ = States::BODY;
         } else {
-          std::cerr << "GOT CLOSE HEADER (length=0)!" << std::endl;
+          std::cerr << "GOT CLOSE HEADER!" << std::endl;
           return;
-        }
-        break;
-      }
-
-      case States::PATH: {
-        setPath();
-        state_ = States::BODY_HEADER;
-        stateData_.length = INT_SIZE;
-        break;
-      }
-
-      case States::BODY_HEADER: {
-        int32_t len = readHeader();
-        if (len<0) {
-          std::cerr << "WRONG BODY HEADER (" << len << "), PATH ALREADY RECEIVED (" << stateData_.path << ")!" << std::endl;
-        } else if (len==0) {
-          gotBody();
-          state_ = States::HEADER;
-          stateData_.length = INT_SIZE;
-        } else {
-          stateData_.length = static_cast<uint32_t>(len);
-          state_ = States::BODY;
         }
         break;
       }
@@ -186,7 +159,7 @@ public:
       case States::BODY: {
         gotBody();
         state_ = States::HEADER;
-        stateData_.length = INT_SIZE;
+        stateData_.length = 2*INT_SIZE;
         break;
       }
     }
@@ -219,55 +192,47 @@ public:
   }
 
 private:
-  int32_t readHeader(){
-    auto data = read_buffer_.getBuffersToRead();
-
-    uint8_t *vec = nullptr;
-    uint8_t extra_store[INT_SIZE];
-
-    if (data.size()==1) {
-      vec = static_cast<uint8_t*>(data[0].data());
-    } else if (data.size()==2) {
-      std::memcpy(extra_store, data[0].data(), sizeof(uint8_t)*data[0].size());
-      std::memcpy(extra_store+data[0].size()-1, data[1].data(), sizeof(uint8_t)*data[1].size());
-      vec = extra_store;
-    } else {
-      std::cerr << "readHeader error! Got data.size=" << data.size() << "!" <<std::endl;
-      return 0;
-    }
-
-    auto len = static_cast<int32_t>(
-        vec[3] << 24 |
-        vec[2] << 16 |
-        vec[1] << 8  |
-        vec[0]
-    );
-
-    return len;
-  }
-
-  void setPath() {
+  bool readHeader(){
     auto data = read_buffer_.getBuffersToRead();
     char_array_buffer buffer(data);
-    std::istream is(&buffer);
-    std::string path((std::istream_iterator<char>(is)), std::istream_iterator<char>());
+    buffer.read(stateData_.header_size).read(stateData_.body_size);
 
-    stateData_.path = path;
+    stateData_.length = stateData_.header_size + stateData_.body_size;
+
+    return stateData_.header_size > 0;
   }
 
   void gotBody() {
-    auto data = read_buffer_.getBuffersToRead();
-    char_array_buffer buffer(data);
-    std::istream is(&buffer);
+    auto data = read_buffer_.getBuffersToRead(stateData_.header_size);
+    char_array_buffer hbuffer(data);
+    std::istream h_is(&hbuffer);
 
-    auto cb_it = cb_store_.find(stateData_.path);
-    if (cb_it == cb_store_.end())
-    {
-      std::cerr << id_ << "Handler not registered for path: '" <<stateData_.path << "'" << std::endl;
+    TransportHeader header;
+    header.ParseFromIstream(&h_is);
+
+    const std::string& path = header.uri();
+
+    if (!header.status().success()) {
+      std::cerr << "Network call got error as response (uri=" << path << "): error_code = "
+                << header.status().error_code() << ", reason = " << std::endl;
+      for(const auto& narrative : header.status().narrative()) {
+        std::cerr<<"                                                          " << narrative << std::endl;
+      }
       return;
     }
 
-    cb_it->second(&is);
+    auto cb_it = cb_store_.find(path);
+    if (cb_it == cb_store_.end())
+    {
+      std::cerr << id_ << "Handler not registered for path: '" << path << "'" << std::endl;
+      return;
+    }
+
+    auto bdata = read_buffer_.getBuffersToRead();
+    char_array_buffer bbuffer(bdata);
+    std::istream b_is(&bbuffer);
+
+    cb_it->second(&b_is);
   }
 
 private:
@@ -281,19 +246,18 @@ private:
 
   struct StateData {
     uint32_t length;
-    std::string path;
+    uint32_t header_size;
+    uint32_t body_size;
   };
 
   enum States {
     START = 0,
     HEADER = 1,
-    PATH = 2,
-    BODY_HEADER = 3,
-    BODY = 4
+    BODY = 3
   };
 
-  static constexpr const uint32_t INT_SIZE = sizeof(int32_t);
+  static constexpr const uint32_t INT_SIZE = sizeof(uint32_t);
   States state_ = {States::START};
-  StateData stateData_ = {INT_SIZE, ""};
+  StateData stateData_ = {2*INT_SIZE, 0, 0};
   std::atomic<bool> active_{true};
 };

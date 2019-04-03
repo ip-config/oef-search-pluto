@@ -31,8 +31,8 @@ public:
       uint8_t c[4];
     } buffer;
 
-    buffer.i = i;
-    //buffer.i = htonl(i);
+    //buffer.i = i;
+    buffer.i = htonl(i);
     oflow(buffer.c[0]);
     oflow(buffer.c[1]);
     oflow(buffer.c[2]);
@@ -52,8 +52,8 @@ public:
     buffer.c[1] = (uint8_t)uflow();
     buffer.c[2] = (uint8_t)uflow();
     buffer.c[3] = (uint8_t)uflow();
-    //i = ntohl(buffer.i);
-    i = buffer.i;
+    i = ntohl(buffer.i);
+    //i = buffer.i;
 
     return *this;
   }
@@ -65,8 +65,8 @@ public:
       uint8_t c[4];
     } buffer;
 
-    buffer.i = i;
-    //buffer.i = htonl(i);
+    //buffer.i = i;
+    buffer.i = htonl(i);
     oflow(buffer.c[0]);
     oflow(buffer.c[1]);
     oflow(buffer.c[2]);
@@ -86,8 +86,8 @@ public:
     buffer.c[1] = (uint8_t)uflow();
     buffer.c[2] = (uint8_t)uflow();
     buffer.c[3] = (uint8_t)uflow();
-    //i = ntohl(buffer.i);
-    i = buffer.i;
+    i = ntohl(buffer.i);
+    //i = buffer.i;
 
     return *this;
   }

@@ -3,6 +3,7 @@
 
 #include "cpp-sdk/src/cpp/Transport.hpp"
 #include "cpp-sdk/test/protos/testmessage.pb.h"
+#include "cpp-sdk/src/cpp/char_array_buffer.hpp"
 
 int success = 0;
 
@@ -209,6 +210,24 @@ public:
   }
 };
 
+
+TEST(char_array_buffer_test, read_write_uint)
+{
+  std::vector<boost::asio::mutable_buffer> buffers;
+  uint8_t buff[8];
+  buffers.push_back(boost::asio::buffer(buff, 8));
+  char_array_buffer buffer(buffers);
+
+  uint32_t source = 53544;
+  uint32_t target;
+  buffer.write(source);
+
+  char_array_buffer buffer_read(buffers);
+
+  buffer_read.read(target);
+
+  ASSERT_EQ(source, target);
+}
 
 
 TEST(message_test,content)
