@@ -20,7 +20,8 @@ cc_library(
     deps = [
         "@boost//:asio",
         "//dap_api/src/protos:cc_dap_api_pb",
-        "//api/src/proto:cc_api_pb"
+        "//api/src/proto:cc_api_pb",
+        "//network/src/proto:cc_network_pb",
     ],
 )
 
@@ -32,7 +33,7 @@ cc_binary(
     srcs = glob(["main.cpp"]),
     deps = [
         ":lib",
-        "@fetch_oef_search_language//:lib"
+        #"@fetch_oef_search_language//:lib"
     ],
     #linkshared = True,
     #linkstatic = True,

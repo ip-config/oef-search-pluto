@@ -1,0 +1,5 @@
+#!/bin/sh
+
+./node "$@"
+
+bash

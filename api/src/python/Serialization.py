@@ -3,7 +3,8 @@ from inspect import signature
 from google.protobuf import json_format
 import json
 from utils.src.python.Logging import get_logger
-
+from enum import Enum
+from typing import Any
 
 def _process_tupple(data):
     if isinstance(data, tuple):
@@ -15,9 +16,14 @@ def _process_tupple(data):
         return data
 
 
-class JsonResponse:
-    def __init__(self, data):
-        self.data = data
+class Serializable:
+    class TargetType(Enum):
+        PROTO = 1,
+        JSON = 2
+
+    def __init__(self, proto: Any, target_type: TargetType = TargetType.PROTO):
+        self.proto = proto
+        self.target_type = target_type
 
 
 def deserializer(func):
@@ -59,19 +65,19 @@ def serializer(func):
     log = get_logger("Serializer")
 
     @functools.wraps(func)
-    async def wrapper(self, msg):
+    async def wrapper(self, msg: Serializable):
         nonlocal log
-        if isinstance(msg, JsonResponse):
+        if msg.target_type == Serializable.TargetType.JSON:
             try:
-                return json_format.MessageToJson(_process_tupple(msg.data))
+                return json_format.MessageToJson(_process_tupple(msg.proto))
             except Exception as e:
                 log.exception("Exception while trying to serialize protocol buffer to json! Because: ", str(e))
-                print("Serializer got data: ", msg.data)
+                print("Serializer got data: ", msg.proto)
         else:
             try:
-                return _process_tupple(msg).SerializeToString()
+                return _process_tupple(msg.proto).SerializeToString()
             except Exception as e:
                 log.exception("Exception while trying to serialize protocol buffer! Because: %s", str(e))
-                print("Serializer got data: ", msg)
+                print("Serializer got data: ", msg.proto)
         return b''
     return wrapper

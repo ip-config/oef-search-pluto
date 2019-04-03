@@ -53,7 +53,7 @@ if __name__ == "__main__":
     connection_factory = ConnectionFactory.ConnectionFactory()
 
     com = CommunicationHandler(1)
-    com.add(http_server, "0.0.0.0", args.http_port, args.ssl_certificate, args.html_dir)
+    com.add(http_server, "0.0.0.0", args.http_port, args.ssl_certificate, html_dir=args.html_dir)
 
     search_network = SearchNetwork.SearchNetwork({'search-0': com}, [
         'search-0', 'search-1', 'search-2', 'search-3', 'search-4'

@@ -3,6 +3,11 @@ from dap_api.src.protos import dap_interface_pb2, dap_update_pb2, dap_descriptio
 from utils.src.python.Logging import has_logger
 import struct
 import socket
+import json
+from network.src.proto import transport_pb2
+from network.src.python.async_socket.AsyncSocket import DataWrapper
+import time
+from typing import List, Tuple
 
 
 class Transport:
@@ -10,36 +15,49 @@ class Transport:
         self._socket = socket
         self._int_size = len(struct.pack("i", 0))
 
-    def write(self, data: bytes, path: str = ""):
-        if len(path) > 0:
-            set_path_cmd = struct.pack("i", -len(path))
-            self._socket.sendall(set_path_cmd)
-            self._socket.sendall(path.encode())
-        size_packed = struct.pack("i", len(data))
+    def write_msg(self, msg: transport_pb2.TransportHeader, data: bytes):
+        smsg = msg.SerializeToString()
+        size_packed = struct.pack("!II", len(smsg), len(data))
         self._socket.sendall(size_packed)
+        self._socket.sendall(smsg)
         self._socket.sendall(data)
 
-    def _read_size(self) -> int:
-        size_packed = self._socket.recv(self._int_size)
-        if len(size_packed) == 0:
-            return 0
-        size = struct.unpack("i", size_packed)[0]
-        return size
+    def write(self, data: bytes, path: str = ""):
+        msg = transport_pb2.TransportHeader()
+        msg.uri = path
+        msg.status.success = True
+        self.write_msg(msg, data)
 
-    def read(self) -> tuple:
+    def write_error(self, error_code: int, narrative: List[str], path: str = ""):
+        msg = transport_pb2.TransportHeader()
+        msg.uri = path
+        msg.status.success = False
+        msg.status.error_code = error_code
+        msg.status.narrative.extend(narrative)
+        self.write_msg(msg, b'')
+
+    def _read_size(self) -> Tuple[int, int]:
+        size_packed = self._socket.recv(2*self._int_size)
+        if len(size_packed) == 0:
+            return 0, 0
+        sizes = struct.unpack("!II", size_packed)
+        return sizes
+
+    def read(self) -> DataWrapper[bytes]:
+        msg = None
         try:
-            size = self._read_size()
-            if size == 0:
-                return "", []
-            path = ""
-            if size < 0:
-                path = self._socket.recv(-size)
-                path = path.decode()
-                path = path.replace("\f", "")
-                size = self._read_size()
-            return path, self._socket.recv(size)
-        except ConnectionResetError:
-            return "", []
+            hsize, bsize = self._read_size()
+            if hsize == 0:
+                return DataWrapper(False, "", b'', 104, "Connection reset (got 0 size)")
+            data = self._socket.recv(hsize+bsize)
+            msg = transport_pb2.TransportHeader()
+            msg.ParseFromString(data[:hsize])
+            if msg.status.success:
+                return DataWrapper(True, msg.uri, data[hsize:])
+            else:
+                return DataWrapper(False, msg.uri, b'', msg.status.error_code, "", msg.status.narrative[:])
+        except ConnectionResetError as e:
+            return DataWrapper(False, msg.uri if msg else "", b'', 104, str(e))
 
     def close(self):
         self.write(b'', "close")
@@ -47,32 +65,35 @@ class Transport:
 
 
 class ClientSocket:
-    @has_logger
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int, logger):
         self.transport = None
         self.host = host
         self.port = port
         self._socket = None
+        self.log = logger
         self.connect()
+        self._call_max_depth = 10
 
     def connect(self):
         self._socket = socket.socket(socket.AF_INET)
-        print("Connecting to DAP: "+self.host+":"+str(self.port))
         self._socket.connect((self.host, self.port))
+        self.log.info("Connected to network dap!")
         self.transport = Transport(self._socket)
 
     def close(self):
         self.transport.close()
 
-    def call(self, func, in_data):
+    def call(self, func, in_data, depth=0):
         try:
             self.transport.write(in_data, func)
-            path, data = self.transport.read()
-        except BrokenPipeError:
+            return self.transport.read()
+        except BrokenPipeError as e:
             self.warning("Connection lost with host %s:%d, reconnecting...", self.host, self.port)
+            if depth > self._call_max_depth:
+                return DataWrapper(False, func, b'', 32, str(e))
+            time.sleep(0.5*depth)
             self.connect()
-            return self.call(func, in_data)
-        return data
+            return self.call(func, in_data, depth+1)
 
 
 class DapNetworkProxy(DapInterface):
@@ -81,7 +102,8 @@ class DapNetworkProxy(DapInterface):
         self.host = configuration["host"]
         self.port = configuration["port"]
         self.log.update_local_name(name+"@"+self.host+":"+str(self.port))
-        self.client = ClientSocket(self.host, self.port)
+        self.info("Opening connection...")
+        self.client = ClientSocket(self.host, self.port, self.log)
 
     def inject_w2v(self, *args, **kwargs):
         pass
@@ -90,14 +112,18 @@ class DapNetworkProxy(DapInterface):
         self.client.close()
 
     def _call(self, path, data_in, output_type):
-        resp = self.client.call(path, data_in.SerializeToString())
+        response = self.client.call(path, data_in.SerializeToString())
+        proto = output_type()
+        if not response.success:
+            self.error("Error response for uri %s, code: %d, reason: %s", response.uri, response.error_code,
+                       response.msg())
+            return proto
         try:
-            proto = output_type()
-            proto.ParseFromString(resp)
+            proto.ParseFromString(response.data)
         except:
             try:
                 sproto = dap_interface_pb2.Successfulness()
-                sproto.ParseFromString(resp)
+                sproto.ParseFromString(response.data)
                 if not sproto.success:
                     self.error("Dap failure: code %d, message: %s", sproto.errorcode, sproto.narrative)
                 else:
@@ -155,3 +181,37 @@ class DapNetworkProxy(DapInterface):
 
     def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
         return self._call("execute", proto, dap_interface_pb2.IdentifierSequence)
+
+
+def _config_from_dap_json(file, cls = "DapNetworkProxy"):
+    f = open(file)
+    j = json.load(f)
+
+    config = dict()
+    c = config[j["description"]["name"]] = dict()
+
+    if cls is None:
+        cls = j["class"]
+
+    c["class"] = cls
+    c["config"] = dict()
+    c["config"]["host"] = j["host"]
+    c["config"]["port"] = j["port"]
+    c["config"]["structure"] = dict()
+
+    cs = c["config"]["structure"]
+
+    tb = j["description"]["table"]
+    if tb:
+        cs[tb["name"]] = dict()
+        for f in tb["field"]:
+            cs[tb["name"]][f["name"]] = f["type"]
+    return config
+
+
+def proxy_config_from_dap_json(file):
+    return _config_from_dap_json(file)
+
+
+def config_from_dap_json(file):
+    return _config_from_dap_json(file, None)

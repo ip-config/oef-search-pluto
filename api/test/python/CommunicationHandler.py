@@ -9,8 +9,12 @@ async def client(transport: ClientTransport):
     msg.name = "Client"
     await transport.write(msg.SerializeToString(), "search")
     response = await transport.read()
+    if not response.success:
+        print("Error response for uri %s, code: %d, reason: %s" % (response.uri, response.error_code,
+                                                                   response.msg()))
+        return
     resp = response_pb2.Response()
-    resp.ParseFromString(response)
+    resp.ParseFromString(response.data)
     print("Response from server: ", resp.name)
     transport.close()
 

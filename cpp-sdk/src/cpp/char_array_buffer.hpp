@@ -31,8 +31,8 @@ public:
       uint8_t c[4];
     } buffer;
 
-    buffer.i = i;
-    //buffer.i = htonl(i);
+    //buffer.i = i;
+    buffer.i = htonl(i);
     oflow(buffer.c[0]);
     oflow(buffer.c[1]);
     oflow(buffer.c[2]);
@@ -52,8 +52,8 @@ public:
     buffer.c[1] = (uint8_t)uflow();
     buffer.c[2] = (uint8_t)uflow();
     buffer.c[3] = (uint8_t)uflow();
-    //i = ntohl(buffer.i);
-    i = buffer.i;
+    i = ntohl(buffer.i);
+    //i = buffer.i;
 
     return *this;
   }
@@ -65,8 +65,8 @@ public:
       uint8_t c[4];
     } buffer;
 
-    buffer.i = i;
-    //buffer.i = htonl(i);
+    //buffer.i = i;
+    buffer.i = htonl(i);
     oflow(buffer.c[0]);
     oflow(buffer.c[1]);
     oflow(buffer.c[2]);
@@ -86,8 +86,8 @@ public:
     buffer.c[1] = (uint8_t)uflow();
     buffer.c[2] = (uint8_t)uflow();
     buffer.c[3] = (uint8_t)uflow();
-    //i = ntohl(buffer.i);
-    i = buffer.i;
+    i = ntohl(buffer.i);
+    //i = buffer.i;
 
     return *this;
   }
@@ -149,12 +149,15 @@ public:
   {
     for(int i=0;i<size;i++)
     {
-      char c = get_char_at(i,true);
+      char c = get_char_at(i);
 
       switch(c)
       {
         case 10:
           std::cout << "\\n";
+          break;
+        case 9:
+          std::cout << "\\t";
           break;
         default:
           if (::isprint(c))
@@ -167,7 +170,7 @@ public:
             std::cout << "\\x";
             for(int j=0;j<2;j++)
             {
-              std::cout << "0123456789ABCDEF"[((cc&0xF0) >> 4)];
+              std::cout << "0123456789abcdef"[((cc&0xF0) >> 4)];
               cc <<= 4;
             }
           }
@@ -175,6 +178,7 @@ public:
     }
     std::cout << std::endl;
   }
+
 
   bool put_char_at(int pos, char character)
   {
@@ -199,14 +203,12 @@ public:
     return false;
   }
 
-  char get_char_at(int pos, bool silent = false)
+  char get_char_at(int pos)
   {
     int buf = 0;
 
     if (pos >= size)
     {
-      if (!silent)
-        std::cout << "pos=" << pos << " c=eof" << std::endl;
       return traits_type::eof();
     }
 
@@ -221,14 +223,8 @@ public:
       else
       {
         auto r = boost::asio::buffer_cast<unsigned char*>(b)[pos];
-        if (!silent)
-          std::cout << "pos=" << pos << " c=" << int(r) << std::endl;
         return static_cast<char>(r);
       }
-    }
-    if (!silent)
-    {
-      std::cout << "pos=" << pos << " c=eof" << std::endl;
     }
     return traits_type::eof();
   }
@@ -282,7 +278,7 @@ public:
     {
       return traits_type::eof();
     }
-    return traits_type::to_int_type(get_char_at(current, true));
+    return traits_type::to_int_type(get_char_at(current));
   }
 
   char_array_buffer::int_type uflow()
@@ -292,7 +288,7 @@ public:
     {
       return traits_type::eof();
     }
-    auto r = traits_type::to_int_type(get_char_at(current, true));
+    auto r = traits_type::to_int_type(get_char_at(current));
     current += 1;
     return r;
   }
@@ -314,13 +310,13 @@ public:
     if (
         (current == 0)
         ||
-        (ch != traits_type::eof() && ch != get_char_at(current-1, true))
+        (ch != traits_type::eof() && ch != get_char_at(current-1))
         )
     {
       return traits_type::eof();
     }
     current--;
-    return traits_type::to_int_type(get_char_at(current, true));
+    return traits_type::to_int_type(get_char_at(current));
   }
 private:
 

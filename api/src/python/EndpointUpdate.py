@@ -1,4 +1,4 @@
-from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer
+from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, DataWrapper
 from api.src.python.Serialization import serializer, deserializer
 from utils.src.python.Logging import has_logger
 from api.src.proto import update_pb2
@@ -9,7 +9,7 @@ from api.src.python.ProtoWrappers import ProtoWrapper, InvalidAttribute, Missing
 ResponseType = response_pb2.UpdateResponse.ResponseType
 
 
-def process_update(self, msg):
+def process_update(self, msg) -> DataWrapper[response_pb2.UpdateResponse]:
     resp = response_pb2.UpdateResponse()
     try:
         upd = self.proto_wrapper.get_instance(msg)
@@ -30,7 +30,7 @@ def process_update(self, msg):
         resp.status = ResponseType.Value("ERROR")
         resp.message = msg
         self.warning(msg)
-    return resp
+    return DataWrapper(True, "update", resp)
 
 
 class UpdateEndpoint(HasProtoSerializer, HasMessageHandler):
@@ -47,7 +47,7 @@ class UpdateEndpoint(HasProtoSerializer, HasMessageHandler):
     def serialize(self, proto_msg: response_pb2.UpdateResponse) -> bytes:
         pass
 
-    async def handle_message(self, msg: update_pb2.Update) -> response_pb2.UpdateResponse:
+    async def handle_message(self, msg: update_pb2.Update) -> DataWrapper[response_pb2.UpdateResponse]:
         return process_update(self, msg)
 
 
@@ -65,5 +65,6 @@ class BlkUpdateEndpoint(HasProtoSerializer, HasMessageHandler):
     def serialize(self, proto_msg: response_pb2.UpdateResponse) -> bytes:
         pass
 
-    async def handle_message(self, msg: update_pb2.Update.BulkUpdate) -> response_pb2.UpdateResponse:
+    async def handle_message(self, msg: update_pb2.Update.BulkUpdate) -> \
+            DataWrapper[response_pb2.UpdateResponse]:
         return process_update(self, msg)
