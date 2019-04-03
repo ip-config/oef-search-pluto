@@ -31,7 +31,7 @@ def socket_handler(router: BackendRouter):
             except Exception as e:
                 path = request.uri if request else ""
                 msg = "Failed to process request for path: " + path + ", because: " + str(e)
-                log.error(msg)
+                log.exception(msg + "! Received data: " + str(request.data))
                 await transport.write_error(response.error_code, [msg], path)
         log.info("Connection lost")
         transport.close()
