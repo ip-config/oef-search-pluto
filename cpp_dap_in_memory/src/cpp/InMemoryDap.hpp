@@ -11,7 +11,7 @@ public:
 
   virtual Successfulness configure(const DapDescription&);
 
-  virtual DapDescription describe() = 0;
+  virtual DapDescription describe();
 
   virtual Successfulness update(const DapUpdate&);
 

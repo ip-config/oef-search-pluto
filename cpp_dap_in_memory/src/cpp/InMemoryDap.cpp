@@ -11,8 +11,12 @@ DapDescription InMemoryDap::describe()
 
   DataStore::Description desc;
   store.getDescription(desc);
+
+  std::cout << "Describing SELF" << std::endl;
+
   for(auto const tablename_table: desc)
   {
+    std::cout << "Describing table: " << tablename_table.first << std::endl;
     auto new_table = result.add_table();
     new_table -> set_name(tablename_table.first);
     for(auto const fieldname_type: tablename_table.second)

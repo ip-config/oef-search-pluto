@@ -21,6 +21,8 @@ class Transport:
 
     def _read_size(self) -> int:
         size_packed = self._socket.recv(self._int_size)
+        print("size_packed", size_packed)
+        print("self._int_size", self._int_size)
         if len(size_packed) == 0:
             return 0
         size = struct.unpack("i", size_packed)[0]
@@ -28,8 +30,10 @@ class Transport:
 
     def read(self) -> tuple:
         try:
+            print("*******************************************************************")
             size = self._read_size()
             if size == 0:
+                print("SIZE ZERO")
                 return "", []
             path = ""
             if size < 0:
@@ -37,8 +41,10 @@ class Transport:
                 path = path.decode()
                 path = path.replace("\f", "")
                 size = self._read_size()
+            print("PATH=", path, "  SIZE=", size)
             return path, self._socket.recv(size)
         except ConnectionResetError:
+            print("ConnectionResetError")
             return "", []
 
     def close(self):
@@ -91,6 +97,7 @@ class DapNetworkProxy(DapInterface):
 
     def _call(self, path, data_in, output_type):
         resp = self.client.call(path, data_in.SerializeToString())
+        self.error("RESP=", resp)
         try:
             proto = output_type()
             proto.ParseFromString(resp)
@@ -108,7 +115,10 @@ class DapNetworkProxy(DapInterface):
 
     def describe(self) -> dap_description_pb2.DapDescription:
         data_in = dap_interface_pb2.NoInputParameter()
-        return self._call("describe", data_in, dap_description_pb2.DapDescription)
+        self.warning("DapNetworkProxy::CALLING DESCRIBE:")
+        result = self._call("describe", data_in, dap_description_pb2.DapDescription)
+        self.warning("DapNetworkProxy::DESCRIBE:", str(result))
+        return result
 
 
     """This function will be called with any update to this DAP.
