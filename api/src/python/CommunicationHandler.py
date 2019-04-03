@@ -10,15 +10,25 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 
+_loop = asyncio.new_event_loop()
+
+
 def socket_handler(router: BackendRouter):
     log = get_logger("SocketConnectionHandler")
 
     @handler
     async def on_connection(transport: Transport):
         log.info("Got socket client")
-        path, data = await transport.read()
-        response = await router.route(path, data)
-        await transport.write(response)
+        request = await transport.read()
+        if not request.success:
+            log.error("Error response for uri %s, code: %d, reason: %s", request.uri, request.error_code,
+                      request.msg())
+            return
+        response = await router.route(request.uri, request.data)
+        if response.success:
+            await transport.write(response.data, request.uri)
+        else:
+            await transport.write_error(response.error_code, response.narrative, request.uri)
         transport.close()
     return on_connection
 
@@ -27,18 +37,20 @@ def http_json_handler(router):
     log = get_logger("HttpJsonRequestHandler")
 
     def on_request(path=""):
+        global _loop
         log.info("Got json request over http")
         try:
-            response = asyncio.run(router.route(path, bottle.request.json))
+            response = _loop.run_until_complete(router.route(path, bottle.request.json))
             bottle.response.headers['Content-Type'] = 'application/json'
-            return response
+            return response.data
         except bottle.HTTPError as e:
             log.error("Not valid JSON request: ", e)
     return on_request
 
 
 def socket_server(host: str, port: str, router: BackendRouter):
-    asyncio.run(run_server(socket_handler(router), host, port))
+    global _loop
+    _loop.create_task(run_server(socket_handler(router), host, port))
 
 
 def serve_site(html_dir: str, path: str):
@@ -49,13 +61,14 @@ def serve_site(html_dir: str, path: str):
     return resources.textfile(os.path.join(html_dir, path))
 
 
-def http_server(host: str, port: int, crt_file: str, html_dir: str, router: BackendRouter):
+def http_server(host: str, port: int, crt_file: str, *, router: BackendRouter, html_dir: str = None):
     resources.initialise(__package__)
     app = bottle.Bottle()
     srv = SSLWSGIRefServer.SSLWSGIRefServer(host=host, port=port, certificate_file=crt_file)
     app.route(path="/json/<path:path>", method="POST", callback=http_json_handler(router))
-    app.route(path="/website/<path:path>", method="GET", callback=partial(serve_site, html_dir))
-    app.route(path="/", method="GET", callback=partial(serve_site, html_dir, "index.html"))
+    if html_dir is not None:
+        app.route(path="/website/<path:path>", method="GET", callback=partial(serve_site, html_dir))
+        app.route(path="/", method="GET", callback=partial(serve_site, html_dir, "index.html"))
     bottle.run(server=srv, app=app)
 
 

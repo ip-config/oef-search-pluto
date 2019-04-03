@@ -6,12 +6,16 @@ import asyncio
 @handler
 async def on_connection(transport: Transport):
     print("Got client")
-    data = await transport.read()
+    response = await transport.read()
+    if not response.success:
+        print("Error response for uri %s, code: %d, reason: %s", response.uri, response.error_code,
+              response.msg())
+        return
     msg = query_pb2.Query()
-    msg.ParseFromString(data)
+    msg.ParseFromString(response.data)
     print("Got message from client: ", msg.name)
     msg.name = "Server"
-    transport.write(msg.SerializeToString())
+    await transport.write(msg.SerializeToString())
     await transport.drain()
     transport.close()
 

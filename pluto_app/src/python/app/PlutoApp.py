@@ -14,13 +14,21 @@ from api.src.python.BackendRouter import BackendRouter
 from dap_2d_geo.src.python import DapGeo
 from dap_e_r_network.src.python import DapERNetwork
 from dap_api.experimental.python.NetworkDapContract import config_contract
+from utils.src.python.Logging import has_logger
+
 
 class PlutoApp:
+    @has_logger
     def __init__(self):
+        self.router = BackendRouter()
         self.dapManager = DapManager.DapManager()
+        self._network_dap_config = dict()
 
     def addClass(self, name, maker):
         self.dapManager.addClass(name, maker)
+
+    def add_network_dap_conf(self, name: str, config: dict):
+        self._network_dap_config[name] = config
 
     def setup(self, dapManagerConfig=None):
         if not dapManagerConfig:
@@ -55,7 +63,6 @@ class PlutoApp:
                         },
                     },
                 },
-                "data_model_searcher": config_contract["data_model_searcher"],
                 "address_registry": {
                     "class": "AddressRegistry",
                     "config": {
@@ -78,6 +85,11 @@ class PlutoApp:
                 #    },
                 #}
             }
+            if len(self._network_dap_config) == 0:
+                dapManagerConfig["data_model_searcher"] = config_contract["data_model_searcher"]
+            else:
+                for name, config in self._network_dap_config.items():
+                    dapManagerConfig[name] = config
 
         self.dapManager.setup(
             sys.modules[__name__],
@@ -116,7 +128,6 @@ class PlutoApp:
 
     def _setup_router(self):
         # router
-        self.router = BackendRouter()
         self.router.register_response_merger(self._search_endpoint)
         self.router.register_serializer("search", self._search_endpoint)
         self.router.register_handler("search",  self._search_endpoint)
@@ -140,5 +151,8 @@ class PlutoApp:
         search_engine.inject_w2v(w2v)
 
     async def callMe(self, path, data):
-        return await self.router.route(path, data)
+        response = await self.router.route(path, data)
+        if not response.success:
+            self.error("callMe error: code=", response.error_code, ", narrative=", response.narrative)
+        return response.data
 

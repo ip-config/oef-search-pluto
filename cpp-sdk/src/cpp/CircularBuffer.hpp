@@ -52,20 +52,26 @@ public:
     return buffers;
   }
 
-  std::vector<boost::asio::mutable_buffer> getBuffersToRead(){
+  std::vector<boost::asio::mutable_buffer> getBuffersToRead(uint32_t size = 0){
+    std::vector<boost::asio::mutable_buffer> buffers;
+
     uint32_t data_len = buff_size_- ((r_+buff_size_)-w_+1)%buff_size_;
+    if (size>data_len) {
+      std::cerr << "Trying to read more data from CircularBuffer then available: size = " << size << ", available = " << data_len;
+      return buffers;
+    }
+    data_len =  size == 0 ? data_len : size;
     //std::cout << "GETBUFFERSTOREAD: " << buff_size_ << ", " << data_len  << ", r_=" << r_<<", w_=" << w_<< std::endl;
     uint32_t r1 = (r_+1)%buff_size_;
-   uint32_t size1 = std::min(r1+data_len, buff_size_)-r1;
+    uint32_t size1 = std::min(r1+data_len, buff_size_)-r1;
 
-   std::vector<boost::asio::mutable_buffer> buffers;
-   buffers.push_back(boost::asio::buffer(buff_+r1, size1));
-   r_ = (r_+size1) % buff_size_;
-   if (size1<data_len){
-     uint32_t size2 = std::max(static_cast<uint32_t>(0), data_len-size1);
-     buffers.push_back(boost::asio::buffer(buff_, size2));
-     r_ = size2-1;
-   }
+    buffers.push_back(boost::asio::buffer(buff_+r1, size1));
+    r_ = (r_+size1) % buff_size_;
+    if (size1<data_len){
+      uint32_t size2 = std::max(static_cast<uint32_t>(0), data_len-size1);
+      buffers.push_back(boost::asio::buffer(buff_, size2));
+      r_ = size2-1;
+    }
     //std::cout << "CIRCBUF: r1=" << r1 <<" , size1=" << size1 << " r_=" << r_ <<", w_" <<w_ << std::endl;
 
     return buffers;

@@ -128,10 +128,12 @@ def socket_message_handler(adapter: OEFSocketAdapter):
         transport = Transport(reader, writer)
         session = ComSession()
         while True:
-            _, data = await transport.read()
-            if len(data) == 0:
+            response = await transport.read()
+            if not response.success:
+                log.error("Error response for uri %s, code: %d, reason: %s", response.uri, response.error_code,
+                          response.msg())
                 break
-            response = await adapter.handle_message(data, session)
+            response = await adapter.handle_message(response.data, session)
             await transport.write(response)
         transport.close()
     return on_connection

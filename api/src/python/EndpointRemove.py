@@ -1,4 +1,4 @@
-from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer
+from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, DataWrapper
 from api.src.python.Serialization import serializer, deserializer
 from utils.src.python.Logging import has_logger
 from api.src.proto import remove_pb2, update_pb2
@@ -31,7 +31,7 @@ class RemoveEndpoint(HasProtoSerializer, HasMessageHandler):
     def serialize(self, proto_msg: response_pb2.RemoveResponse) -> bytes:
         pass
 
-    async def handle_message(self, msg: remove_pb2.Remove) -> response_pb2.UpdateResponse:
+    async def handle_message(self, msg: remove_pb2.Remove) -> DataWrapper[response_pb2.UpdateResponse]:
         resp = response_pb2.RemoveResponse()
         try:
             if msg.all:
@@ -46,4 +46,4 @@ class RemoveEndpoint(HasProtoSerializer, HasMessageHandler):
         except Exception as e:
             resp.status = ResponseType.Value("ERROR")
             resp.message = str(e)
-        return resp
+        return DataWrapper(True, "remove", resp)

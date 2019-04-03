@@ -3,8 +3,11 @@ import functools
 import colorlog
 import functools
 
+_ID_FLAG = ""
 
-def configure(level=logging.INFO):
+
+def configure(level=logging.INFO, id_flag=""):
+    global _ID_FLAG
     log_format = '%(asctime)s, %(levelname)s:  - %(name)s ] %(message)s'
     bold_seq = '\033[1m'  #f'{bold_seq} '
     colorlog_format = (
@@ -13,6 +16,7 @@ def configure(level=logging.INFO):
     )
     colorlog.basicConfig(format=colorlog_format, level=level)
     logging.basicConfig(format=log_format, level=level)
+    _ID_FLAG = id_flag
 
 
 class Logger:
@@ -63,7 +67,7 @@ def has_logger(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         self = args[0]
-        name = self.__class__.__name__
+        name = self.__class__.__name__+_ID_FLAG
         local_name = None
         if "id" in kwargs:
             local_name = kwargs["id"]
@@ -74,4 +78,4 @@ def has_logger(func):
 
 
 def get_logger(name):
-    return Logger(name)
+    return Logger(name+_ID_FLAG)

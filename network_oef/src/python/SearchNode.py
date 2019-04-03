@@ -1,17 +1,16 @@
-from fake_oef.src.python.lib import FakeBase
 from pluto_app.src.python.app import PlutoApp
-from fake_oef.src.python.lib.ConnectionFactory import SupportsConnectionInterface
+from network_oef.src.python.Connection import Connection
 from api.src.proto import response_pb2
 from api.src.proto import query_pb2, update_pb2
 from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, DataWrapper
 from api.src.python.Serialization import serializer, deserializer
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Any
 import time
 import gensim
 import abc
 from utils.src.python.Logging import has_logger
+from dap_api.src.python.network.DapNetwork import network_support
 
 
 class SearchResponseSerialization(HasProtoSerializer):
@@ -41,12 +40,19 @@ class BroadcastFromNode(HasMessageHandler):
             result.extend(flatten)
         return result
 
-    async def handle_message(self, msg) -> DataWrapper[Any]:
+    async def handle_message(self, msg):
         response = await self._node.broadcast(self._path, msg)
         if type(response) != list:
             response = [response]
         response = self.__flatten_list(response)
-        return await asyncio.gather(*[self._serializer.deserialize(serialized) for serialized in response])
+        transformed = []
+        for r in response:
+            if len(r.data) < 1:
+                deserialized = None
+            else:
+                deserialized = await self._serializer.deserialize(r.data)
+            transformed.append(DataWrapper(r.success, r.uri, deserialized, r.error_code, "", r.narrative))
+        return transformed
 
 
 class LazyW2V:
@@ -142,42 +148,44 @@ class NodeAttributeInterface:
         self._attributes["location"] = location
 
 
-class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeInterface):
+class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
     @has_logger
-    def __init__(self, connection_factory, cleaner_pool: ThreadPoolExecutor, cache_lifetime: int, id: str):
+    @network_support(router_name="router")
+    def __init__(self, cache_lifetime: int, id: str, cleaner_pool: ThreadPoolExecutor = None):
         self._id = id
         self._bin_id = self._id.encode("utf-8")
-        self._connection_factory = connection_factory
-        self._connection_factory.add_obj(id, self)
         self._connections = {}
         self._cache = {}
         self._cache_lifetime = cache_lifetime
-        self._executor = cleaner_pool
+        if cleaner_pool is None:
+            self._executor = ThreadPoolExecutor(1)
+        else:
+            self._executor = cleaner_pool
         self._last_clean = 0
         self._search_coms = {}
         self._attributes = {
             "loc": ()
         }
         PlutoApp.PlutoApp.__init__(self)
-        SupportsConnectionInterface.__init__(self)
         NodeAttributeInterface.__init__(self)
+        self.log.update_local_name(self._id)
+        self._loop = asyncio.get_event_loop()
 
-    @property
-    def connection(self):
-        return self._connections
-
-    @connection.setter
-    def connection(self, value):
-        self._connections = value
-
-    def init(self, w2v: LazyW2V, communication_handler=None):
-        self.start(communication_handler)
-        self.inject_w2v(w2v)
+    def init(self, node_ip: str, node_port: int, network_dap_config: dict, http_port: int = -1, ssl_certificate: str = None, html_dir: str = None):
+        for name, conf in network_dap_config.items():
+            self.add_network_dap_conf(name, conf)
+        self.start()
         self.add_handler("search", BroadcastFromNode("search", self))
         self._setup(self.dapManager)
 
-    def connect_to_search_node(self, search_node_id):
-        self._search_coms[search_node_id] = self._connection_factory.create(search_node_id, self._id)
+        if node_ip is not None and node_port is not None and hasattr(self, "start_network"):
+            self.start_network(self, node_ip, node_port, http_port, ssl_certificate, html_dir)
+
+    def connect_to_search_node(self, host: str, port: int, search_node_id=None):
+        if search_node_id is None:
+            search_node_id = host + ":" + str(port)
+        self.info("Create search network link with search node {} @ {}:{}".format(search_node_id, host, port))
+        self._search_coms[search_node_id] = Connection(host, port)
 
     def disconnect(self):
         for com in self._search_coms:
@@ -244,6 +252,7 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
             return False
 
     async def broadcast(self, path: str, data):
+        self.info("Broadcasting started: path=", path, ", data=", data)
         source = None
         if isinstance(data, query_pb2.Query):
             if data.ttl <= 0:
@@ -252,6 +261,8 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
             data.ttl -= 1
             source = data.source_key
             data.source_key = self._bin_id
+        else:
+            self.warning("query is not api query (missing TTL)")
         cos = []
         #proto = data.SerializeToString()
         proto_model = data.model.SerializeToString()
@@ -261,11 +272,32 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
             h = hash(path + ":" + str(proto_model) + ":" + str(data.directed_search.target.geo)  + ":" + str(target_search_node_id))
             c = self._cache.get(h, t - 2 * self._cache_lifetime)
             if (t - c) < self._cache_lifetime:
+                self.info("Skip broadcast to {} because last broadcast was @ {} (current time = {})".format(target_search_node_id, c, t))
                 continue
             self._cache[h] = t
             if source is None or source != target_search_node_id.encode("utf-8"):
+                self.info("Broadcasted search to ", target_search_node_id)
                 cos.append(self._search_coms[target_search_node_id].call_node(path, data.SerializeToString()))
-        self._executor.submit(FakeSearch._cache_cleaner, self)
+            else:
+                self.info("Skip broadcast to {} because last broadcast was source ({}) is the same".format(
+                    target_search_node_id, source))
+        self.info("Active co-routines: ", cos)
+        try:
+            self._executor.submit(SearchNode._cache_cleaner, self)
+        except Exception as e:
+            self.warning("Failed to schedule cache cleaner, because: ", str(e))
         if len(cos) > 0:
-            return await asyncio.gather(*cos)
+            self.info("Await gather")
+            resp = await asyncio.gather(*cos)
+            self.info("Response to broadcast: num = ", len(resp))
+            for r in resp:
+                if not r.success:
+                    self.info("Response to broadcast is error: code=", r.error_code, ", message: ", r.msg())
+            return resp
         return []
+
+    def block(self):
+        if hasattr(self, "_com"):
+            self._com.wait()
+        else:
+            time.sleep(1e6)

@@ -42,9 +42,9 @@ def create_address_attribute_update(key: str, ip: str, port: int):
     return upd
 
 
-def create_blk_update() -> update_pb2.Update.BulkUpdate:
+def create_blk_update(flag="") -> update_pb2.Update.BulkUpdate:
 
-    upd1 = create_update("oef:Weather",
+    upd1 = create_update("oef:Weather"+flag,
                          "weather_data",
                          "All possible weather data.", [
                              get_attr_b("wind_speed", "Provides wind speed measurements.", 0),
@@ -52,7 +52,7 @@ def create_blk_update() -> update_pb2.Update.BulkUpdate:
                              get_attr_b("air_pressure", "Provides wind speed measurements.", 2)
                          ])
 
-    upd2 = create_update("oef:Books",
+    upd2 = create_update("oef:Books"+flag,
                          "book_data",
                          "Book store data", [
                             get_attr_b("title", "The title of the book", 1),
@@ -61,7 +61,7 @@ def create_blk_update() -> update_pb2.Update.BulkUpdate:
                             get_attr_b("introduction", "Short introduction by the author.", 3),
                             get_attr_b("rating", "Summary rating of the book given by us.", 0)
                         ])
-    upd3 = create_update("oef:Novels",
+    upd3 = create_update("oef:Novels"+flag,
                          "book_store_new",
                          "Other bookstore. Focuses on novels.", [
                             get_attr_b("title", "The title of the book", 1),
@@ -71,9 +71,9 @@ def create_blk_update() -> update_pb2.Update.BulkUpdate:
                             get_attr_b("count", "How many do we have", 0),
                             get_attr_b("condition", "Our books are in the best condition", 0)
                         ])
-    upd4 = create_address_attribute_update("oef:Weather", "127.0.0.1", 3333)
-    upd5 = create_address_attribute_update("oef:Books", "127.0.0.1", 3334)
-    upd6 = create_address_attribute_update("oef:Novels", "127.0.0.1", 3335)
+    upd4 = create_address_attribute_update("oef:Weather"+flag, "127.0.0.1", 3333)
+    upd5 = create_address_attribute_update("oef:Books"+flag, "127.0.0.1", 3334)
+    upd6 = create_address_attribute_update("oef:Novels"+flag, "127.0.0.1", 3335)
     blk_upd = update_pb2.Update.BulkUpdate()
     blk_upd.list.extend([upd1, upd2, upd3, upd4, upd5, upd6])
     return blk_upd
@@ -82,16 +82,19 @@ def create_blk_update() -> update_pb2.Update.BulkUpdate:
 @client_handler
 async def client(transport: ClientTransport):
     print("connected to the server")
-    msg = create_blk_update()
+    msg = create_blk_update("1")
     await transport.write(msg.SerializeToString(), "blk_update")
     response = await transport.read()
+    if not response.success:
+        print("Error response for uri %s, code: %d, reason: %s", response.uri, response.error_code, response.msg())
+        return
     resp = response_pb2.UpdateResponse()
-    resp.ParseFromString(response)
+    resp.ParseFromString(response.data)
     print("Response from server: ", resp.status)
     transport.close()
 
 loop = asyncio.get_event_loop()
 try:
-    loop.run_until_complete(run_client(client, "127.0.0.1", 7501))
+    loop.run_until_complete(run_client(client, "127.0.0.1", 20000))
 finally:
     loop.close()
