@@ -1,4 +1,5 @@
 from dap_api.src.python.DapInterface import DapInterface
+from dap_api.src.protos.dap_update_pb2 import DapUpdate
 from dap_api.src.protos import dap_interface_pb2, dap_update_pb2, dap_description_pb2
 from utils.src.python.Logging import has_logger
 import struct
@@ -112,7 +113,10 @@ class DapNetworkProxy(DapInterface):
         self.client.close()
 
     def _call(self, path, data_in, output_type):
-        response = self.client.call(path, data_in.SerializeToString())
+        request = data_in.SerializeToString()
+        self.warning("REQUEST=" + str(request))
+
+        response = self.client.call(path, request)
         proto = output_type()
         if not response.success:
             self.error("Error response for uri %s, code: %d, reason: %s", response.uri, response.error_code,
@@ -149,7 +153,7 @@ class DapNetworkProxy(DapInterface):
       None
     """
 
-    def update(self, update_data: dap_update_pb2.DapUpdate) -> dap_interface_pb2.Successfulness:
+    def update(self, update_data: dap_update_pb2.DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
         return self._call("update", update_data, dap_interface_pb2.Successfulness)
 
 
@@ -162,7 +166,7 @@ class DapNetworkProxy(DapInterface):
       None
     """
 
-    def remove(self, remove_data: dap_update_pb2.DapUpdate) -> dap_interface_pb2.Successfulness:
+    def remove(self, remove_data: dap_update_pb2.DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
         return self._call("remove", remove_data, dap_interface_pb2.Successfulness)
 
     """Remove all the keys in the update[].key fields from the store.

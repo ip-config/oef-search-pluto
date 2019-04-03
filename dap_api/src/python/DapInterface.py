@@ -35,7 +35,7 @@ class DapInterface(abc.ABC):
       None
     """
     @abstractmethod
-    def update(self, update_data: dap_update_pb2.DapUpdate) -> dap_interface_pb2.Successfulness:
+    def update(self, update_data: dap_update_pb2.DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
         raise Exception("NOT IMPL")
 
     """This function will be called when the core wants to remove data from search
@@ -46,7 +46,7 @@ class DapInterface(abc.ABC):
     Returns:
       None
     """
-    def remove(self, remove_data: dap_update_pb2.DapUpdate) -> dap_interface_pb2.Successfulness:
+    def remove(self, remove_data: dap_update_pb2.DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
         raise Exception("NOT IMPL")
 
     """Remove all the keys in the update[].key fields from the store.

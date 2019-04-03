@@ -16,8 +16,8 @@ public:
 
   virtual DapDescription describe() = 0;
   virtual Successfulness configure(const DapDescription&) = 0;
-  virtual Successfulness update(const DapUpdate&) = 0;
-  virtual Successfulness remove(const DapUpdate&) = 0;
+  virtual Successfulness update(const DapUpdate_TableFieldValue&) = 0;
+  virtual Successfulness remove(const DapUpdate_TableFieldValue&) = 0;
   virtual ConstructQueryMementoResponse prepareConstraint(const ConstructQueryConstraintObjectRequest&) = 0;
   virtual ConstructQueryMementoResponse prepare(const ConstructQueryObjectRequest&) = 0;
   virtual IdentifierSequence execute(const DapExecute&) = 0;
@@ -48,12 +48,12 @@ public:
       tptr->write(self->dap_->configure(proto));
     });
 
-    transport->AddReadCallback<DapUpdate>("update",
-        [self](DapUpdate proto, Transport::TransportPtr tptr){
+    transport->AddReadCallback<DapUpdate_TableFieldValue>("update",
+        [self](DapUpdate_TableFieldValue proto, Transport::TransportPtr tptr){
       tptr->write(self->dap_->update(proto));
     });
-    transport->AddReadCallback<DapUpdate>("remove",
-        [self](DapUpdate proto, Transport::TransportPtr tptr){
+    transport->AddReadCallback<DapUpdate_TableFieldValue>("remove",
+        [self](DapUpdate_TableFieldValue proto, Transport::TransportPtr tptr){
       tptr->write(self->dap_->remove(proto));
     });
     transport->AddReadCallback<ConstructQueryConstraintObjectRequest>("prepareConstraint",

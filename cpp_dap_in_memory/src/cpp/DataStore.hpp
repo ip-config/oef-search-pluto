@@ -66,6 +66,8 @@ public:
     }
   }
 
+  void diagnostics();
+
   void AddTableField(const std::string &tablename, const std::string &fieldname,
                      const std::string &fieldtype)
   {
@@ -93,20 +95,7 @@ public:
   }
 
   void performUpdate(const std::string &tablename, const std::string &fieldname,
-                     const std::string &core, const std::string &agent, const ValueMessage &value)
-  {
-    auto fp = getFieldByNames(tablename, fieldname);
-    if (fp -> type != value.typecode())
-    {
-      throw DapException(EINVAL, std::string("'") + tablename + "." + fieldname + "' is "  + fp -> type + " and cannot be assigned " + value.typecode());
-    }
-
-    auto key = std::make_pair(core, agent);
-
-    auto table = tables[fp -> tablename];
-    auto row = table[key];
-    row[fp -> fieldname] = value;
-  }
+                     const std::string &core, const std::string &agent, const ValueMessage &value);
 
   void queryAllRows(std::vector<Key> &output,
                       const std::string &target_table_name,

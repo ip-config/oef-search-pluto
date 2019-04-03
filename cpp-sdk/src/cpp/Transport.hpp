@@ -4,6 +4,7 @@
 #include "CircularBuffer.hpp"
 #include "char_array_buffer.hpp"
 #include "network/src/proto/transport.pb.h"
+#include "dap_api/src/protos/dap_update.pb.h"
 
 #include <iostream>
 #include <functional>
@@ -204,6 +205,7 @@ private:
 
   void gotBody() {
     auto data = read_buffer_.getBuffersToRead(stateData_.header_size);
+
     char_array_buffer hbuffer(data);
     std::istream h_is(&hbuffer);
 
@@ -211,6 +213,7 @@ private:
     header.ParseFromIstream(&h_is);
 
     const std::string& path = header.uri();
+
 
     if (!header.status().success()) {
       std::cerr << "Network call got error as response (uri=" << path << "): error_code = "
@@ -229,6 +232,7 @@ private:
     }
 
     auto bdata = read_buffer_.getBuffersToRead();
+
     char_array_buffer bbuffer(bdata);
     std::istream b_is(&bbuffer);
 

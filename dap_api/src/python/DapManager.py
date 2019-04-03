@@ -142,11 +142,8 @@ class DapManager(object):
         self.structures = {}
         self.attributes_to_daps = {}
 
-        time.sleep(5)
-
         for instance_name, instance_object in self.instances.items():
             self.warning("INTERROGATE:" + str(type(instance_object)))
-            structure_pb = instance_object.describe()
             structure_pb = instance_object.describe()
 
             self.warning("INTERROGATE:" + instance_name + " Returned a description: " + str(structure_pb))

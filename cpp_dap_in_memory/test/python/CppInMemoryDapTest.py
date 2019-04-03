@@ -33,6 +33,9 @@ class CppInMemoryDapTest(unittest.TestCase):
                         "media": {
                             "media": "string"
                         },
+                        "nation": {
+                            "nation": "string"
+                        },
                     },
                     "host": "127.0.0.1",
                     "port": 15000
@@ -46,15 +49,25 @@ class CppInMemoryDapTest(unittest.TestCase):
     "port": 15000,
     "description": {
         "name": "dap1",
-        "table": {
-            "name": "media",
-            "field": [
-                {
-                    "name": "media",
-                    "type": "string"
-                }
-            ]
-        }
+        "table": [
+            {
+                "name": "media",
+                "field": [
+                    {
+                        "name": "media",
+                        "type": "string"
+                    }
+                ]
+            }, {
+                "name": "nation",
+                "field": [
+                    {
+                        "name": "nation",
+                        "type": "string"
+                    }
+                ]
+            }
+        ]
     }
 }
 """
@@ -65,7 +78,7 @@ class CppInMemoryDapTest(unittest.TestCase):
             #'--help',
         ]
         self.remoteProcess = subprocess.Popen(self.remoteProcessArgs)
-        time.sleep(1)
+        time.sleep(0.25)
 
         self.dapManager.setup(sys.modules[__name__], dapManagerConfig)
         self.dap1 = self.dapManager.getInstance("dap1")
@@ -94,34 +107,30 @@ class CppInMemoryDapTest(unittest.TestCase):
             update.update[0].key.agent = agent.encode("utf-8")
             update.update[0].value.s = media
             update.update[0].value.type = 2
+
+            self.warning(str(update))
+
             self.dapManager.update(update)
 
-        #for agent, nation in [
-        #    ("007/James/Bond",   "UK"),
-        #    ("White/Spy",        "UK"),
-        #    ("Black/Spy",        "UK"),
-        #    ("86/Maxwell/Smart", "America"),
-        #]:
-        #    update = self._createUpdate()
-        #    update.update[0].tablename = "nation"
-        #    update.update[0].fieldname = "nation"
-        #    update.update[0].value.s = nation
-        #    update.update[0].value.type = 2
-        #    update.update[0].key.agent = agent.encode("utf-8")
-        #    self.dapManager.update(update)
+        for agent, nation in [
+            ("007/James/Bond",   "UK"),
+            ("White/Spy",        "UK"),
+            ("Black/Spy",        "UK"),
+            ("86/Maxwell/Smart", "America"),
+        ]:
+            update = self._createUpdate()
+            update.update[0].tablename = "nation"
+            update.update[0].fieldname = "nation"
+            update.update[0].value.s = nation
+            update.update[0].value.type = 2
+            update.update[0].key.agent = agent.encode("utf-8")
+            self.dapManager.update(update)
 
     def testQuery(self):
-        """Test case A. note that all test method names must begin with 'test.'"""
         self.info("=======================================================================")
         self.info("testQuery")
 
-        dap1 = self.dapManager.getInstance("dap1")
-        self.warning("--------------------------")
-        self.warning(json_format.MessageToJson(dap1.describe()))
-        self.warning("--------------------------")
-
         self._setupAgents()
-
 
         qm = query_pb2.Query.Model()
         q = qm.constraints.add()
@@ -134,3 +143,28 @@ class CppInMemoryDapTest(unittest.TestCase):
         results = list(self.dapManager.execute(dapQuery).identifiers)
         assert len(results) == 2
 
+    def testQueryAnd(self):
+        self.info("=======================================================================")
+        self.info("testQueryAnd")
+        self._setupAgents()
+
+        qm = query_pb2.Query.Model()
+        qAnd = qm.constraints.add()
+
+        q1 = qAnd.and_.expr.add()
+        q2 = qAnd.and_.expr.add()
+
+        q1.constraint.attribute_name = "media"
+        q1.constraint.relation.op = 0
+        q1.constraint.relation.val.s = "tv/film"
+
+        q2.constraint.attribute_name = "nation"
+        q2.constraint.relation.op = 0
+        q2.constraint.relation.val.s = "UK"
+
+
+        dapQuery = self.dapManager.makeQuery(qm)
+        output = self.dapManager.execute(dapQuery)
+        results = list(output.identifiers)
+        assert len(results) == 1
+        assert output.HasField("status") == False
