@@ -4,10 +4,10 @@ from utils.src.python.Logging import has_logger
 import struct
 import socket
 import json
-from network.src.proto import message_pb2
+from network.src.proto import transport_pb2
 from network.src.python.async_socket.AsyncSocket import DataWrapper
 import time
-from typing import List
+from typing import List, Tuple
 
 
 class Transport:
@@ -15,48 +15,49 @@ class Transport:
         self._socket = socket
         self._int_size = len(struct.pack("i", 0))
 
-    def write_msg(self, msg: message_pb2.Message):
+    def write_msg(self, msg: transport_pb2.TransportHeader, data: bytes):
         smsg = msg.SerializeToString()
-        size_packed = struct.pack("i", len(smsg))
+        size_packed = struct.pack("!ii", len(smsg), len(data))
         self._socket.sendall(size_packed)
         self._socket.sendall(smsg)
+        self._socket.sendall(data)
 
     def write(self, data: bytes, path: str = ""):
-        msg = message_pb2.Message()
+        msg = transport_pb2.TransportHeader()
         msg.uri = path
-        msg.body = data
         msg.status.success = True
-        self.write_msg(msg)
+        self.write_msg(msg, data)
 
     def write_error(self, error_code: int, narrative: List[str], path: str = ""):
-        msg = message_pb2.Message()
+        msg = transport_pb2.TransportHeader()
         msg.uri = path
         msg.status.success = False
         msg.status.error_code = error_code
         msg.status.narrative.extend(narrative)
-        self.write_msg(msg)
+        self.write_msg(msg, b'')
 
-    def _read_size(self) -> int:
-        size_packed = self._socket.recv(self._int_size)
+    def _read_size(self) -> Tuple[int, int]:
+        size_packed = self._socket.recv(2*self._int_size)
         if len(size_packed) == 0:
-            return 0
-        size = struct.unpack("i", size_packed)[0]
-        return size
+            return 0, 0
+        sizes = struct.unpack("!ii", size_packed)
+        return sizes
 
     def read(self) -> DataWrapper[bytes]:
+        msg = None
         try:
-            size = self._read_size()
-            if size == 0:
+            hsize, bsize = self._read_size()
+            if hsize == 0:
                 return DataWrapper(False, "", b'', 104, "Connection reset (got 0 size)")
-            data = self._socket.recv(size)
-            msg = message_pb2.Message()
-            msg.ParseFromString(data)
+            data = self._socket.recv(hsize+bsize)
+            msg = transport_pb2.TransportHeader()
+            msg.ParseFromString(data[:hsize])
             if msg.status.success:
-                return DataWrapper(True, msg.uri, msg.body)
+                return DataWrapper(True, msg.uri, data[hsize:])
             else:
                 return DataWrapper(False, msg.uri, b'', msg.status.error_code, "", msg.status.narrative[:])
         except ConnectionResetError as e:
-            return DataWrapper(False, DataWrapper, b'', 104, str(e))
+            return DataWrapper(False, msg.uri if msg else "", b'', 104, str(e))
 
     def close(self):
         self.write(b'', "close")

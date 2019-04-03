@@ -2,8 +2,8 @@ import asyncio
 from inspect import signature
 import struct
 import functools
-from network.src.proto import message_pb2
-from typing import List
+from network.src.proto import transport_pb2
+from typing import List, Tuple
 from api.src.python.Interfaces import DataWrapper
 
 
@@ -15,49 +15,50 @@ class Transport:
         self._writer = writer
         self._int_size = len(struct.pack("i", 0))
 
-    async def write_msg(self, msg: message_pb2.Message):
+    async def write_msg(self, msg: transport_pb2.TransportHeader, data: bytes):
         smsg = msg.SerializeToString()
-        size_packed = struct.pack("i", len(smsg))
+        size_packed = struct.pack("!ii", len(smsg), len(data))
         await self.drain()
         self._writer.write(size_packed)
         await self.drain()
         self._writer.write(smsg)
+        await self.drain()
+        self._writer.write(data)
 
     async def write(self, data: bytes, path: str = ""):
-        msg = message_pb2.Message()
+        msg = transport_pb2.TransportHeader()
         msg.uri = path
-        msg.body = data
         msg.status.success = True
-        await self.write_msg(msg)
+        await self.write_msg(msg, data)
 
     async def write_error(self, error_code: int, narrative: List[str], path: str = ""):
-        msg = message_pb2.Message()
+        msg = transport_pb2.TransportHeader()
         msg.uri = path
         msg.status.success = False
         msg.status.error_code = error_code
         msg.status.narrative.extend(narrative)
-        await self.write_msg(msg)
+        await self.write_msg(msg, b'')
 
     async def drain(self):
         return await self._writer.drain()
 
-    async def _read_size(self) -> int:
-        size_packed = await self._reader.read(self._int_size)
+    async def _read_size(self) -> Tuple[int, int]:
+        size_packed = await self._reader.read(2*self._int_size)
         if len(size_packed) == 0:
-            return 0
-        size = struct.unpack("i", size_packed)[0]
-        return size
+            return 0, 0
+        hsize, bsize = struct.unpack("!ii", size_packed)
+        return hsize, bsize
 
     async def read(self) -> DataWrapper[bytes]:
         try:
-            size = await self._read_size()
-            if size == 0:
+            hsize, bsize = await self._read_size()
+            if hsize == 0:
                 return DataWrapper(False, "", b'', 104, "Connection closed by peer (got 0 size)")
-            data = await self._reader.read(size)
-            msg = message_pb2.Message()
-            msg.ParseFromString(data)
+            data = await self._reader.read(hsize+bsize)
+            msg = transport_pb2.TransportHeader()
+            msg.ParseFromString(data[:hsize])
             if msg.status.success:
-                return DataWrapper(True, msg.uri, msg.body)
+                return DataWrapper(True, msg.uri, data[hsize:])
             else:
                 return DataWrapper(False, msg.uri, b'', msg.status.error_code, "", msg.status.narrative[:])
         except ConnectionResetError as e:
