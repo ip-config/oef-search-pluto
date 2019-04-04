@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+message CoreLocation {
+    message Location {
+        double lon = 1;
+        double lat = 2;
+    }
+
+    bytes core_key = 1;
+    Location location = 2;
+}
+
+message Response {
+    bool status = 1;
+    repeated string narrative = 2;
+}
