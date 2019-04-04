@@ -114,14 +114,12 @@ class PlutoApp:
             .dm_values("local_dm_table", "dm_values")\
             .build()
 
-        address_registry = self.dapManager.getInstance("address_registry")
-
-        update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, update_config, address_registry)
+        update_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.UpdateData, update_config)
         query_wrapper = ProtoWrappers.ProtoWrapper(ProtoWrappers.QueryData, self.dapManager)
 
 
         # endpoints
-        self._search_endpoint = SearchQuery(self.dapManager, query_wrapper, address_registry)
+        self._search_endpoint = SearchQuery(self.dapManager, query_wrapper)
         self._update_endpoint = UpdateEndpoint(self.dapManager, update_wrapper)
         self._blk_update_endpoint = BlkUpdateEndpoint(self.dapManager, update_wrapper)
         self._remove_endpoint = RemoveEndpoint(self.dapManager, update_wrapper)

@@ -19,7 +19,6 @@ py_library(
         "//api/src/proto:py_api_pb",
         "//utils/src/python:py_utils",
         "//fetch_teams/oef_core_protocol:py_oef_protocol",
-        "//ai_search_engine/src/python:search_engine"
     ],
     visibility = ["//visibility:public"],
 )
