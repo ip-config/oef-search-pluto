@@ -22,6 +22,17 @@ py_library(
 )
 
 py_library(
+    name = "router_builder",
+    srcs = ["RouterBuilder.py"],
+    deps = [
+        ":backend_router",
+        "//api/src/python/core:endpoints",
+        "//api/src/python/director:endpoints"
+    ],
+    visibility = ["//visibility:public"],
+)
+
+py_library(
     name = "communication_handler",
     srcs = ["CommunicationHandler.py"],
     deps = [
@@ -35,5 +46,16 @@ py_library(
         "//api/src/resources:website"
     ],
     srcs_version = "PY3",
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "network",
+    srcs = ["network.py"],
+    deps = [
+        ":backend_router",
+        "//utils/src/python:py_utils",
+        ":communication_handler",
+    ],
     visibility = ["//visibility:public"],
 )

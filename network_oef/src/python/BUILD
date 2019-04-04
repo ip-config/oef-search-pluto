@@ -4,7 +4,7 @@ py_library(
     srcs = glob(["*.py"]),
     deps = [
         "//dap_api/src/python:dap_api",
-        "//dap_api/src/python/network:dap_network",
+        "//api/src/python:network",
         "//ai_search_engine/src/python:search_engine",
         "//api/src/proto/core:py_api_pb",
         "//fetch_teams/oef_core_protocol:py_oef_protocol",

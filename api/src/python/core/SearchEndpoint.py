@@ -8,7 +8,7 @@ from dap_api.src.python.DapManager import DapManager
 from typing import List
 
 
-class SearchQuery(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
+class SearchEndpoint(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
 
     @has_logger
     def __init__(self, dap_manager: DapManager, proto_wrapper: ProtoWrapper):

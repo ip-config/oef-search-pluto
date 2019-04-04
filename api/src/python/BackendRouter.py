@@ -6,11 +6,12 @@ import asyncio
 
 class BackendRouter:
     @has_logger
-    def __init__(self):
+    def __init__(self, name: str = ""):
         self.__routing_serializer = {}
         self.__routing_handler = {}
         self.__response_builder = {}
         self.__response_merger = {}
+        self.name = name
 
     def register_serializer(self, path: str, obj: HasProtoSerializer):
         self.__routing_serializer[path] = obj

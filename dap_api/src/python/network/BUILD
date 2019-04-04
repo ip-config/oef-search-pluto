@@ -6,7 +6,7 @@ py_library(
         "//api/src/python:interfaces",
         "//utils/src/python:py_utils",
         "//dap_api/src/protos:py_dap_api_pb",
-        "//api/src/python:communication_handler",
+        "//api/src/python:network",
         "//api/src/python:backend_router",
         "//network/src/proto:py_network_pb",
         "//network/src/python/async_socket:async_socket",

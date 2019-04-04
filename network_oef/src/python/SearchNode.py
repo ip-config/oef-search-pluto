@@ -10,7 +10,7 @@ import time
 import gensim
 import abc
 from utils.src.python.Logging import has_logger
-from dap_api.src.python.network.DapNetwork import network_support
+from api.src.python.network import network_support
 
 
 class SearchResponseSerialization(HasProtoSerializer):
@@ -150,7 +150,7 @@ class NodeAttributeInterface:
 
 class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
     @has_logger
-    @network_support(router_name="router")
+    @network_support
     def __init__(self, cache_lifetime: int, id: str, cleaner_pool: ThreadPoolExecutor = None):
         self._id = id
         self._bin_id = self._id.encode("utf-8")
@@ -179,7 +179,7 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         self._setup(self.dapManager)
 
         if node_ip is not None and node_port is not None and hasattr(self, "start_network"):
-            self.start_network(self, node_ip, node_port, http_port, ssl_certificate, html_dir)
+            self._com = self.start_network(self.router, node_ip, node_port, http_port, ssl_certificate, html_dir)
 
     def connect_to_search_node(self, host: str, port: int, search_node_id=None):
         if search_node_id is None:
