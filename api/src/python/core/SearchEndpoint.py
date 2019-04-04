@@ -5,17 +5,15 @@ from utils.src.python.Logging import has_logger
 from api.src.python.core.ProtoWrappers import ProtoWrapper
 from api.src.proto.core import query_pb2
 from dap_api.src.python.DapManager import DapManager
-from dap_in_memory.src.python.AddressRegistry import AddressRegistry
 from typing import List
 
 
 class SearchQuery(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
 
     @has_logger
-    def __init__(self, dap_manager: DapManager, proto_wrapper: ProtoWrapper, address_registry: AddressRegistry):
+    def __init__(self, dap_manager: DapManager, proto_wrapper: ProtoWrapper):
         self._dap_manager = dap_manager
         self._proto_wrapper = proto_wrapper
-        self._address_registry = address_registry
 
     @deserializer
     def deserialize(self, data: bytes) -> query_pb2.Query:
@@ -58,18 +56,13 @@ class SearchQuery(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
                 core, agent_id = element.core, element.agent
                 if core not in items:
                     item = response_pb2.SearchResponse.Item()
-                    addresses = self._address_registry.resolve(core)
-                    if len(addresses) > 0:
-                        address = addresses[0]
-                        item.ip = address.ip
-                        item.port = address.port
-                        item.key = core
-                    #item.info = data model names registered with this oef
-                    else:
-                        self.log.warning("Ignoring result because no address found!")
-                        print("Query: ", msg)
-                        print("Result: ", element)
+                    address = element.uri.split(":")
+                    if len(address) != 2:
+                        self.warning("No valid address for core: ", core, "! address=", address)
                         continue
+                    item.ip = address[0]
+                    item.port = int(address[1])
+                    item.key = core
                     item.score = element.score
                     items[core] = item
                 agent = items[core].agents.add()
