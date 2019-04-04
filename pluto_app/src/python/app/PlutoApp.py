@@ -7,9 +7,9 @@ from dap_in_memory.src.python import InMemoryDap
 from dap_in_memory.src.python import AddressRegistry
 from dap_in_memory.src.python import DataModelInstanceStore
 import api.src.python.core.ProtoWrappers as ProtoWrappers
-from api.src.python.core.EndpointSearch import SearchQuery
-from api.src.python.core.EndpointUpdate import UpdateEndpoint, BlkUpdateEndpoint
-from api.src.python.core.EndpointRemove import RemoveEndpoint
+from api.src.python.core.SearchEndpoint import SearchQuery
+from api.src.python.core.UpdateEndpoint import UpdateEndpoint, BlkUpdateEndpoint
+from api.src.python.core.RemoveEndpoint import RemoveEndpoint
 from api.src.python.BackendRouter import BackendRouter
 from dap_2d_geo.src.python import DapGeo
 from dap_e_r_network.src.python import DapERNetwork

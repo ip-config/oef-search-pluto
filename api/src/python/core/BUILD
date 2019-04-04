@@ -1,6 +1,6 @@
 py_library(
     name = "endpoints",
-    srcs = glob(["Endpoint*.py"]),
+    srcs = glob(["*Endpoint.py"]),
     deps = [
         "//api/src/python:serialization",
         "//api/src/python:interfaces",
