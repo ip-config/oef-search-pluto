@@ -20,14 +20,15 @@ class Transport:
         if len(data) > 0:
             self._socket.sendall(data)
 
-    def write(self, data: bytes, path: str = "", call_id: int = 0):
+    def write(self, data: bytes, path: str = "", call_id: int = 0) -> int:
         msg = transport_pb2.TransportHeader()
         msg.uri = path
         msg.id = self._call_store.new_id_if0(call_id)
         msg.status.success = True
         self.write_msg(msg, data)
+        return msg.id
 
-    def write_error(self, error_code: int, narrative: List[str], path: str = "", call_id: int = 0):
+    def write_error(self, error_code: int, narrative: List[str], path: str = "", call_id: int = 0) -> int:
         msg = transport_pb2.TransportHeader()
         msg.uri = path
         msg.id = self._call_store.new_id_if0(call_id)
@@ -35,6 +36,7 @@ class Transport:
         msg.status.error_code = error_code
         msg.status.narrative.extend(narrative)
         self.write_msg(msg, b'')
+        return msg.id
 
     def _read_size(self) -> Tuple[int, int]:
         size_packed = self._socket.recv(2*self._int_size)
@@ -43,7 +45,7 @@ class Transport:
         sizes = struct.unpack("!II", size_packed)
         return sizes
 
-    def _read(self, size: int):
+    def _read(self, size: int = 0):
         data = self._socket.recv(size)
         if len(data) < size:
             return data + self._read(size - len(data))
@@ -63,9 +65,9 @@ class Transport:
             msg = transport_pb2.TransportHeader()
             msg.ParseFromString(data[:hsize])
             if msg.status.success:
-                response = DataWrapper(True, msg.uri, data[hsize:])
+                response = DataWrapper(True, msg.uri, data[hsize:], id=msg.id)
             else:
-                response = DataWrapper(False, msg.uri, b'', msg.status.error_code, "", msg.status.narrative[:])
+                response = DataWrapper(False, msg.uri, b'', msg.status.error_code, "", msg.status.narrative[:], id=msg.id)
             if call_id != 0 and msg.id != call_id:
                 self._call_store.put(call_id, response)
                 return self.read(call_id)
@@ -100,8 +102,8 @@ class ClientSocket:
 
     def call(self, func, in_data, depth=0):
         try:
-            self.transport.write(in_data, path=func)
-            return self.transport.read()
+            call_id = self.transport.write(in_data, path=func)
+            return self.transport.read(call_id)
         except BrokenPipeError as e:
             self.warning("Connection lost with host %s:%d, reconnecting...", self.host, self.port)
             if depth > self._call_max_depth:

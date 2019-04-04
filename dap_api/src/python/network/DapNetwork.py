@@ -25,9 +25,9 @@ def socket_handler(router: BackendRouter):
                     break
                 response = await router.route(request.uri, request.data)
                 if response.success:
-                    await transport.write(response.data)
+                    await transport.write(response.data, call_id=request.id)
                 else:
-                    await transport.write_error(response.error_code, response.narrative, request.uri)
+                    await transport.write_error(response.error_code, response.narrative, request.uri, call_id=request.id )
             except Exception as e:
                 path = request.uri if request else ""
                 msg = "Failed to process request for path: " + path + ", because: " + str(e)

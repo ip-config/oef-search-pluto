@@ -66,9 +66,9 @@ class Transport:
         msg.status.success = True
         msg.id = self._call_store.new_id_if0(call_id)
         await self.write_msg(msg, data)
-        return call_id
+        return msg.id
 
-    async def write_error(self, error_code: int, narrative: List[str], path: str = "", call_id: int = 0):
+    async def write_error(self, error_code: int, narrative: List[str], path: str = "", call_id: int = 0) -> int:
         msg = transport_pb2.TransportHeader()
         msg.uri = path
         msg.id = self._call_store.new_id_if0(call_id)
@@ -76,6 +76,7 @@ class Transport:
         msg.status.error_code = error_code
         msg.status.narrative.extend(narrative)
         await self.write_msg(msg, b'')
+        return msg.id
 
     async def drain(self):
         return await self._writer.drain()
@@ -106,9 +107,9 @@ class Transport:
             msg = transport_pb2.TransportHeader()
             msg.ParseFromString(data[:hsize])
             if msg.status.success:
-                response = DataWrapper(True, msg.uri, data[hsize:])
+                response = DataWrapper(True, msg.uri, data[hsize:], id=msg.id)
             else:
-                response = DataWrapper(False, msg.uri, b'', msg.status.error_code, "", msg.status.narrative[:])
+                response = DataWrapper(False, msg.uri, b'', msg.status.error_code, "", msg.status.narrative[:], id=msg.id)
             if call_id != 0 and msg.id != call_id:
                 self._call_store.put(call_id, response)
                 return await self.read(call_id)
