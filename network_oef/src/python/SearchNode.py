@@ -51,7 +51,7 @@ class BroadcastFromNode(HasMessageHandler):
                 deserialized = None
             else:
                 deserialized = await self._serializer.deserialize(r.data)
-            transformed.append(DataWrapper(r.success, r.uri, deserialized, r.error_code, "", r.narrative))
+            transformed.append(DataWrapper(r.success, r.uri, deserialized, r.error_code, "", r.narrative, r.id))
         return transformed
 
 

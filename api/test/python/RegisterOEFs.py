@@ -2,6 +2,8 @@ import asyncio
 from network.src.python.async_socket.AsyncSocket import client_handler, run_client, ClientTransport
 from api.src.proto.core import update_pb2, response_pb2
 from fetch_teams.oef_core_protocol import query_pb2
+import argparse
+import sys
 
 
 def get_attr_b(name, desc, t=2):
@@ -78,11 +80,17 @@ def create_blk_update(flag="") -> update_pb2.Update.BulkUpdate:
     blk_upd.list.extend([upd1, upd2, upd3, upd4, upd5, upd6])
     return blk_upd
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--id", required=True, type=int)
+args = parser.parse_args()
+ID = args.id
+print("ID", ID)
 
 @client_handler
 async def client(transport: ClientTransport):
+    global ID
     print("connected to the server")
-    msg = create_blk_update("1")
+    msg = create_blk_update(str(ID))
     await transport.write(msg.SerializeToString(), "blk_update")
     response = await transport.read()
     if not response.success:
@@ -95,6 +103,6 @@ async def client(transport: ClientTransport):
 
 loop = asyncio.get_event_loop()
 try:
-    loop.run_until_complete(run_client(client, "127.0.0.1", 20000))
+    loop.run_until_complete(run_client(client, "127.0.0.1", 20000+ID))
 finally:
     loop.close()
