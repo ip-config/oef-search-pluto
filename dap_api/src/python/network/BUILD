@@ -9,7 +9,8 @@ py_library(
         "//api/src/python:communication_handler",
         "//api/src/python:backend_router",
         "//network/src/proto:py_network_pb",
-        "//network/src/python/async_socket:async_socket"
+        "//network/src/python/async_socket:async_socket",
+        "//network/src/python/socket:sync_socket",
     ],
     visibility = ["//visibility:public"],
 )

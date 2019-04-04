@@ -90,7 +90,7 @@ class BackendRouter:
                     wrapped_data.target_type = Serializable.TargetType.JSON
                 serialized_response = await serializer.serialize(wrapped_data)
                 return DataWrapper(response.success, path, serialized_response, response.error_code, "",
-                                   response.narrative)
+                                   response.narrative, id=response.id)
             else:
                 msg = "Message handler not register for path: %s" % path
                 self.log.error(msg)

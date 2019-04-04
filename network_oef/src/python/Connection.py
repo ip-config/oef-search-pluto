@@ -25,9 +25,9 @@ class Connection(object):
     async def call_node(self, path: str, data: bytes) -> bytes:
         if self._transport is None:
             await self.connect()
-        await self._transport.write(data, path)
+        call_id = await self._transport.write(data, path)
         await self._transport.drain()
-        response = await self._transport.read()
+        response = await self._transport.read(call_id)
         if not response.success:
             self.error("Error response for uri %s (%s), code: %d, reason: %s", response.uri, path,
                        response.error_code, response.msg())
