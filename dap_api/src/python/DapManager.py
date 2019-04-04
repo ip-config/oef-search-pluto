@@ -43,10 +43,29 @@ class DapManager(object):
                 (k, v if v != None else {} )
                 for k,v in matching_daps_and_configuration_outputs
             ]
+
             node.dap_field_candidates = dict(null_safed_matching_daps_and_configuration_outputs)
             node.dap_names = set(node.dap_field_candidates.keys())
             node.name = "leaf" + str(self.leaf)
             self.leaf += 1
+
+    class AddMoreDapsBasedOnOptionsVisitor(DapQueryRepn.DapQueryRepn.Visitor):
+        def __init__(self, manager):
+            self.manager = manager
+
+        def visitNode(self, node, depth):
+            for dap in self.manager.getDapNamesByOptions('all-branches', 'all-nodes'):
+                if node.dap_names == None or dap not in node.dap_names:
+                    node.dap_names = node.dap_names or set()
+                    node.dap_names.add(dap)
+                    node.dap_field_candidates[dap] = {}
+
+        def visitLeaf(self, node, depth):
+            for dap in self.manager.getDapNamesByOptions('all-leaf', 'all-nodes'):
+                if node.dap_names == None or dap not in node.dap_names:
+                    node.dap_names = node.dap_names or set()
+                    node.dap_names.add(dap)
+                    node.dap_field_candidates[dap] = {}
 
     class CollectDapsVisitor(DapQueryRepn.DapQueryRepn.Visitor):
         def __init__(self):
@@ -79,7 +98,11 @@ class DapManager(object):
                     node.mementos.extend([
                         (dap_name, queryObject_pb)
                     ])
-                    return False
+                    self.dapmanager.info("Gotcha ", dap_name, " node now at ", node.printable())
+                    if self.dapmanager.isDap(dap_name, "late"):
+                        continue
+                    else:
+                        return False
             self.dapmanager.info("Okes, we'll recurse.")
             return True
 
@@ -116,6 +139,7 @@ class DapManager(object):
         self.classmakers = {}
         self.log.update_local_name("DapManager")
 
+
     def addClass(self, name, maker):
         self.classmakers[name] = maker
 
@@ -149,7 +173,7 @@ class DapManager(object):
             self.warning("INTERROGATE:" + instance_name + " Returned a description: " + str(structure_pb))
 
             self.dap_matchers[instance_name] = DapMatcher.DapMatcher(instance_name, structure_pb)
-            self.dap_options[instance_name] = structure_pb.options
+            self.dap_options[instance_name] = set(structure_pb.options)
 
             self.warning(instance_name + " Returned a options: " + str(structure_pb.options))
 
@@ -186,11 +210,22 @@ class DapManager(object):
                     r.add(dap)
         return r
 
+    def isDap(self, dapName, *attributes):
+        return len(self.dap_options.get(dapName, set()).intersection(attributes))
+
+    def getDapNamesByOptions(self, *attributes):
+        return [
+            instance_name
+            for instance_name, options
+            in self.dap_options.items()
+            if options.intersection(attributes)
+        ]
+
     def isDapEarly(self, dapName):
-        return 'early' in self.dap_options.get(dapName, [])
+        return self.isDap(dapName, 'early')
 
     def isDapLate(self, dapName):
-        return 'late' in self.dap_options.get(dapName, [])
+        return self.isDap(dapName, 'late')
 
     def update(self, update: dap_update_pb2.DapUpdate):
         success = True
@@ -279,6 +314,10 @@ class DapManager(object):
         dapQueryRepn.visit(v)
         self.printQuery("COLLECT_PASS    ", dapQueryRepn)
 
+        v = DapManager.AddMoreDapsBasedOnOptionsVisitor(self)
+        dapQueryRepn.visit(v)
+        self.printQuery("EXTRA_DAPS_PASS ", dapQueryRepn)
+
         return dapQueryRepn
 
     def execute(self, dapQueryRepn) -> dap_interface_pb2.IdentifierSequence:
@@ -294,42 +333,47 @@ class DapManager(object):
             failure.success = False
             failure.narrative.append(str(ex))
             return r
-        self.printQuery("GEN_ACTIONS_PASS", dapQueryRepn)
 
+        self.printQuery("GEN_ACTIONS_PASS", dapQueryRepn)
         start = dap_interface_pb2.IdentifierSequence()
         start.originator = True
         return self._execute(dapQueryRepn.root, start)
 
     def _execute(self, node, cores) -> dap_interface_pb2.IdentifierSequence:
-        if node.mementos:
-            r = self._executeMementoChain(node, node.mementos, cores)
-        elif node.combiner == "any":
-            r = self._executeOr(node, cores)
-        elif node.combiner == "result":
-            r = self._executeAnd(node, cores)
-        elif node.combiner == "all":
-            r = self._executeAnd(node, cores)
+
+        early_daps = []
+        regular_daps = []
+        late_daps = []
+        for dap_name, memento in node.mementos:
+            if self.isDapEarly(dap_name):
+                early_daps.append( (dap_name, memento) )
+            elif self.isDapLate(dap_name):
+                late_daps.append( (dap_name, memento) )
+            else:
+                regular_daps.append( (dap_name, memento) )
+
+        if early_daps + regular_daps:
+            r = self._executeMementoChain(node, early_daps + regular_daps, cores)
         else:
-            raise Exception("Node combiner '{}' not handled.".format(node.combiner))
+            if node.combiner == "any":
+                r = self._executeOr(node, cores)
+            elif node.combiner == "result":
+                r = self._executeAnd(node, cores)
+            elif node.combiner == "all":
+                r = self._executeAnd(node, cores)
+            else:
+                raise Exception("Node combiner '{}' not handled.".format(node.combiner))
+
+        if late_daps:
+            r = self._executeMementoChain(node, late_daps, r)
+
 #        print("_executeNode")
 #        print("Results;")
 #        for ident in r.identifiers:
 #            print(DapQueryResult.DapQueryResult(pb=ident).printable())
         return r
 
-    def _executeMementoChain(self, node, mementos, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
-        ordered_mementos = [
-            (k,v)
-            for k,v
-            in node.mementos
-            if self.isDapEarly(k)
-        ] + [
-            (k,v)
-            for k,v
-            in node.mementos
-            if not self.isDapEarly(k)
-        ]
-
+    def _executeMementoChain(self, node, ordered_mementos, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
         self.warning("_executeMementoChain working on ", node.printable())
         self.warning("_executeMementoChain will run: ", [ m[0] for m in ordered_mementos ])
         self.warning("_executeMementoChain input count ", len(cores.identifiers))
@@ -340,7 +384,7 @@ class DapManager(object):
             proto.query_memento.CopyFrom(memento)
             proto.input_idents.CopyFrom(current)
             current = self.getInstance(dap_name).execute(proto)
-        self.warning("_executeMementoChain output count ", len(current.identifiers))
+        self.warning("_executeMementoChain output ", current)
         return current
 
     def _executeLeaf(self, node, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:

@@ -4,6 +4,7 @@ import unittest
 from pluto_app.src.python.app import PlutoApp
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
+from dap_api.src.protos import dap_interface_pb2
 
 from dap_api.src.python import DapQuery
 
@@ -54,6 +55,7 @@ class PlutoTest(unittest.TestCase):
         }
 
         self.pluto = PlutoApp.PlutoApp()
+
         self.pluto.setup(config)
 
         self.pluto.dapManager.setDataModelEmbedder("data_model_searcher", "data_model_table", "data_model_field")
@@ -103,7 +105,7 @@ class PlutoTest(unittest.TestCase):
         newvalue = update.update.add()
         newvalue.fieldname = fieldname
 
-        ag, _, co = agent_name.partition(' ')
+        co, _, ag = agent_name.partition(' ')
 
         newvalue.value.type = {
             'string': 2,
@@ -157,6 +159,8 @@ class PlutoTest(unittest.TestCase):
         results = self.pluto.dapManager.execute(dapQuery).identifiers
         assert len(results) == 1
         assert results[0].agent == "007/James/Bond/Weather".encode("utf-8")
+        assert results[0].core  == b"server1"
+        assert results[0].uri   == "abc://127.0.0.1:8001"
 
     def testDataModelOrAttributeQuery(self):
         """Test case A. note that all test method names must begin with 'test.'"""
