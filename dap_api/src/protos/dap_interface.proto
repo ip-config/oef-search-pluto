@@ -52,7 +52,7 @@ message ConstructQueryObjectRequest
         repeated ConstructQueryConstraintObjectRequest constraints = 2;
         repeated ConstructQueryObjectRequest children = 3;
 
-// These three are used in internal representations.
+// These two are used in internal representations.
         optional string node_name = 4;
         repeated string dap_names = 5;
 }
@@ -69,6 +69,7 @@ message Identifier
         required bytes core = 1;
         optional bytes agent = 2;
         optional float score = 3;
+        optional string uri = 4;
 }
 
 message DapExecute {
