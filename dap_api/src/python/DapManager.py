@@ -189,6 +189,9 @@ class DapManager(object):
     def isDapEarly(self, dapName):
         return 'early' in self.dap_options.get(dapName, [])
 
+    def isDapLate(self, dapName):
+        return 'late' in self.dap_options.get(dapName, [])
+
     def update(self, update: dap_update_pb2.DapUpdate):
         success = True
         if isinstance(update, dap_update_pb2.DapUpdate.TableFieldValue):
@@ -302,6 +305,8 @@ class DapManager(object):
             r = self._executeMementoChain(node, node.mementos, cores)
         elif node.combiner == "any":
             r = self._executeOr(node, cores)
+        elif node.combiner == "result":
+            r = self._executeAnd(node, cores)
         elif node.combiner == "all":
             r = self._executeAnd(node, cores)
         else:

@@ -206,7 +206,7 @@ class DapQueryRepn(object):
         yield from self.root.print()
 
     def __init__(self):
-        self.root = DapQueryRepn.Branch(combiner="all")
+        self.root = DapQueryRepn.Branch(combiner="result")
 
     def Copy(self):
         return self.root.Copy()
