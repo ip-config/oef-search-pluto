@@ -1,10 +1,10 @@
 from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, DataWrapper
 from api.src.python.Serialization import serializer, deserializer
 from utils.src.python.Logging import has_logger
-from api.src.proto import update_pb2
-from api.src.proto import response_pb2
+from api.src.proto.core import update_pb2
+from api.src.proto.core import response_pb2
 from dap_api.src.python.DapManager import DapManager
-from api.src.python.ProtoWrappers import ProtoWrapper, InvalidAttribute, MissingAddress
+from api.src.python.core.ProtoWrappers import ProtoWrapper, InvalidAttribute, MissingAddress
 
 ResponseType = response_pb2.UpdateResponse.ResponseType
 

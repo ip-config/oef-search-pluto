@@ -10,9 +10,9 @@ py_library(
         "//dap_api/experimental/python:experimental_lib",
         "//dap_api/src/protos:py_dap_api_pb",
         "//api/src/python:backend_router",
-        "//api/src/python:endpoints",
+        "//api/src/python/core:endpoints",
         "//utils/src/python:py_utils",
-        "//api/src/python:utils",
+        "//api/src/python/core:utils",
         "//api/src/python:communication_handler",
         "//fake_oef/src/python/lib:lib",
         "//dap_api/experimental/python:network_dap_contract"

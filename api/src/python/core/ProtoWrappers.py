@@ -1,4 +1,4 @@
-from api.src.proto import update_pb2
+from api.src.proto.core import update_pb2
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 from utils.src.python.Logging import has_logger

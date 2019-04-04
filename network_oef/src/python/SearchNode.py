@@ -1,7 +1,7 @@
 from pluto_app.src.python.app import PlutoApp
 from network_oef.src.python.Connection import Connection
-from api.src.proto import response_pb2
-from api.src.proto import query_pb2, update_pb2
+from api.src.proto.core import response_pb2
+from api.src.proto.core import query_pb2, update_pb2
 from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, DataWrapper
 from api.src.python.Serialization import serializer, deserializer
 import asyncio

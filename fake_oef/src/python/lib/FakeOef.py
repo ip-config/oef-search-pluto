@@ -1,10 +1,10 @@
 import asyncio
-from api.src.proto import update_pb2
+from api.src.proto.core import update_pb2
 import abc
 from fake_oef.src.python.lib.ConnectionFactory import SupportsConnectionInterface
 from fake_oef.src.python.lib import FakeBase
 from fake_oef.src.python.lib.Connection import Connection
-from api.src.proto import update_pb2, response_pb2
+from api.src.proto.core import update_pb2, response_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 import re
 from utils.src.python.Logging import has_logger

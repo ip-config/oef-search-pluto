@@ -6,10 +6,10 @@ from ai_search_engine.src.python import SearchEngine
 from dap_in_memory.src.python import InMemoryDap
 from dap_in_memory.src.python import AddressRegistry
 from dap_in_memory.src.python import DataModelInstanceStore
-import api.src.python.ProtoWrappers as ProtoWrappers
-from api.src.python.EndpointSearch import SearchQuery
-from api.src.python.EndpointUpdate import UpdateEndpoint, BlkUpdateEndpoint
-from api.src.python.EndpointRemove import RemoveEndpoint
+import api.src.python.core.ProtoWrappers as ProtoWrappers
+from api.src.python.core.EndpointSearch import SearchQuery
+from api.src.python.core.EndpointUpdate import UpdateEndpoint, BlkUpdateEndpoint
+from api.src.python.core.EndpointRemove import RemoveEndpoint
 from api.src.python.BackendRouter import BackendRouter
 from dap_2d_geo.src.python import DapGeo
 from dap_e_r_network.src.python import DapERNetwork

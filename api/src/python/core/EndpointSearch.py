@@ -1,9 +1,9 @@
-from api.src.proto import response_pb2
+from api.src.proto.core import response_pb2
 from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, HasResponseMerger, DataWrapper
 from api.src.python.Serialization import serializer, deserializer
 from utils.src.python.Logging import has_logger
-from api.src.python.ProtoWrappers import ProtoWrapper
-from api.src.proto import query_pb2
+from api.src.python.core.ProtoWrappers import ProtoWrapper
+from api.src.proto.core import query_pb2
 from dap_api.src.python.DapManager import DapManager
 from dap_in_memory.src.python.AddressRegistry import AddressRegistry
 from typing import List

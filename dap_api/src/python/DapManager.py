@@ -133,7 +133,7 @@ class DapManager(object):
 
             klass = self.classmakers.get(klass_name, None)
             if not klass:
-                raise Exception("{} is not well formed. 'class' does't exist.".format(k))
+                raise Exception("{} is not well formed (klass_name={}). 'class' does't exist.".format(k, klass_name))
             instance = klass(k, configuration)
             self.instances[k] = instance
 

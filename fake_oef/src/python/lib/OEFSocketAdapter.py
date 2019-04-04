@@ -4,7 +4,7 @@ from utils.src.python.Logging import get_logger, has_logger
 from fake_oef.src.python.lib import ConnectionFactory
 from fetch_teams.oef_core_protocol import agent_pb2
 from fake_oef.src.python.lib.ConnectionFactory import SupportsConnectionInterface
-from api.src.proto import query_pb2
+from api.src.proto.core import query_pb2
 
 
 class ComSession:
