@@ -2,6 +2,7 @@ import sys
 import inspect
 import json
 import re
+import time
 
 from utils.src.python.Logging import has_logger
 from dap_api.src.python import DapOperatorFactory
@@ -142,11 +143,18 @@ class DapManager(object):
         self.attributes_to_daps = {}
 
         for instance_name, instance_object in self.instances.items():
+            self.warning("INTERROGATE:" + str(type(instance_object)))
             structure_pb = instance_object.describe()
+
+            self.warning("INTERROGATE:" + instance_name + " Returned a description: " + str(structure_pb))
+
             self.dap_matchers[instance_name] = DapMatcher.DapMatcher(instance_name, structure_pb)
             self.dap_options[instance_name] = structure_pb.options
 
+            self.warning(instance_name + " Returned a options: " + str(structure_pb.options))
+
             for table_desc_pb in structure_pb.table:
+                self.warning(instance_name + " Returned a description for table ", table_desc_pb.name)
                 for field_description_pb in table_desc_pb.field:
                     self.structures.setdefault(
                         instance_name, {}).setdefault(
@@ -181,9 +189,11 @@ class DapManager(object):
     def isDapEarly(self, dapName):
         return 'early' in self.dap_options.get(dapName, [])
 
+    def isDapLate(self, dapName):
+        return 'late' in self.dap_options.get(dapName, [])
+
     def update(self, update: dap_update_pb2.DapUpdate):
         success = True
-
         if isinstance(update, dap_update_pb2.DapUpdate.TableFieldValue):
             update_list = [ update ]
         else:
@@ -295,6 +305,8 @@ class DapManager(object):
             r = self._executeMementoChain(node, node.mementos, cores)
         elif node.combiner == "any":
             r = self._executeOr(node, cores)
+        elif node.combiner == "result":
+            r = self._executeAnd(node, cores)
         elif node.combiner == "all":
             r = self._executeAnd(node, cores)
         else:

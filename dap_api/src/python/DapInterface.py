@@ -15,6 +15,10 @@ class DapInterface(abc.ABC):
     def __init__():
         pass
 
+    @abstractmethod
+    def configure(self, dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
+        pass
+
     """This function returns the DAP description which lists the
     tables it hosts, the fields within those tables and the result of
     a lookup on any of those tables.
@@ -35,7 +39,7 @@ class DapInterface(abc.ABC):
       None
     """
     @abstractmethod
-    def update(self, update_data: dap_update_pb2.DapUpdate) -> dap_interface_pb2.Successfulness:
+    def update(self, update_data: dap_update_pb2.DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
         raise Exception("NOT IMPL")
 
     """This function will be called when the core wants to remove data from search
@@ -46,7 +50,7 @@ class DapInterface(abc.ABC):
     Returns:
       None
     """
-    def remove(self, remove_data: dap_update_pb2.DapUpdate) -> dap_interface_pb2.Successfulness:
+    def remove(self, remove_data: dap_update_pb2.DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:
         raise Exception("NOT IMPL")
 
     """Remove all the keys in the update[].key fields from the store.

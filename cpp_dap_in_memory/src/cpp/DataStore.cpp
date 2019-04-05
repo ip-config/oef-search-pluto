@@ -63,6 +63,38 @@ const DataStore::FieldInfoPtr &DataStore::getFieldByNames(const std::string &tab
   throw DapException(ENOENT, std::string("'") + tablename + "." + fieldname + "' is not a valid fieldname (Not stored in structure)");
 }
 
+void DataStore::performUpdate(const std::string &tablename, const std::string &fieldname,
+                              const std::string &core, const std::string &agent, const ValueMessage &value)
+{
+//  diagnostics();
+//  std::cout << " tablename= " << tablename<< std::endl;
+//  std::cout << " fieldname= " << fieldname<< std::endl;
+//  std::cout << " core= " << core<< std::endl;
+//  std::cout << " agent= " << agent<< std::endl;
+
+  auto fp = getFieldByNames(tablename, fieldname);
+  if (fp -> type != value.typecode())
+  {
+    throw DapException(EINVAL, std::string("'") + tablename + "." + fieldname + "' is "  + fp -> type + " and cannot be assigned " + value.typecode());
+  }
+
+  auto key = std::make_pair(core, agent);
+
+  Table &table = tables[fp -> tablename];
+  Row &row = table[key];
+  row[fp -> fieldname] = value;
+
+}
+
+void DataStore::diagnostics()
+{
+  std::cout << "tables size:" << tables.size() << std::endl;
+  for(auto const &table : tables)
+  {
+    std::cout << "table " << table.first << " size:" << table.second.size() << std::endl;
+  }
+}
+
 void DataStore::queryAllRows(std::vector<DataStore::Key> &output,
                              const std::string &target_table_name,
                              const std::string &target_field_name,
@@ -71,11 +103,20 @@ void DataStore::queryAllRows(std::vector<DataStore::Key> &output,
 {
   auto fp = getFieldByNames(target_table_name, target_field_name);
   auto opfunc = dap_utils::getOperator(fp->type, op, query_field_value.typecode());
+
   auto table = tables.find(target_table_name) -> second;
+
+//  std::cout << " target_table_name= " << target_table_name<< std::endl;
+//  std::cout << " target_field_name= " << target_field_name<< std::endl;
+//  std::cout << " op= " << op<< std::endl;
+//  std::cout << " table:" << table.size() << std::endl;
 
   for(auto const &key_and_row : table)
   {
     auto const &row = key_and_row.second;
+
+    //std::cout << "Examine:"<<key_and_row.first.second << std::endl;
+
     auto fv_iter = row.find(fp -> fieldname);
     if (fv_iter == row.end())
     {

@@ -9,6 +9,7 @@ cc_library(
     hdrs = [
          "Transport.hpp",
          "DapInterface.hpp",
+         "DapException.hpp",
          "Listener.hpp",
          "CircularBuffer.hpp",
          "char_array_buffer.hpp",
