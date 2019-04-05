@@ -1,13 +1,19 @@
 #really naive implementaiotn.
 
 import math
+from utils.src.python.Logging import has_logger
 
 class GeoStore(object):
+    @has_logger
     def __init__(self, left=180, right=-180, top=75, bottom=-75):
         self.store = {}
 
     def place(self, entity, location):
         self.store[entity] = location
+
+    def getAllKeys(self):
+        for k in self.store.keys():
+            yield k
 
     def remove(self, entity):
         self.store.pop(entity, None)
@@ -53,7 +59,16 @@ class GeoStore(object):
                 return True
         return False
 
-    def searchWithData(self, location, radius_in_m, bearing=None, bearing_width=None):
+    def entityToData(self, location, entity):
+        loc = self.store.get(entity, None)
+        if loc == None:
+            self.error("no data entity=", entity)
+            return None
+        d = self.EquirectangularDistance(location, loc)
+        br = GeoStore.InitialBearing(location, loc)
+        return (entity, int(d), int(br))
+
+    def accept(self, entities, location, radius_in_m, bearing=None, bearing_width=None):
         left = None
         right = None
 
@@ -63,13 +78,20 @@ class GeoStore(object):
             left = (bearing - bearing_width + 360) % 360
             right = (bearing + bearing_width + 360) % 360
 
-        for entity, loc in self.store.items():
-            d = self.EquirectangularDistance(location, loc)
-            br = GeoStore.InitialBearing(location, loc)
-            r = (entity, int(d), int(br))
+        self.error("entities=", entities)
+        for entity in list(entities):
+            self.error("entity=", entity)
+            r = self.entityToData(location, entity)
+            if r == None:
+                continue
+            self.error("data=", r)
+            _, d, br = r
             if d > radius_in_m:
                 continue
             if left != None:
                 if not GeoStore.containsBearing(left, right, br):
                     continue
             yield r
+
+    def searchWithData(self, location, radius_in_m, bearing=None, bearing_width=None):
+        return self.accept(self.store.keys(), location, radius_in_m, bearing, bearing_width)

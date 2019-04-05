@@ -80,8 +80,8 @@ class GeoStoreTest(unittest.TestCase):
                  # Yes, misspelled in data.
             ('YEO/UK', 171994, 201),
         ]
-        print(output)
-        print(expected)
+        #print(output)
+        #print(expected)
 
         assert output == expected
 

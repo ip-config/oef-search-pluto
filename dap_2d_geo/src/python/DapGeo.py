@@ -73,11 +73,12 @@ class DapGeo(DapInterface.DapInterface):
             },
         }
 
-        def __init__(self):
+        def __init__(self, dap):
             self.radius = None
             self.locations = None
             self.tablename = None
             self.geo = None
+            self.dap = dap
 
         def setGeo(self, geo):
             self.geo = geo
@@ -115,10 +116,20 @@ class DapGeo(DapInterface.DapInterface):
                 raise Exception("GeoQuery must have a search radius in METRES")
             return self
 
-        def execute(self, agents: Sequence[str]=None):
+        def execute(self, entities):
+            r = set()
+
+            entities = set(entities)
+
             for location in self.locations:
-                for r in self.geo.search( location, self.radius ):
-                    yield r
+                self.dap.warning("TRYING:", entities)
+                ok = self.geo.accept(entities, location, self.radius)
+                print("OK=", ok)
+                for k in ok:
+                    r.add(k[0])
+                    entities.remove(k[0])
+                    self.dap.warning("ACCEPT:", k[0])
+            return r
 
         def toJSON(self):
             r = {}
@@ -151,7 +162,7 @@ class DapGeo(DapInterface.DapInterface):
             r.success = False
             return r
 
-        geoQuery = DapGeo.DapGeoQuery()
+        geoQuery = DapGeo.DapGeoQuery(self)
         for constraint in proto.constraints:
             geoQuery.setTablename(constraint.target_table_name)
 
@@ -160,8 +171,8 @@ class DapGeo(DapInterface.DapInterface):
             (geoQuery.tablename + ".location", "location_list"): lambda q,x: q.addLocations(x),
             (geoQuery.tablename + ".radius", "double"):          lambda q,x: q.addRadius(x),
             (geoQuery.tablename + ".radius", "float"):           lambda q,x: q.addRadius(x),
-            (geoQuery.tablename + ".radius", "i32"):             lambda q,x: q.addRadius(x),
-            (geoQuery.tablename + ".radius", "i64"):             lambda q,x: q.addRadius(x),
+            (geoQuery.tablename + ".radius", "int32"):             lambda q,x: q.addRadius(x),
+            (geoQuery.tablename + ".radius", "int64"):             lambda q,x: q.addRadius(x),
         }
 
         for constraint in proto.constraints:
@@ -183,8 +194,14 @@ class DapGeo(DapInterface.DapInterface):
 
         return r
 
+    def makeIdentifier(core,ag):
+        r = dap_interface_pb2.Identifier()
+        r.core = core
+        r.agent = ag
+        return r
+
     def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
-        geoQuery = DapGeo.DapGeoQuery()
+        geoQuery = DapGeo.DapGeoQuery(self)
         input_idents = proto.input_idents
         query_memento = proto.query_memento
         j = query_memento.memento.decode("utf-8")
@@ -193,16 +210,20 @@ class DapGeo(DapInterface.DapInterface):
         geoQuery.setGeo(self.getGeoByTableName(geoQuery.tablename))
 
         if input_idents.HasField('originator') and input_idents.originator:
-            idents = None
+            self.warning("geoQuery.tablename=", geoQuery.tablename)
+            idents = list(self.geos[geoQuery.tablename].getAllKeys())
+            self.warning("idents=", idents)
         else:
-            idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
+            idents = input_idents.identifiers
 
+        self.warning("idents=", idents)
         reply = dap_interface_pb2.IdentifierSequence()
         reply.originator = False;
-        for core in geoQuery.execute(idents):
+
+        for r in geoQuery.execute(set(idents)):
             c = reply.identifiers.add()
-            c.core = core[0].encode("utf-8")
-            c.agent = core[1].encode("utf-8")
+            c.core = r[0]
+            c.agent = r[1]
         return reply
 
     def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:
@@ -217,8 +238,10 @@ class DapGeo(DapInterface.DapInterface):
       None
     """
     def update(self, tfv: dap_update_pb2.DapUpdate.TableFieldValue)  -> dap_interface_pb2.Successfulness:
-        typecode, val = decodeAttributeValueToInfo(tfv.value)
 
+        self.warning(tfv)
+
+        typecode, val = ProtoHelpers.decodeAttributeValueToTypeValue(tfv.value)
         r = dap_interface_pb2.Successfulness()
         r.success = True
 
@@ -227,5 +250,9 @@ class DapGeo(DapInterface.DapInterface):
             r.narrative = "DapGeo won't do " + typecode + " updates."
             return r
 
-        if core and loc:
-            store.place( (key.core, key.agent), val
+        entity = (tfv.key.core, tfv.key.agent)
+        locn = (val.lat, val.lon)
+
+        self.warning("storing ", entity, locn)
+        self.geos[tfv.tablename].place( entity, locn)
+        return r
