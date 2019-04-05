@@ -15,6 +15,10 @@ class DapInterface(abc.ABC):
     def __init__():
         pass
 
+    @abstractmethod
+    def configure(self, dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
+        pass
+
     """This function returns the DAP description which lists the
     tables it hosts, the fields within those tables and the result of
     a lookup on any of those tables.

@@ -23,7 +23,6 @@ class DapNetworkProxy(DapInterface):
 
     def _call(self, path, data_in, output_type):
         request = data_in.SerializeToString()
-        self.warning("REQUEST=" + str(request))
 
         response = self.client.call(path, request)
         proto = output_type()
@@ -47,9 +46,7 @@ class DapNetworkProxy(DapInterface):
 
     def describe(self) -> dap_description_pb2.DapDescription:
         data_in = dap_interface_pb2.NoInputParameter()
-        self.warning("DapNetworkProxy::CALLING DESCRIBE:")
         result = self._call("describe", data_in, dap_description_pb2.DapDescription)
-        self.warning("DapNetworkProxy::DESCRIBE:", str(result))
         return result
 
 
