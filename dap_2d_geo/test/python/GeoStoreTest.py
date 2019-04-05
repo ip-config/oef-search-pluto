@@ -43,7 +43,7 @@ class GeoStoreTest(unittest.TestCase):
 
                 self.g.place("{}/{}".format(airport, country), (lat, lon))
 
-    def xtestBasic(self):
+    def testBasic(self):
         self.add(limit = [
             'CVT',
             'BHX',
@@ -61,7 +61,7 @@ class GeoStoreTest(unittest.TestCase):
 
         assert ('CVT/ENGLAND', 20) in r
 
-    def xtestBearings1(self):
+    def testBearings1(self):
         self.add(limit = [
             'CVT',
             'BHX',
@@ -72,15 +72,20 @@ class GeoStoreTest(unittest.TestCase):
 
         r = list(self.g.searchWithData(self.BHX, 250000))
 
-        assert sorted(r, key=lambda x: x[0]) == [
+        output = sorted(r, key=lambda x: x[0])
+        expected = [
             ('BHX/ENGLAND', 0, 0),
-            ('CVT/ENGLAND', 20436, 233),
-            ('LHR/ENGALND', 139916, 151),
+            ('CVT/ENGLAND', 20436, 117),
+            ('LHR/ENGALND', 139916, 140),
                  # Yes, misspelled in data.
-            ('YEO/UK', 171994, 216),
+            ('YEO/UK', 171994, 201),
         ]
+        #print(output)
+        #print(expected)
 
-    def xtestBasic2(self):
+        assert output == expected
+
+    def testBasic2(self):
         self.add(limit = [
             'CVT',
             'BHX',
@@ -119,7 +124,7 @@ class GeoStoreTest(unittest.TestCase):
         assert GeoStore.GeoStore.containsBearing(270, 90, 0) == True
         assert GeoStore.GeoStore.containsBearing(270, 90, 95) == False
 
-    def xtestBigger(self):
+    def testBigger(self):
         self.add()
         expected = [
             'BBS/ENGLAND',
