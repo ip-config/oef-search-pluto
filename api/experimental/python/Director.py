@@ -80,8 +80,10 @@ class Director:
         self.info("create task")
         self.transports[name] = asyncio.create_task(transport())
 
+    def get_node_names(self):
+        return list(self.clients.keys())
+
     async def push_cmd(self, client_name: str, cmd: str, data):
-        self.info("push_cmd")
         try:
             await self.clients[client_name].put((cmd, data))
         except Exception as e:
@@ -89,6 +91,7 @@ class Director:
 
     @block_if_first_not_found(store_name="clients")
     async def set_location(self, client_name: str, core_key: str, location: Tuple[float, float]):
+        self.info(client_name, ": Set location for core ", core_key, " to ", location)
         data = core_pb2.CoreLocation()
         data.core_key = core_key
         data.location.lon = location[0]
