@@ -34,8 +34,14 @@ def listOf(x):
 def rangeOf(x):
     return("{}_range".format(x))
 
-def populateUpdateTFV(tfv, fieldname, data):
+def populateUpdateTFV(tfv, fieldname, data, typename=None):
     tfv.fieldname = fieldname
+    if typename == 'location':
+        tfv.value.l.lat = data[0]
+        tfv.value.l.lon = data[1]
+        tfv.value.type = 9
+        return
+
     if isinstance(data, str):
         tfv.value.type = 2
         tfv.value.s = data

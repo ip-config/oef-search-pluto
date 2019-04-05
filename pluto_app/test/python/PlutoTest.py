@@ -105,6 +105,7 @@ class PlutoTest(unittest.TestCase):
         newvalue = update.update.add()
         newvalue.fieldname = fieldname
 
+        ag, _, co = agent_name.partition(' ')
 
         newvalue.value.type = {
             'string': 2,

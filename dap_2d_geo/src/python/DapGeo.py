@@ -41,8 +41,8 @@ class DapGeo(DapInterface.DapInterface):
                     opt = set()
                 else:
                     raise Exception("Unexpected specification for a field")
-            self.fields_by_table.setdefault(table_name, {}).setdefault(field_name, {})['options'] = opt
-            self.fields_by_table.setdefault(table_name, {}).setdefault(field_name, {})['type'] = t
+                self.fields_by_table.setdefault(table_name, {}).setdefault(field_name, {})['options'] = opt
+                self.fields_by_table.setdefault(table_name, {}).setdefault(field_name, {})['type'] = t
         self.operatorFactory = DapOperatorFactory.DapOperatorFactory()
 
     def configure(self, desc: dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
@@ -280,4 +280,17 @@ class DapGeo(DapInterface.DapInterface):
 
         self.warning("storing ", entity, locn)
         self.geos[tfv.tablename].place( entity, locn)
+        return r
+
+    def listCores(self, tablename, fieldname):
+        r = []
+        for k in self.geos[tablename].getAllKeys():
+            if k[1] == b'':
+                latlon = self.geos[tablename].get(k)
+                result = dap_update_pb2.DapUpdate.TableFieldValue()
+                ProtoHelpers.populateUpdateTFV(result, fieldname, latlon, typename='location')
+                result.key.core = k[0]
+                result.tablename = tablename
+
+                r.append(result)
         return r

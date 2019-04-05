@@ -11,6 +11,9 @@ class GeoStore(object):
     def place(self, entity, location):
         self.store[entity] = location
 
+    def get(self, entity):
+        return self.store.get(entity, None)
+
     def getAllKeys(self):
         for k in self.store.keys():
             yield k
