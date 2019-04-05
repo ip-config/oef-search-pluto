@@ -46,6 +46,10 @@ class EarlyInMemoryDap(DapInterface.DapInterface):
                 self.fields.setdefault(field_name, {})['tablename']=table_name
                 self.fields.setdefault(field_name, {})['type']=field_type
 
+
+    def configure(self, desc: dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
+        raise Exception("EarlyInMemoryDap does not configure via this interface yet.")
+
     """This function returns the DAP description which lists the
     tables it hosts, the fields within those tables and the result of
     a lookup on any of those tables.

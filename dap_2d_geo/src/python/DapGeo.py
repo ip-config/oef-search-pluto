@@ -25,13 +25,37 @@ class DapGeo(DapInterface.DapInterface):
     def __init__(self, name, configuration):
         self.name = name
         self.geos = {}
-        self.structure_pb = configuration['structure']
+        self.structure = configuration['structure']
+        self.fields_by_table = {}
         self.log.update_local_name("DapGeo("+name+")")
 
-        for table_name, fields in self.structure_pb.items():
+        for table_name, fields in self.structure.items():
             self.geos[table_name] = GeoStore.GeoStore()
+            for field_name, config in fields.items():
 
+                if isinstance(config, dict):
+                    t = config['type']
+                    opt = set(config['options'])
+                elif isinstance(config, str):
+                    t = config
+                    opt = set()
+                else:
+                    raise Exception("Unexpected specification for a field")
+                self.fields_by_table.setdefault(table_name, {}).setdefault(field_name, {})['options'] = opt
+                self.fields_by_table.setdefault(table_name, {}).setdefault(field_name, {})['type'] = t
         self.operatorFactory = DapOperatorFactory.DapOperatorFactory()
+
+    def configure(self, desc: dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
+        r = dap_interface_pb2.Successfulness
+        r.success = True
+
+        for tableinfo in desc.table:
+            self.geos[tableinfo.name] = GeoStore.GeoStore()
+            for fieldinfo in tableinfo.field:
+                self.fields_by_table.setdefault(table_name, {}).setdefault(fieldinfo.name, {})['options'] = fieldinfo.options
+                self.fields_by_table.setdefault(table_name, {}).setdefault(fieldinfo.name, {})['type'] = fieldinfo.type
+
+        return r
 
     def describe(self):
         result = dap_description_pb2.DapDescription()
@@ -44,6 +68,7 @@ class DapGeo(DapInterface.DapInterface):
             result_field = result_table.field.add()
             result_field.name = table_name + ".location"
             result_field.type = "location"
+            result_field.options.extend(self.fields_by_table.get(table_name, {}).get( table_name + ".location", {}).get('options', []))
 
             result_field = result_table.field.add()
             result_field.name = table_name + ".radius"
@@ -255,4 +280,17 @@ class DapGeo(DapInterface.DapInterface):
 
         self.warning("storing ", entity, locn)
         self.geos[tfv.tablename].place( entity, locn)
+        return r
+
+    def listCores(self, tablename, fieldname):
+        r = []
+        for k in self.geos[tablename].getAllKeys():
+            if k[1] == b'':
+                latlon = self.geos[tablename].get(k)
+                result = dap_update_pb2.DapUpdate.TableFieldValue()
+                ProtoHelpers.populateUpdateTFV(result, fieldname, latlon, typename='location')
+                result.key.core = k[0]
+                result.tablename = tablename
+
+                r.append(result)
         return r

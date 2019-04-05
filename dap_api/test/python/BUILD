@@ -13,6 +13,7 @@ py_library(
     deps = [
         "//dap_api/src/python:dap_api",
         "//dap_api/src/protos:py_dap_api_pb",
+        "//dap_2d_geo/src/python:dap_2d_geo",
         "//fetch_teams/oef_core_protocol:py_oef_protocol",
     ],
 )
@@ -29,6 +30,7 @@ py_test(
         "//dap_api/experimental/python:experimental_lib",
         "//dap_in_memory/src/python:dap_in_memory",
         "//dap_api/src/protos:py_dap_api_pb",
+        "//dap_2d_geo/src/python:dap_2d_geo",
         ":mocks",
         ":classes",
     ]
