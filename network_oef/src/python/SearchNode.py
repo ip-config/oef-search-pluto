@@ -11,6 +11,7 @@ import gensim
 import abc
 from utils.src.python.Logging import has_logger
 from api.src.python.network import network_support
+import api.src.python.RouterBuilder as RouterBuilder
 
 
 class SearchResponseSerialization(HasProtoSerializer):
@@ -170,8 +171,13 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         NodeAttributeInterface.__init__(self)
         self.log.update_local_name(self._id)
         self._loop = asyncio.get_event_loop()
+        self.director_router = RouterBuilder.DirectorAPIRouterBuilder()\
+            .set_name("DirectorRouter")\
+            .build()
+        self._com = None
+        self._com_director = None
 
-    def init(self, node_ip: str, node_port: int, network_dap_config: dict, http_port: int = -1, ssl_certificate: str = None, html_dir: str = None):
+    def init(self, node_ip: str, node_port: int, network_dap_config: dict, http_port: int = -1, ssl_certificate: str = None, html_dir: str = None, *, director_port: int = None):
         for name, conf in network_dap_config.items():
             self.add_network_dap_conf(name, conf)
         self.start()
@@ -180,6 +186,8 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
 
         if node_ip is not None and node_port is not None and hasattr(self, "start_network"):
             self._com = self.start_network(self.router, node_ip, node_port, http_port, ssl_certificate, html_dir)
+            if director_port is not None:
+                self._com_director = self.start_network(self.director_router, node_ip, director_port)
 
     def connect_to_search_node(self, host: str, port: int, search_node_id=None):
         if search_node_id is None:
@@ -297,7 +305,9 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         return []
 
     def block(self):
-        if hasattr(self, "_com"):
+        if self._com is not None:
             self._com.wait()
+        elif self._com_director is not None:
+            self._com_director.wait()
         else:
             time.sleep(1e6)

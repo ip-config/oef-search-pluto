@@ -7,6 +7,7 @@ from utils.src.python.Logging import has_logger
 class LocationEndpoint(HasProtoSerializer, HasMessageHandler):
     @has_logger
     def __init__(self):
+        pass
 
     @deserializer
     def deserialize(self, data: bytes) -> core_pb2.CoreLocation:

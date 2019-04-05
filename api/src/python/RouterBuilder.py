@@ -1,7 +1,8 @@
+from api.src.python.BackendRouter import BackendRouter
 from api.src.python.core.SearchEndpoint import SearchEndpoint
 from api.src.python.core.UpdateEndpoint import UpdateEndpoint, BlkUpdateEndpoint
 from api.src.python.core.RemoveEndpoint import RemoveEndpoint
-from api.src.python.BackendRouter import BackendRouter
+from api.src.python.director.LocationEndpoint import LocationEndpoint
 
 
 class CoreAPIRouterBuilder:
@@ -16,6 +17,7 @@ class CoreAPIRouterBuilder:
 
     def set_name(self, name):
         self._name = name
+        return self
 
     def add_dap_manager(self, dap_manager):
         self._dap_manager = dap_manager
@@ -46,4 +48,20 @@ class CoreAPIRouterBuilder:
         return self._router
 
     def get_not_initialized_router(self):
+        return self._router
+
+
+class DirectorAPIRouterBuilder:
+    def __init__(self):
+        self._router = BackendRouter()
+        self._name = ""
+        self._location_endpoint = LocationEndpoint()
+
+    def set_name(self, name):
+        self._name = name
+        return self
+
+    def build(self):
+        self._router.register_serializer("location", self._location_endpoint)
+        self._router.register_handler("location", self._location_endpoint)
         return self._router
