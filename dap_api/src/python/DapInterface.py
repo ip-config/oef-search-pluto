@@ -15,8 +15,7 @@ class DapInterface(abc.ABC):
     def __init__():
         pass
 
-    @abstractmethod
-    def configure(self, dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
+    def configure(self, d: dap_description_pb2.DapDescription) -> dap_interface_pb2.Successfulness:
         pass
 
     """This function returns the DAP description which lists the

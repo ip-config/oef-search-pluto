@@ -174,7 +174,7 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         self.director_router = RouterBuilder.DirectorAPIRouterBuilder()\
             .set_name("DirectorRouter")\
             .set_dap_manager(self.dapManager)\
-            .add_location_config({})\
+            .add_location_config({"table": "locations", "field": "locations.update"})\
             .build()
         self._com = None
         self._com_director = None
