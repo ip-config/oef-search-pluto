@@ -8,7 +8,7 @@ import time
 import socket
 
 
-def run_node(name: str, node_ip: str, node_port: int, dap_port_start: int, http_port: int, ssl_certificate: str, q: multiprocessing.Queue):
+def run_node(name: str, node_ip: str, node_port: int, dap_port_start: int, http_port: int, director_api_port: int, ssl_certificate: str, q: multiprocessing.Queue):
     from network_oef.src.python.FullLocalSearchNode import FullSearchNone
     from utils.src.python.Logging import configure as configure_logging
     configure_logging(id_flag="_"+name)
@@ -18,11 +18,11 @@ def run_node(name: str, node_ip: str, node_port: int, dap_port_start: int, http_
         "file": "ai_search_engine/src/resources/dap_config.json",
         "port": dap_port_start
     }
-    ],http_port, ssl_certificate, "api/src/resources/website")
-    print("Node started")
+    ],http_port, ssl_certificate, "api/src/resources/website", director_api_port=director_api_port)
+    print("**** Node {} started".format(name))
     time.sleep(1)
     con = q.get()
-    print("SearchProcess {} got: ".format(id), con)
+    print("**** SearchProcess ({}) {} got: ".format(name, id), con)
     node.add_remote_peer(*con)
     node.block()
 
@@ -30,14 +30,24 @@ def run_node(name: str, node_ip: str, node_port: int, dap_port_start: int, http_
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Test application for PLUTO.')
-    parser.add_argument("--name", required=True, type=str, help="Name extension for the current full node.")
-    parser.add_argument("--ip", required=False, type=str, default="0.0.0.0", help="IP address")
-    parser.add_argument("--http_port", required=False, type=int, default=-1, help="Http API port number. If -1 (default) then it's disabled")
-    parser.add_argument("--ssl_certificate", required=False, type=str, default=None, help="Specify an SSL certificate PEM file for the http API")
-    parser.add_argument("--core_port", required=False, type=int, default=10000, help="Port number for the core")
-    parser.add_argument("--search_port", required=False, type=int, default=20000, help="Port number of the search")
-    parser.add_argument("--dap_port", required=False, type=int, default=30000, help="Starting port for the network daps")
-    parser.add_argument("--search_peers", nargs='*',  type=str, help="Search peers to connect to, format: ip:port ip:port ...")
+    parser.add_argument("--name", required=True, type=str,
+                        help="Name extension for the current full node.")
+    parser.add_argument("--ip", required=False, type=str, default="0.0.0.0",
+                        help="IP address")
+    parser.add_argument("--http_port", required=False, type=int, default=-1,
+                        help="Http API port number. If -1 (default) then it's disabled")
+    parser.add_argument("--ssl_certificate", required=False, type=str, default=None,
+                        help="Specify an SSL certificate PEM file for the http API")
+    parser.add_argument("--core_port", required=False, type=int, default=10000,
+                        help="Port number for the core")
+    parser.add_argument("--search_port", required=False, type=int, default=20000,
+                        help="Port number of the search")
+    parser.add_argument("--dap_port", required=False, type=int, default=30000,
+                        help="Starting port for the network daps")
+    parser.add_argument("--search_peers", nargs='*',  type=str,
+                        help="Search peers to connect to, format: ip:port ip:port ...")
+    parser.add_argument("--director_api_port", required=False, type=int, default=40000,
+                        help="Director api port")
 
     args = parser.parse_args()
 
@@ -47,8 +57,10 @@ if __name__ == "__main__":
     search_name = args.name+"-search"
 
     search_queue = multiprocessing.Queue()
-    search_process = multiprocessing.Process(target=run_node, args=(search_name, args.ip, args.search_port, args.dap_port,
-                                                                    args.http_port, args.ssl_certificate, search_queue))
+    search_process = multiprocessing.Process(target=run_node, args=(search_name, args.ip, args.search_port,
+                                                                    args.dap_port, args.http_port,
+                                                                    args.director_api_port, args.ssl_certificate,
+                                                                    search_queue))
     search_process.start()
 
     while True:

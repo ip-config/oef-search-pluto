@@ -55,10 +55,19 @@ class DirectorAPIRouterBuilder:
     def __init__(self):
         self._router = BackendRouter()
         self._name = ""
-        self._location_endpoint = LocationEndpoint()
+        self._dap_manager = None
+        self._location_endpoint = None
 
     def set_name(self, name):
         self._name = name
+        return self
+
+    def set_dap_manager(self, dap_manager):
+        self._dap_manager = dap_manager
+        return self
+
+    def add_location_config(self, db_structure: dict):
+        self._location_endpoint = LocationEndpoint(self._dap_manager, db_structure)
         return self
 
     def build(self):

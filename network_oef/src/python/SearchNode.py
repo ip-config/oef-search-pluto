@@ -173,6 +173,8 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         self._loop = asyncio.get_event_loop()
         self.director_router = RouterBuilder.DirectorAPIRouterBuilder()\
             .set_name("DirectorRouter")\
+            .set_dap_manager(self.dapManager)\
+            .add_location_config({})\
             .build()
         self._com = None
         self._com_director = None

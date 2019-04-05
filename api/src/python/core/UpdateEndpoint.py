@@ -10,27 +10,31 @@ ResponseType = response_pb2.UpdateResponse.ResponseType
 
 
 def process_update(self, msg) -> DataWrapper[response_pb2.UpdateResponse]:
-    resp = response_pb2.UpdateResponse()
+    response = DataWrapper(False, "update", response_pb2.UpdateResponse())
     try:
         upd = self.proto_wrapper.get_instance(msg)
-        self.dap_manager.update(upd.toDapUpdate())
-        resp.status = ResponseType.Value("SUCCESS")
+        status = self.dap_manager.update(upd.toDapUpdate())
+        response.success = status
+        if status.success:
+            response.data.status = ResponseType.Value("SUCCESS")
+        else:
+            response.data.status = ResponseType.Value("ERROR")
     except InvalidAttribute as e:
         msg = "Got invalid attribute: " + str(e)
-        resp.status = ResponseType.Value("INVALID_ATTRIBUTE")
-        resp.message = msg
+        response.data.status = ResponseType.Value("INVALID_ATTRIBUTE")
+        response.data.message = msg
         self.log.info(msg)
     except MissingAddress as e:
-        resp.status = ResponseType.Value("MISSING_ADDRESS")
+        response.data.status = ResponseType.Value("MISSING_ADDRESS")
         msg = str(e)
-        resp.message = msg
+        response.data.message = msg
         self.log.info(msg)
     except Exception as e:
         msg = "Failed to update data, because: " + str(e)
-        resp.status = ResponseType.Value("ERROR")
-        resp.message = msg
+        response.data.status = ResponseType.Value("ERROR")
+        response.data.message = msg
         self.warning(msg)
-    return DataWrapper(True, "update", resp)
+    return response
 
 
 class UpdateEndpoint(HasProtoSerializer, HasMessageHandler):
