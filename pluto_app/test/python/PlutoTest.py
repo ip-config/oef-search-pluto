@@ -105,7 +105,7 @@ class PlutoTest(unittest.TestCase):
         newvalue = update.update.add()
         newvalue.fieldname = fieldname
 
-        ag, _, co = agent_name.partition(' ')
+        co, _, ag = agent_name.partition(' ')
 
         newvalue.value.type = {
             'string': 2,
@@ -158,7 +158,8 @@ class PlutoTest(unittest.TestCase):
         dapQuery = self.pluto.dapManager.makeQuery(qm)
         results = self.pluto.dapManager.execute(dapQuery).identifiers
         assert len(results) == 1
-        assert results[0].agent == "007/James/Bond/Weather".encode("utf-8")
+        print(results[0])
+        assert results[0].agent == b"007/James/Bond/Weather"
         assert results[0].core  == b"server1"
         assert results[0].uri   == "abc://127.0.0.1:8001"
 
@@ -185,4 +186,4 @@ class PlutoTest(unittest.TestCase):
         dapQuery = self.pluto.dapManager.makeQuery(qm)
         results = self.pluto.dapManager.execute(dapQuery).identifiers
         assert len(results) == 1
-        assert results[0].agent == "007/James/Bond/Weather".encode("utf-8")
+        assert results[0].agent == b"007/James/Bond/Weather"
