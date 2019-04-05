@@ -239,6 +239,7 @@ class DapManager(object):
 
             if len(daps_to_update) == 0:
                 self.log.error("NO DAPS CLAIMED THIS VALUE -- {}".format(tableFieldValue.fieldname))
+                success = False
 
             for dap_to_update in daps_to_update:
                 tfv = dap_update_pb2.DapUpdate.TableFieldValue()
