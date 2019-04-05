@@ -61,7 +61,7 @@ class DapQueryRepn(object):
                     x.dap_names for x in self.leaves
                 ]
 
-            self.dap_names = dap_names[0] if dap_names else []
+            self.dap_names = set(dap_names[0]) if dap_names else []
             for n in dap_names[1:]:
                 if n != self.dap_names:
                     self.dap_names = None

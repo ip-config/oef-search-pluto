@@ -15,7 +15,7 @@ def process_update(self, msg) -> DataWrapper[response_pb2.UpdateResponse]:
         upd = self.proto_wrapper.get_instance(msg)
         status = self.dap_manager.update(upd.toDapUpdate())
         response.success = status
-        if status.success:
+        if status:
             response.data.status = ResponseType.Value("SUCCESS")
         else:
             response.data.status = ResponseType.Value("ERROR")
