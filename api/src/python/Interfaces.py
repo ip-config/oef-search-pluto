@@ -17,12 +17,13 @@ T = TypeVar('T')
 
 class DataWrapper(Generic[T]):
     def __init__(self, success: bool, uri: str, data: T, error_code: int = 0, narrative: str = "",
-                 narrative_list: List[str] = list()):
+                 narrative_list: List[str] = list(), id: int = 0):
         self.uri = uri
         self.success = success
         self.data = data
         self.error_code = error_code
         self.narrative = []
+        self.id = id
         if len(narrative) > 0:
             self.add_narrative(narrative)
         if len(narrative_list) > 0:

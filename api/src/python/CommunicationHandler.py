@@ -26,9 +26,9 @@ def socket_handler(router: BackendRouter):
             return
         response = await router.route(request.uri, request.data)
         if response.success:
-            await transport.write(response.data, request.uri)
+            await transport.write(response.data, request.uri, call_id=request.id)
         else:
-            await transport.write_error(response.error_code, response.narrative, request.uri)
+            await transport.write_error(response.error_code, response.narrative, request.uri, call_id=request.id)
         transport.close()
     return on_connection
 
