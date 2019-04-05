@@ -52,7 +52,7 @@ message ConstructQueryObjectRequest
         repeated ConstructQueryConstraintObjectRequest constraints = 2;
         repeated ConstructQueryObjectRequest children = 3;
 
-// These three are used in internal representations.
+// These two are used in internal representations.
         optional string node_name = 4;
         repeated string dap_names = 5;
 }
@@ -89,5 +89,6 @@ message IdentifierSequence
         required bool originator = 1;
         repeated Identifier identifiers = 2;
         optional Successfulness status = 3;
+        required bool oinks = 4;
 }
 

@@ -11,6 +11,7 @@ DapDescription InMemoryDap::describe()
 
   DataStore::Description desc;
   store.getDescription(desc);
+
   for(auto const tablename_table: desc)
   {
     auto new_table = result.add_table();
@@ -46,56 +47,53 @@ Successfulness InMemoryDap::configure(const DapDescription &desc)
   return result;
 }
 
-Successfulness InMemoryDap::update(const DapUpdate&upd) {
+Successfulness InMemoryDap::update(const DapUpdate_TableFieldValue&tfv) {
   Successfulness result;
   result.set_success(true);
 
-  for(int i = 0 ;i < upd.update_size(); i++)
+  std::string tablename = tfv.tablename();
+  std::string fieldname = tfv.fieldname();
+  std::string core = tfv.key().core();
+  std::string agent = tfv.key().agent();
+  DapUpdate::DapValue value = tfv.value();
+
+  //std::cout << "tablename=" << tablename << std::endl;
+  //std::cout << "fieldname=" << fieldname << std::endl;
+  //std::cout << "core=" << core << std::endl;
+  //std::cout << "agent=" << agent << std::endl;
+  //std::cout << "value=" << value.DebugString() << std::endl;
+  //std::cout << "UPDATE got dap value with type = " << value.type() << std::endl;
+
+  ValueMessage constraintValue = dap_utils::DapUpdateDapValueToValueMessage(value);
+
+  try
   {
-    auto tfv = upd.update(i);
-
-    std::string tablename = tfv.tablename();
-    std::string fieldname = tfv.fieldname();
-    std::string core = tfv.key().core();
-    std::string agent = tfv.key().agent();
-    DapUpdate::DapValue value = tfv.value();
-
-    ValueMessage constraintValue = dap_utils::DapUpdateDapValueToValueMessage(value);
-
-    try
-    {
-      store.performUpdate(tablename, fieldname, core, agent, constraintValue);
-    }
-    catch(DapException &ex)
-    {
-      result.set_success(false);
-      result.add_narrative(ex.what());
-    }
+    store.performUpdate(tablename, fieldname, core, agent, constraintValue);
+  }
+  catch(DapException &ex)
+  {
+    result.set_success(false);
+    result.add_narrative(ex.what());
   }
 
   return result;
 }
 
-Successfulness InMemoryDap::remove(const DapUpdate &upd) {
+Successfulness InMemoryDap::remove(const DapUpdate_TableFieldValue &tfv) {
   Successfulness result;
   result.set_success(true);
 
-  for(int i = 0 ;i < upd.update_size(); i++)
+  std::string core = tfv.key().core();
+  std::string agent = tfv.key().agent();
+
+  try
   {
-    auto tfv = upd.update(i);
-
-    std::string core = tfv.key().core();
-    std::string agent = tfv.key().agent();
-
-    try
-    {
-      store.performRemove(core, agent);
-    }
-    catch(DapException &ex)
-    {
-      result.set_success(false);
-      result.add_narrative(ex.what());
-    }
+    store.performRemove(core, agent);
+  }
+  catch(DapException &ex)
+  {
+    result.set_success(false);
+    result.add_narrative(ex.what());
   }
 
   return result;
@@ -117,6 +115,7 @@ ConstructQueryMementoResponse InMemoryDap::prepareConstraint(const ConstructQuer
 
 IdentifierSequence InMemoryDap::execute(const DapExecute &execute) {
   IdentifierSequence result;
+  result.set_originator(false);
 
   auto query_memento = execute.query_memento();
   auto memento = query_memento.memento();
@@ -139,5 +138,19 @@ IdentifierSequence InMemoryDap::execute(const DapExecute &execute) {
                     constraint.operator_(), constraint.query_field_value(),
                     from, to);
   }
+
+  for(auto const &ident : output)
+  {
+    auto r = result.add_identifiers();
+    if (ident.first.length() > 0)
+    {
+      r -> set_core(ident.first);
+    }
+    if (ident.second.length() > 0)
+    {
+      r -> set_agent(ident.second);
+    }
+  }
+
   return result;
 }

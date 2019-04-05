@@ -11,11 +11,11 @@ public:
 
   virtual Successfulness configure(const DapDescription&);
 
-  virtual DapDescription describe() = 0;
+  virtual DapDescription describe();
 
-  virtual Successfulness update(const DapUpdate&);
+  virtual Successfulness update(const DapUpdate_TableFieldValue&);
 
-  virtual Successfulness remove(const DapUpdate&);
+  virtual Successfulness remove(const DapUpdate_TableFieldValue&);
 
   virtual ConstructQueryMementoResponse prepareConstraint(const ConstructQueryConstraintObjectRequest&);
 

@@ -4,6 +4,7 @@ import unittest
 from pluto_app.src.python.app import PlutoApp
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
+from dap_api.src.protos import dap_interface_pb2
 
 from dap_api.src.python import DapQuery
 
@@ -54,9 +55,14 @@ class PlutoTest(unittest.TestCase):
         }
 
         self.pluto = PlutoApp.PlutoApp()
+
         self.pluto.setup(config)
 
         self.pluto.dapManager.setDataModelEmbedder("data_model_searcher", "data_model_table", "data_model_field")
+
+        addrs = self.pluto.dapManager.getInstance("address_registry")
+        addrs.storeCore(b'server1', 'abc://127.0.0.1:8001')
+        addrs.storeCore(b'server2', 'abc://127.0.0.1:8002')
 
         dm1 = query_pb2.Query.DataModel()
         dm1.name = "weather_data"
@@ -99,6 +105,8 @@ class PlutoTest(unittest.TestCase):
         newvalue = update.update.add()
         newvalue.fieldname = fieldname
 
+        co, _, ag = agent_name.partition(' ')
+
         newvalue.value.type = {
             'string': 2,
             'dm': 6,
@@ -108,21 +116,21 @@ class PlutoTest(unittest.TestCase):
         if typename == "dm":
             newvalue.value.dm.CopyFrom(data)
 
-        newvalue.key.agent = agent_name.encode("utf-8")
-        newvalue.key.core = "localhost".encode("utf-8")
+        newvalue.key.agent = ag.encode("utf-8")
+        newvalue.key.core = co.encode("utf-8")
         return update
 
     def setupAgents(self):
         for agent_name, fieldname, typename, data in [
-            ("007/James/Bond/Weather",      "data_model_field", "dm", self.dm1),
-            ("White/Spy/Book",              "data_model_field", "dm", self.dm2),
-            ("Black/Spy/BookMoreDataNovel", "data_model_field", "dm", self.dm3),
-            ("86/Maxwell/Smart/Weather",    "data_model_field", "dm", self.dm1),
+            ("server1 007/James/Bond/Weather",      "data_model_field", "dm", self.dm1),
+            ("server1 White/Spy/Book",              "data_model_field", "dm", self.dm2),
+            ("server2 Black/Spy/BookMoreDataNovel", "data_model_field", "dm", self.dm3),
+            ("server2 86/Maxwell/Smart/Weather",    "data_model_field", "dm", self.dm1),
 
-            ("007/James/Bond/Weather",      "country", "string", "UK"),
-            ("White/Spy/Book",              "country", "string", "US"),
-            ("Black/Spy/BookMoreDataNovel", "country", "string", "UK"),
-            ("86/Maxwell/Smart/Weather",    "country", "string", "US"),
+            ("server1 007/James/Bond/Weather",      "country", "string", "UK"),
+            ("server1 White/Spy/Book",              "country", "string", "US"),
+            ("server2 Black/Spy/BookMoreDataNovel", "country", "string", "UK"),
+            ("server2 86/Maxwell/Smart/Weather",    "country", "string", "US"),
         ]:
             update = self._createUpdate(agent_name, fieldname, typename, data)
             self.pluto.dapManager.update(update)
@@ -151,6 +159,8 @@ class PlutoTest(unittest.TestCase):
         results = self.pluto.dapManager.execute(dapQuery).identifiers
         assert len(results) == 1
         assert results[0].agent == "007/James/Bond/Weather".encode("utf-8")
+        assert results[0].core  == b"server1"
+        assert results[0].uri   == "abc://127.0.0.1:8001"
 
     def testDataModelOrAttributeQuery(self):
         """Test case A. note that all test method names must begin with 'test.'"""

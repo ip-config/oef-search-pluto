@@ -54,6 +54,7 @@ class InMemoryDap(DapInterface.DapInterface):
     def describe(self) -> dap_description_pb2.DapDescription:
         result = dap_description_pb2.DapDescription()
         result.name = self.name
+        result.options.append("leaf-only")
 
         for table_name, fields in self.structure_pb.items():
             result_table = result.table.add()

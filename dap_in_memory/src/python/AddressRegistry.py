@@ -8,12 +8,14 @@ from dap_api.src.python import DapQueryRepn
 from dap_api.src.protos import dap_update_pb2
 from utils.src.python.Logging import has_logger
 from dap_in_memory.src.python import InMemoryDap
+from dap_api.src.protos import dap_interface_pb2
 
 
 class AddressRegistry(InMemoryDap.InMemoryDap):
     @has_logger
     def __init__(self, name, configuration):
         super().__init__(name, configuration)
+        self.coreToURI = {}
 
     def resolve(self, key):
         address = []
@@ -27,6 +29,19 @@ class AddressRegistry(InMemoryDap.InMemoryDap):
             self.warning("No address entry for key: "+key.decode("utf-8")+", details: "+str(e))
             print(self.store)
         return address
+
+    def resolveCore(self, core_name):
+        return self.coreToURI.get(core_name, None)
+
+    def storeCore(self, core_name, uri):
+        self.coreToURI[core_name] = uri
+
+    def describe(self) -> dap_description_pb2.DapDescription:
+        result = super().describe()
+        del result.options[:]
+        result.options.append("late")
+        result.options.append("all-branches")
+        return result
 
     def remove(self, remove_data: dap_update_pb2.DapUpdate.TableFieldValue):
         success = False
@@ -52,3 +67,29 @@ class AddressRegistry(InMemoryDap.InMemoryDap):
     def removeAll(self, key):
         return self.store[self.tablenames[0]].pop(key, None) is not None
 
+    def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
+        raise Exception("AddressRegistry::prepare is NOT IMPL")
+
+    def prepare(self, proto: dap_interface_pb2.ConstructQueryObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
+        r = dap_interface_pb2.ConstructQueryMementoResponse()
+
+        if proto.operator != "result":
+            r.success = False
+            return r
+
+        r.memento = b"dummy_token"
+        r.success = True
+        return r
+
+    def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
+        r = dap_interface_pb2.IdentifierSequence()
+        r.originator = False
+        for key in proto.input_idents.identifiers:
+            new_result = r.identifiers.add()
+            new_result.agent = key.agent
+            new_result.core = key.core
+            addr = self.resolveCore(key.core)
+            if addr:
+                new_result.uri = addr
+
+        return r

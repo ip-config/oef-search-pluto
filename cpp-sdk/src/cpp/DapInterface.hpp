@@ -1,30 +1,26 @@
 #pragma once
 
+#include <exception>
+
 #include "proto.hpp"
 #include "TransportFactory.hpp"
-
+#include "DapException.hpp"
 
 class DapInterface {
 public:
-  DapInterface(const DapDescription& description)
-   : description_{description}
+  DapInterface()
   {
   }
 
   virtual ~DapInterface() = default;
 
-  virtual const DapDescription& describe() {
-    return description_;
-  }
-
-  virtual Successfulness update(const DapUpdate&) = 0;
-  virtual Successfulness remove(const DapUpdate&) = 0;
+  virtual DapDescription describe() = 0;
+  virtual Successfulness configure(const DapDescription&) = 0;
+  virtual Successfulness update(const DapUpdate_TableFieldValue&) = 0;
+  virtual Successfulness remove(const DapUpdate_TableFieldValue&) = 0;
   virtual ConstructQueryMementoResponse prepareConstraint(const ConstructQueryConstraintObjectRequest&) = 0;
   virtual ConstructQueryMementoResponse prepare(const ConstructQueryObjectRequest&) = 0;
-  virtual DapExecute execute(const IdentifierSequence&) = 0;
-
-protected:
-  const DapDescription& description_;
+  virtual IdentifierSequence execute(const DapExecute&) = 0;
 };
 
 
@@ -41,18 +37,23 @@ public:
     std::cout << "SET READ CALLBACKS" << std::endl;
     auto self(shared_from_this());
     std::cout << "SET READ CALLBACKS : self" << std::endl;
+
     transport->AddReadCallback<NoInputParameter>("describe",
         [self](NoInputParameter proto, Transport::TransportPtr tptr){
       tptr->write(self->dap_->describe());
     });
-    std::cout << "SET READ CALLBACKS: describe" << std::endl;
 
-    transport->AddReadCallback<DapUpdate>("update",
-        [self](DapUpdate proto, Transport::TransportPtr tptr){
+    transport->AddReadCallback<DapDescription>("configure",
+        [self](DapDescription proto, Transport::TransportPtr tptr){
+      tptr->write(self->dap_->configure(proto));
+    });
+
+    transport->AddReadCallback<DapUpdate_TableFieldValue>("update",
+        [self](DapUpdate_TableFieldValue proto, Transport::TransportPtr tptr){
       tptr->write(self->dap_->update(proto));
     });
-    transport->AddReadCallback<DapUpdate>("remove",
-        [self](DapUpdate proto, Transport::TransportPtr tptr){
+    transport->AddReadCallback<DapUpdate_TableFieldValue>("remove",
+        [self](DapUpdate_TableFieldValue proto, Transport::TransportPtr tptr){
       tptr->write(self->dap_->remove(proto));
     });
     transport->AddReadCallback<ConstructQueryConstraintObjectRequest>("prepareConstraint",
@@ -63,8 +64,8 @@ public:
         [self](ConstructQueryObjectRequest proto, Transport::TransportPtr tptr){
       tptr->write(self->dap_->prepare(proto));
     });
-    transport->AddReadCallback<IdentifierSequence>("execute",
-        [self](IdentifierSequence proto, Transport::TransportPtr tptr){
+    transport->AddReadCallback<DapExecute>("execute",
+        [self](DapExecute proto, Transport::TransportPtr tptr){
       tptr->write(self->dap_->execute(proto));
     });
     std::cout << "SET READ CALLBACKS: end" << std::endl;
