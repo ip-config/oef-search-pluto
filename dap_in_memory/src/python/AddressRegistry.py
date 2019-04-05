@@ -38,7 +38,9 @@ class AddressRegistry(InMemoryDap.InMemoryDap):
 
     def describe(self) -> dap_description_pb2.DapDescription:
         result = super().describe()
+        del result.options[:]
         result.options.append("late")
+        result.options.append("all-branches")
         return result
 
     def remove(self, remove_data: dap_update_pb2.DapUpdate.TableFieldValue):
@@ -66,29 +68,28 @@ class AddressRegistry(InMemoryDap.InMemoryDap):
         return self.store[self.tablenames[0]].pop(key, None) is not None
 
     def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
+        raise Exception("AddressRegistry::prepare is NOT IMPL")
+
+    def prepare(self, proto: dap_interface_pb2.ConstructQueryObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
         r = dap_interface_pb2.ConstructQueryMementoResponse()
 
         if proto.operator != "result":
             r.success = False
             return r
 
-        r.memento = "dummy_token"
-        reply.success = True
-        return reply
-
-    def prepare(self, proto: dap_interface_pb2.ConstructQueryObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
-        raise Exception("AddressRegistry::prepare is NOT IMPL")
+        r.memento = b"dummy_token"
+        r.success = True
+        return r
 
     def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
-        r = dap_interface_pb2.IdentifierSequence
+        r = dap_interface_pb2.IdentifierSequence()
         r.originator = False
         for key in proto.input_idents.identifiers:
-            new_result = dap_interface_pb2.Identifier()
-            new.result.agent = key.agent
-            new.result.core = key.core
+            new_result = r.identifiers.add()
+            new_result.agent = key.agent
+            new_result.core = key.core
             addr = self.resolveCore(key.core)
-            if addrs:
-                new.result.uri = addr
-            r.identifiers.append(new_result)
+            if addr:
+                new_result.uri = addr
 
         return r

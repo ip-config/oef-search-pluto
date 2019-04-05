@@ -89,5 +89,6 @@ message IdentifierSequence
         required bool originator = 1;
         repeated Identifier identifiers = 2;
         optional Successfulness status = 3;
+        required bool oinks = 4;
 }
 
