@@ -49,6 +49,9 @@ class DapGeo(DapInterface.DapInterface):
             result_field.name = table_name + ".radius"
             result_field.type = "double"
 
+            result_field = result_table.field.add()
+            result_field.name = table_name + ".update"
+            result_field.type = "location"
         return result
 
     def getGeoByTableName(self, table_name):
@@ -213,8 +216,16 @@ class DapGeo(DapInterface.DapInterface):
     Returns:
       None
     """
-    def update(self, update_data: dap_update_pb2.DapUpdate.TableFieldValue):
-        for commit in [ False, True ]:
-            upd = update_data
-            if upd:
-                raise Exception("Not implemented")
+    def update(self, tfv: dap_update_pb2.DapUpdate.TableFieldValue)  -> dap_interface_pb2.Successfulness:
+        typecode, val = decodeAttributeValueToInfo(tfv.value)
+
+        r = dap_interface_pb2.Successfulness()
+        r.success = True
+
+        if typecode != 'location':
+            r.success = False
+            r.narrative = "DapGeo won't do " + typecode + " updates."
+            return r
+
+        if core and loc:
+            store.place( (key.core, key.agent), val
