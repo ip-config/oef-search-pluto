@@ -17,3 +17,14 @@
   height: 30px;
   width: 80px;
 }
+
+.location_div {
+    margin-top: 16px;
+}
+
+.location_div_input {
+  height: 40px;
+  font-size: 22px;
+  width: 80px;
+  margin-right: 8px;
+}
