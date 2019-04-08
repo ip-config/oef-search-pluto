@@ -18,6 +18,9 @@ class DapNetworkProxy(DapInterface):
     def inject_w2v(self, *args, **kwargs):
         pass
 
+    def configure(self, d: dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
+        raise Exception("DapNetworkProxy does not configure via this interface yet.")
+
     def close(self):
         self.client.close()
 
