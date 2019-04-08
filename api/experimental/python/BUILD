@@ -13,3 +13,17 @@ py_binary(
          "//england_grid/resources/images:pop-images",
     ]
 )
+
+py_binary(
+    name = "demo_agents",
+    srcs = ["Director.py", "DemoWeatherAgent.py"],
+    main = "DemoWeatherAgent.py",
+    deps = [
+        "//network/src/python/async_socket:async_socket",
+        "//api/src/proto/director:py_api_pb",
+        "//api/src/proto/core:py_api_pb",
+
+    ],
+    srcs_version = "PY3",
+
+)

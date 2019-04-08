@@ -98,6 +98,12 @@ class Director:
         data.location.lat = location[1]
         await self.push_cmd(client_name, "location", data)
 
+    #TODO: this is only for the demo
+    @block_if_first_not_found(store_name="clients")
+    async def send(self, client_name: str, cmd: str, data):
+        self.info(client_name, ": Send update: ", data)
+        await self.push_cmd(client_name, cmd, data)
+
     async def close_all(self):
         for key, queue in self.clients.items():
             await queue.put(("close",))
