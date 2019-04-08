@@ -64,7 +64,7 @@ class PlutoTest(unittest.TestCase):
                 if lat == 0.0 and lon == 0.0:
                     continue
 
-                ident = ( "localhost",  "{}/{}".format(airport, country) )
+                ident = ( b"localhost",  ("{}/{}".format(airport, country)).encode('utf-8') )
                 loc = (lat, lon)
 
                 g.place(ident, loc)

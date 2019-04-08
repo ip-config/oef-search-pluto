@@ -138,7 +138,7 @@ class DapManager(object):
         self.embeddingTableName = None # SUPPORT_SINGLE_GLOBAL_EMBEDDING_QUERY
         self.classmakers = {}
         self.log.update_local_name("DapManager")
-
+        self.planes = {}
 
     def addClass(self, name, maker):
         self.classmakers[name] = maker
@@ -184,10 +184,24 @@ class DapManager(object):
                         instance_name, {}).setdefault(
                             table_desc_pb.name, {}).setdefault(
                                 field_description_pb.name, {})['type']=field_description_pb.type
+                    if 'plane' in field_description_pb.options:
+                        self.planes[field_description_pb.type] = {
+                            'dap_name': instance_name,
+                            'table_name': table_desc_pb.name,
+                            'field_name': field_description_pb.name,
+                            'field_type': field_description_pb.type,
+                        }
                     self.attributes_to_daps.setdefault(field_description_pb.name, []).append(instance_name)
 
     def getInstance(self, name):
         return self.instances[name]
+
+    def getPlaneInformation(self, name):
+        r = self.planes.get(name, None)
+        store = self.getInstance(r.get('dap_name', '')) or object()
+        if hasattr(store, 'listCores'):
+            r['values'] = list(store.listCores(r['table_name'], r['field_name']))
+        return r
 
     def getDapsForAttributeName(self, attributeName):
         r = set()
@@ -239,6 +253,7 @@ class DapManager(object):
 
             if len(daps_to_update) == 0:
                 self.log.error("NO DAPS CLAIMED THIS VALUE -- {}".format(tableFieldValue.fieldname))
+                success = False
 
             for dap_to_update in daps_to_update:
                 tfv = dap_update_pb2.DapUpdate.TableFieldValue()

@@ -68,7 +68,7 @@ class AddressRegistry(InMemoryDap.InMemoryDap):
         return self.store[self.tablenames[0]].pop(key, None) is not None
 
     def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
-        raise Exception("AddressRegistry::prepare is NOT IMPL")
+        raise Exception("AddressRegistry::prepareConstraint is NOT IMPL")
 
     def prepare(self, proto: dap_interface_pb2.ConstructQueryObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
         r = dap_interface_pb2.ConstructQueryMementoResponse()

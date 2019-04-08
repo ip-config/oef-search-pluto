@@ -32,6 +32,11 @@ class DapERNetwork(DapInterface.DapInterface):
 
         self.operatorFactory = DapOperatorFactory.DapOperatorFactory()
 
+
+    def configure(self, desc: dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
+        raise Exception("EarlyInMemoryDap does not configure via this interface yet.")
+
+
     def describe(self):
         result = dap_description_pb2.DapDescription()
         result.name = self.name

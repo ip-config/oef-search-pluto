@@ -60,6 +60,10 @@ class DapAttributeStore(DapInterface.DapInterface):
                 self.log.info("    "+kk+":")
                 self.log.info("        " + self.table[k][kk].printable())
 
+
+    def configure(self, desc: dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
+        raise Exception("DapAttributeStore does not configure via this interface yet.")
+
     def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
         query_settings = {}
 

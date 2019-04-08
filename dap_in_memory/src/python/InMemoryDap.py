@@ -44,6 +44,9 @@ class InMemoryDap(DapInterface.DapInterface):
                 self.fields.setdefault(field_name, {})['tablename']=table_name
                 self.fields.setdefault(field_name, {})['type']=field_type
 
+    def configure(self, desc: dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
+        raise Exception("InMemoryDap does not configure via this interface yet.")
+
     """This function returns the DAP description which lists the
     tables it hosts, the fields within those tables and the result of
     a lookup on any of those tables.
@@ -180,11 +183,18 @@ class InMemoryDap(DapInterface.DapInterface):
                 tbname = self.fields[tfv.fieldname]["tablename"]
                 ftype = self.fields[tfv.fieldname]["type"]
 
-            if ftype != k:
-                r.narrative.append("Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, upd.key.core, upd.fieldname, ftype, k))
+            if tbname not in self.tablenames:
+                r.narrative.append("Bad tablename tname={} not in {}".format(tbname, ','.join(self.tablenames)))
                 r.success = False
+                break
+
+            if ftype != k:
+                r.narrative.append("Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, tfv.key.core, tfv.fieldname, ftype, k))
+                r.success = False
+                break
 
             if commit:
+                self.error("==>", tbname)
                 self.store.setdefault(tbname, {}).setdefault((core_ident, agent_ident), {})[tfv.fieldname] = v
 #                self.log.info("Stored {} into {} for {},{}".format(
 #                    tfv.fieldname, tbname, core_ident, agent_ident

@@ -300,6 +300,10 @@ class SearchEngine(DapInterface):
                 setattr(self, k, funcs['jtoh'](r.get(k, None)))
             return self
 
+
+    def configure(self, desc: dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
+        raise Exception("SearchEngine does not configure via this interface yet.")
+
     def execute(self, proto:  dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
         input_idents = proto.input_idents
         query_memento = proto.query_memento

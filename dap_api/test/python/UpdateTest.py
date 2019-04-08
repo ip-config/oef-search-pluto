@@ -51,7 +51,7 @@ class UpdateTest(unittest.TestCase):
         newvalue.fieldname = "wibble"
         newvalue.value.type = 2
         newvalue.value.s = "moo"
-        newvalue.key = "007/James/Bond".encode("utf-8")
+        newvalue.key.agent = "007/James/Bond".encode("utf-8")
         return update
 
     def testUpdate(self):
@@ -65,12 +65,6 @@ class UpdateTest(unittest.TestCase):
         update.update[0].value.type = 3
         update.update[0].value.i = 12345
 
-        with self.assertRaises(Exception) as context:
-            self.dapManager.update(update.update[0])
-
-    def testNoTableUpdate(self):
-        update = self._createUpdate()
-
-        with self.assertRaises(Exception) as context:
-            self.dapManager.update(update.update[0])
-
+        #with self.assertRaises(Exception) as context:
+        r = self.dapManager.update(update.update[0])
+        assert r == False
