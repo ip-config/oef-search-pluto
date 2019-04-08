@@ -12,6 +12,7 @@ def socket_handler(router: BackendRouter):
     async def on_connection(transport: Transport):
         log.info("Got socket client")
         while True:
+            request = None
             try:
                 request = await transport.read()
                 if not request.success:
