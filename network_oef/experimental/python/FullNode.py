@@ -79,7 +79,7 @@ if __name__ == "__main__":
         while len(args.search_peers) != 0:
             print("SEARCH PEERS: ", args.search_peers)
             for target in args.search_peers:
-                host, port = target.split(":")
+                key, host, port = target.split(":")
                 try:
                     host = socket.gethostbyname(host)
                 except Exception as e:
@@ -88,7 +88,7 @@ if __name__ == "__main__":
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 if sock.connect_ex((host, port)) != 0:
                     continue
-                search_queue.put([host, port])
+                search_queue.put([host, port, key])
                 args.search_peers.remove(target)
             time.sleep(2)
 

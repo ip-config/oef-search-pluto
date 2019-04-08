@@ -2,6 +2,7 @@ from api.src.proto.core import response_pb2
 from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, HasResponseMerger, DataWrapper
 from api.src.python.Serialization import serializer, deserializer
 from utils.src.python.Logging import has_logger
+from utils.src.python.distance import geo_distance
 from api.src.python.core.ProtoWrappers import ProtoWrapper
 from api.src.proto.core import query_pb2
 from dap_api.src.python.DapManager import DapManager
@@ -48,6 +49,29 @@ class SearchEndpoint(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
 
     async def handle_message(self, msg: query_pb2.Query) -> DataWrapper[response_pb2.SearchResponse]:
         resp = response_pb2.SearchResponse()
+        distance = None
+        try:
+            location = self._dap_manager.getPlaneInformation("location")["values"]
+            if len(location) > 1:
+                self.warning("Got more then 1 location from dapManager (I'm using first, ignoring the rest now): ",
+                             location)
+            #TODO: multiple core
+            location = location[0].value.l
+            prev_distance = msg.directed_search.distance.geo
+            target = msg.directed_search.target.geo
+            distance = geo_distance(location, target)
+            if prev_distance > 0 and distance > prev_distance:
+                #ignore query
+                self.warning("Ignoring query with TTL %d, because source (%s) distance (%.3f) was smaller then "
+                             "my distance (%.3f)", msg.ttl, msg.source_key.decode("UTF-8"), prev_distance, distance)
+                return DataWrapper(False, "search", resp, 601, "Ignoring query because distance!")
+            else:
+                self.info("Handling query with TTL %d, because source (%s) distance (%.3f) was greater then"
+                          " my distance (%.3f)", msg.ttl, msg.source_key.decode("UTF-8"), prev_distance, distance)
+        except Exception as e:
+            #TODO: what?
+            self.exception("Exception during location check: ", str(e))
+            #return DataWrapper(False, "search", resp, 600, "Ignoring query, location check error!")
         try:
             query = self._proto_wrapper.get_instance(msg.model)
             result = self._dap_manager.execute(query.toDapQuery())
@@ -65,6 +89,9 @@ class SearchEndpoint(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
                     item.key = core
                     item.score = element.score
                     items[core] = item
+                    if distance:
+                        #TODO multiple core
+                        item.distance = distance
                 agent = items[core].agents.add()
                 agent.key = agent_id
             resp.result.extend(items.values())
