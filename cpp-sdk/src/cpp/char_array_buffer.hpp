@@ -66,7 +66,7 @@ public:
     } buffer;
 
     //buffer.i = i;
-    buffer.i = htonl(i);
+    buffer.i = static_cast<int32_t>(htonl(i));
     oflow(buffer.c[0]);
     oflow(buffer.c[1]);
     oflow(buffer.c[2]);
@@ -86,7 +86,7 @@ public:
     buffer.c[1] = (uint8_t)uflow();
     buffer.c[2] = (uint8_t)uflow();
     buffer.c[3] = (uint8_t)uflow();
-    i = ntohl(buffer.i);
+    i = static_cast<int32_t>(ntohl(buffer.i));
     //i = buffer.i;
 
     return *this;
@@ -94,7 +94,7 @@ public:
 
   char_array_buffer& write(const std::string &s)
   {
-    for(int i=0;i<s.size();i++)  // Using a "<=" ensures we also write a zero terminator
+    for(uint32_t i=0;i<s.size();i++)  // Using a "<=" ensures we also write a zero terminator
     {
       oflow(s.c_str()[i]);
     }
@@ -104,7 +104,7 @@ public:
   char_array_buffer& read(std::string &s, uint32_t length)
   {
     std::string output(length, ' ');
-    for(int i=0;i<output.size();i++)
+    for(uint32_t i=0;i<output.size();i++)
     {
       output[i] = traits_type::to_char_type(uflow());
     }
@@ -116,7 +116,7 @@ public:
 
   static void diagnostic(void *p, unsigned int sz)
   {
-    for(int i=0;i<sz;i++)
+    for(uint32_t i=0;i<sz;i++)
     {
       char c = ((char*)(p))[i];
 
@@ -196,7 +196,7 @@ public:
       else
       {
          //std::cout << "pos=" << pos << " c=" << character << std::endl;
-        boost::asio::buffer_cast<unsigned char*>(b)[pos] = character;
+        boost::asio::buffer_cast<unsigned char*>(b)[pos] = static_cast<unsigned char>(character);
         return true;
       }
     }
