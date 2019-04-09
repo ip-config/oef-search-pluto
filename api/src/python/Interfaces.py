@@ -27,11 +27,13 @@ class DataWrapper(Generic[T]):
         if len(narrative) > 0:
             self.add_narrative(narrative)
         if len(narrative_list) > 0:
-            for n in narrative_list:
-                self.add_narrative(n)
+            self.extend_narrative(narrative)
 
     def add_narrative(self, narrative: str):
         self.narrative.append(narrative)
+
+    def extend_narrative(self, narrative: List[str]):
+        self.narrative.extend(narrative)
 
     def msg(self):
         return " ".join(self.narrative)

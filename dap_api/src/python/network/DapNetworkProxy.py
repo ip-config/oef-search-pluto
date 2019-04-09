@@ -52,6 +52,8 @@ class DapNetworkProxy(DapInterface):
         result = self._call("describe", data_in, dap_description_pb2.DapDescription)
         return result
 
+    def configure(self, desc: dap_description_pb2.DapDescription) -> dap_interface_pb2.Successfulness:
+        raise Exception("InMemoryDap does not configure via this interface yet.")
 
     """This function will be called with any update to this DAP.
 

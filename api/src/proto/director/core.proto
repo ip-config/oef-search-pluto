@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+
+import "fetch_teams/oef_core_protocol/query.proto";
+
+message CoreLocation {
+    bytes core_key = 1;
+    fetch.oef.pb.Query.Location location = 2;
+}
+
+message Response {
+}

@@ -4,7 +4,7 @@ from fake_oef.src.python.lib.FakeOef import FakeOef
 from concurrent.futures import ThreadPoolExecutor
 from fake_oef.src.python.lib import FakeAgent
 from fetch_teams.oef_core_protocol import query_pb2
-from api.src.proto import update_pb2
+from api.src.proto.core import update_pb2
 from fake_oef.src.python.lib.FakeSearch import MultiFieldObserver, NodeAttributeInterface, Observer, ObserverNotifier
 from fake_oef.src.python.lib.FakeDirector import Location
 from fake_oef.src.python.lib.ConnectionFactory import ConnectionFactory

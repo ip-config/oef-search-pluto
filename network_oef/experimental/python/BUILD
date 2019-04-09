@@ -14,3 +14,19 @@ py_binary(
             "//fetch_teams:oef-core",
     ]
 )
+
+py_binary(
+    name="search_node",
+    visibility = ["//visibility:public"],
+    srcs = ["SearchNode.py"],
+    main="SearchNode.py",
+    deps=[
+        "//network_oef/src/python:lib",
+        "//utils/src/python:py_utils",
+    ],
+    data = [
+            "//cpp-sdk/experimental/resources:dap_configs",
+            "//ai_search_engine/src/resources:dap_config",
+            "//api/src/resources:website"
+    ]
+)

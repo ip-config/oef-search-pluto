@@ -1,7 +1,7 @@
 from pluto_app.src.python.app import PlutoApp
 from network_oef.src.python.Connection import Connection
-from api.src.proto import response_pb2
-from api.src.proto import query_pb2, update_pb2
+from api.src.proto.core import response_pb2
+from api.src.proto.core import query_pb2, update_pb2
 from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, DataWrapper
 from api.src.python.Serialization import serializer, deserializer
 import asyncio
@@ -10,7 +10,10 @@ import time
 import gensim
 import abc
 from utils.src.python.Logging import has_logger
-from dap_api.src.python.network.DapNetwork import network_support
+from api.src.python.network import network_support
+import api.src.python.RouterBuilder as RouterBuilder
+from utils.src.python.distance import geo_distance
+import copy
 
 
 class SearchResponseSerialization(HasProtoSerializer):
@@ -41,7 +44,7 @@ class BroadcastFromNode(HasMessageHandler):
         return result
 
     async def handle_message(self, msg):
-        response = await self._node.broadcast(self._path, msg)
+        response = await self._node.broadcast(self._path, copy.deepcopy(msg))
         if type(response) != list:
             response = [response]
         response = self.__flatten_list(response)
@@ -150,7 +153,7 @@ class NodeAttributeInterface:
 
 class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
     @has_logger
-    @network_support(router_name="router")
+    @network_support
     def __init__(self, cache_lifetime: int, id: str, cleaner_pool: ThreadPoolExecutor = None):
         self._id = id
         self._bin_id = self._id.encode("utf-8")
@@ -170,8 +173,15 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         NodeAttributeInterface.__init__(self)
         self.log.update_local_name(self._id)
         self._loop = asyncio.get_event_loop()
+        self.director_router = RouterBuilder.DirectorAPIRouterBuilder()\
+            .set_name("DirectorRouter")\
+            .set_dap_manager(self.dapManager)\
+            .add_location_config({"table": "locations", "field": "locations.update"})\
+            .build()
+        self._com = None
+        self._com_director = None
 
-    def init(self, node_ip: str, node_port: int, network_dap_config: dict, http_port: int = -1, ssl_certificate: str = None, html_dir: str = None):
+    def init(self, node_ip: str, node_port: int, network_dap_config: dict, http_port: int = -1, ssl_certificate: str = None, html_dir: str = None, *, director_port: int = None):
         for name, conf in network_dap_config.items():
             self.add_network_dap_conf(name, conf)
         self.start()
@@ -179,7 +189,9 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         self._setup(self.dapManager)
 
         if node_ip is not None and node_port is not None and hasattr(self, "start_network"):
-            self.start_network(self, node_ip, node_port, http_port, ssl_certificate, html_dir)
+            self._com = self.start_network(self.router, node_ip, node_port, http_port, ssl_certificate, html_dir)
+            if director_port is not None:
+                self._com_director = self.start_network(self.director_router, node_ip, director_port)
 
     def connect_to_search_node(self, host: str, port: int, search_node_id=None):
         if search_node_id is None:
@@ -200,67 +212,27 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
             if (v - t) >= self._cache_lifetime:
                 self._cache.pop(k)
 
-    def call(self, path: str, data):
-        if path == "get":
-            if data == "location":
-                return self.location
-        return asyncio.run(self.call_node(path, data.SerializeToString()))
-
-    async def call_node(self, path: str, data):
-        self.log.info("Got request for path %s", path)
-        if path == "search":
-            if isinstance(data, query_pb2.Query):
-                query = data
-            else:
-                query = query_pb2.Query()
-                query.ParseFromString(data)
-            if not self._am_i_closer_and_update_query(query):
-                return []
-            data = query.SerializeToString()
-        elif path == "update":
-            self.error("GOT update", data)
-            if isinstance(data, update_pb2.Update):
-                data = data.SerializeToString()
-        result = await self.callMe(path, data)
-        if path == "update":
-            self.notify_update()
-        elif path == "search":
-            #TODO(AB): HACK. do this in a nice way
-            core_id = self._id.replace("-search", "-core").encode("UTF-8")
-            res = response_pb2.SearchResponse()
-            res.ParseFromString(result)
-            for r in res.result:
-                if r.key == core_id:
-                    r.distance = self.location.distance(query.directed_search.target.geo)
-            result = res.SerializeToString()
-        return result
-
-    def _am_i_closer_and_update_query(self, query):
-        if self.location is None:
-            self.log.error("Ignoring query because no location is set for the search node!")
-            return False
-        my_distance = self.location.distance(query.directed_search.target.geo)
-        source_distance = query.directed_search.distance.geo
-        if my_distance <= source_distance:
-            query.directed_search.distance.geo = my_distance
-            self.log.info("Handling query with TTL %d, because source (%s) distance was greater (%.3f) then my distance (%.3f)",
-                          query.ttl, query.source_key.decode("UTF-8"), source_distance, my_distance)
-            return True
-        else:
-            self.log.warn("Ignoring query with TTL %d, because source (%s) distance was smaller (%.3f) then my distance (%.3f)",
-                          query.ttl, query.source_key.decode("UTF-8"), source_distance, my_distance)
-            return False
-
     async def broadcast(self, path: str, data):
-        self.info("Broadcasting started: path=", path, ", data=", data)
         source = None
         if isinstance(data, query_pb2.Query):
             if data.ttl <= 0:
-                self.log.warn("Stop broadcasting query because TTL is 0")
+                self.warning("Stop broadcasting query because TTL is 0")
                 return []
             data.ttl -= 1
-            source = data.source_key
+            source = data.source_key.decode("UTF-8")
             data.source_key = self._bin_id
+            try:
+                location = self.dapManager.getPlaneInformation("location")["values"]
+                if len(location) > 1:
+                    self.warning("Got more then 1 location from dapManager (I'm using first, ignoring the rest now): ",
+                                 location)
+                # TODO: multiple core
+                # TODO: nicer way?
+                location = location[0].value.l
+                target = data.directed_search.target.geo
+                data.directed_search.distance.geo = geo_distance(location, target)
+            except Exception as e:
+                self.warning("Set distance failed in broadcast, because: ", str(e))
         else:
             self.warning("query is not api query (missing TTL)")
         cos = []
@@ -268,15 +240,16 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         proto_model = data.model.SerializeToString()
         t = time.time()
         self.notify_activity(t)
+        self.info("Coms to broadcast: ", self._search_coms.keys())
         for target_search_node_id in self._search_coms:
-            h = hash(path + ":" + str(proto_model) + ":" + str(data.directed_search.target.geo)  + ":" + str(target_search_node_id))
+            h = hash(path + ":" + str(proto_model) + ":" + str(data.directed_search.target.geo) + ":" + str(target_search_node_id))
             c = self._cache.get(h, t - 2 * self._cache_lifetime)
             if (t - c) < self._cache_lifetime:
                 self.info("Skip broadcast to {} because last broadcast was @ {} (current time = {})".format(target_search_node_id, c, t))
                 continue
             self._cache[h] = t
-            if source is None or source != target_search_node_id.encode("utf-8"):
-                self.info("Broadcasted search to ", target_search_node_id)
+            if source is None or source != target_search_node_id:
+                self.info("Broadcasting search to ", target_search_node_id, ", data=", data)
                 cos.append(self._search_coms[target_search_node_id].call_node(path, data.SerializeToString()))
             else:
                 self.info("Skip broadcast to {} because last broadcast was source ({}) is the same".format(
@@ -297,7 +270,9 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         return []
 
     def block(self):
-        if hasattr(self, "_com"):
+        if self._com is not None:
             self._com.wait()
+        elif self._com_director is not None:
+            self._com_director.wait()
         else:
             time.sleep(1e6)

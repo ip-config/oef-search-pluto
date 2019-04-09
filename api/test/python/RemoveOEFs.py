@@ -1,7 +1,7 @@
 import asyncio
 from network.src.python.async_socket.AsyncSocket import client_handler, run_client, ClientTransport
-from api.src.proto import update_pb2, response_pb2
-from api.src.proto import remove_pb2
+from api.src.proto.core import update_pb2, response_pb2
+from api.src.proto.core import remove_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 
 

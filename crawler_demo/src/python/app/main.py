@@ -18,7 +18,7 @@ from england_grid.src.python.lib import EnglandGrid
 from crawler_demo.src.python.lib import CrawlerAgents
 from utils.src.python import ThreadedWebserver
 from fake_oef.src.python.lib import FakeAgent
-from api.src.proto import query_pb2, response_pb2
+from api.src.proto.core import query_pb2, response_pb2
 import logging
 
 

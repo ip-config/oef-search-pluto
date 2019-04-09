@@ -10,7 +10,7 @@ from behaviour_tree.src.python.lib import BehaveTreeControlNode
 from behaviour_tree.src.python.lib import BehaveTreeExecution
 from fake_oef.src.python.lib import FakeAgent
 from crawler_demo.src.python.lib.SearchNetwork import SearchNetwork, ConnectionFactory
-from api.src.proto import query_pb2, response_pb2
+from api.src.proto.core import query_pb2, response_pb2
 from utils.src.python.Logging import has_logger
 from enum import Enum
 

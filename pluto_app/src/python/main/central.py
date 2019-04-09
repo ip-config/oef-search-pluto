@@ -5,7 +5,7 @@ from pluto_app.src.python.app import SearchNetwork
 from api.src.python.CommunicationHandler import socket_server, http_server, CommunicationHandler
 from fake_oef.src.python.lib import ConnectionFactory
 from fake_oef.src.python.lib import FakeAgent
-from api.src.proto import update_pb2
+from api.src.proto.core import update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 
 

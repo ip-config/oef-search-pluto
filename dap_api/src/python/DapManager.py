@@ -158,7 +158,7 @@ class DapManager(object):
 
             klass = self.classmakers.get(klass_name, None)
             if not klass:
-                raise Exception("{} is not well formed. 'class' does't exist.".format(k))
+                raise Exception("{} is not well formed (klass_name={}). 'class' does't exist.".format(k, klass_name))
             instance = klass(k, configuration)
             self.instances[k] = instance
 
@@ -384,8 +384,15 @@ class DapManager(object):
 
 #        print("_executeNode")
 #        print("Results;")
-#        for ident in r.identifiers:
-#            print(DapQueryResult.DapQueryResult(pb=ident).printable())
+        #TODO remove this with late dap
+        try:
+            ar = self.getInstance("address_registry")
+            for ident in r.identifiers:
+                a = ar.resolve(ident.core)[0]
+                ident.uri = a.ip+":"+str(a.port)
+                print(DapQueryResult.DapQueryResult(pb=ident).printable())
+        except Exception as e:
+            print("Address resolve exception", str(e))
         return r
 
     def _executeMementoChain(self, node, ordered_mementos, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:

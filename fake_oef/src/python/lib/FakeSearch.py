@@ -1,8 +1,8 @@
 from fake_oef.src.python.lib import FakeBase
 from pluto_app.src.python.app import PlutoApp
 from fake_oef.src.python.lib.ConnectionFactory import SupportsConnectionInterface
-from api.src.proto import response_pb2
-from api.src.proto import query_pb2, update_pb2
+from api.src.proto.core import response_pb2
+from api.src.proto.core import query_pb2, update_pb2
 from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, DataWrapper
 from api.src.python.Serialization import serializer, deserializer
 import asyncio

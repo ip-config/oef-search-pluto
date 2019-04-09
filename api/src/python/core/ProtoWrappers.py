@@ -1,4 +1,4 @@
-from api.src.proto import update_pb2
+from api.src.proto.core import update_pb2
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 from utils.src.python.Logging import has_logger
@@ -126,36 +126,37 @@ class UpdateData:
         "dm_values": lambda table, field: {"dm_instance_values": UpdateData._table_entry(table, field)}
     }
 
-    def __init__(self, origin: update_pb2.Update, db_structure: dict, address_resolver):
+    # TODO: missing address handling
+    def __init__(self, origin: update_pb2.Update, db_structure: dict):
         self.origin = origin
         self.db_structure = db_structure
-        if type(origin) == update_pb2.Update:
-            address_needed = len(address_resolver.resolve(origin.key)) == 0
-            address_found = self._validate_attributes(origin.attributes)
-            if address_needed and not address_found:
-                raise MissingAddress(origin.key)
-        else:
-            addresses = {}
-            for upd in origin.list:
-                address_needed = len(address_resolver.resolve(upd.key)) == 0
-                address_found = self._validate_attributes(upd.attributes)
-                if upd.key in addresses:
-                    addresses[upd.key] = addresses[upd.key] and (address_needed and not address_found)
-                else:
-                    addresses[upd.key] = (address_needed and not address_found)
-            for key in addresses:
-                if addresses[key]:
-                    raise MissingAddress(key)
+        #if type(origin) == update_pb2.Update:
+        #     address_needed = len(address_resolver.resolve(origin.key)) == 0
+        #     address_found = self._validate_attributes(origin.attributes)
+        #    if address_needed and not address_found:
+        #        raise MissingAddress(origin.key)
+        #else:
+        #    addresses = {}
+        #    for upd in origin.list:
+        #       address_needed = len(address_resolver.resolve(upd.key)) == 0
+        #        address_found = self._validate_attributes(upd.attributes)
+        #        if upd.key in addresses:
+        #            addresses[upd.key] = addresses[upd.key] and (address_needed and not address_found)
+        #        else:
+        #            addresses[upd.key] = (address_needed and not address_found)
+        #    for key in addresses:
+        #        if addresses[key]:
+        #            raise MissingAddress(key)
 
-    def _validate_attributes(self, attributes: List[update_pb2.Update.Attribute]) -> bool:
-        address_found = False
-        address_name = update_pb2.Update.Attribute.Name.Value("NETWORK_ADDRESS")
-        for attr in attributes:
-            address_found = address_found or attr.name == address_name
-            exp_type = _attr_name_to_type[attr.name]
-            if exp_type > 0 and exp_type != attr.value.type:
-                raise InvalidAttribute(attr.name, attr.description, attr.value.type, "Expected type mismatch: {}".format(exp_type))
-        return address_found
+    #def _validate_attributes(self, attributes: List[update_pb2.Update.Attribute]) -> bool:
+    #    address_found = False
+    #    address_name = update_pb2.Update.Attribute.Name.Value("NETWORK_ADDRESS")
+    #    for attr in attributes:
+    #        address_found = address_found or attr.name == address_name
+    #        exp_type = _attr_name_to_type[attr.name]
+    #        if exp_type > 0 and exp_type != attr.value.type:
+    #            raise InvalidAttribute(attr.name, attr.description, attr.value.type, "Expected type mismatch: {}".format(exp_type))
+    #    return address_found
 
     def _set_value(self, upd: dap_update_pb2.DapUpdate.DapValue, origin: update_pb2.Update):
         upd.type = 6

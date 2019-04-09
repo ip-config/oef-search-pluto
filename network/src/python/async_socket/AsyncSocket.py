@@ -129,8 +129,8 @@ class ClientTransport:
     async def write(self, data: bytes, path: str = ""):
         return await self.__transport.write(data, path)
 
-    async def read(self) -> DataWrapper[bytes]:
-        return await self.__transport.read()
+    async def read(self, call_id: int = 0) -> DataWrapper[bytes]:
+        return await self.__transport.read(call_id)
 
     async def drain(self):
         return await self.__transport.drain()

@@ -21,7 +21,7 @@ from dap_api.src.python.SubQueryInterface import SubQueryInterface
 from fetch_teams.oef_core_protocol import query_pb2
 from utils.src.python.Logging import has_logger
 from typing import List
-from dap_api.src.python.network.DapNetwork import network_support
+from dap_api.src.python.network.DapNetwork import dap_network_support
 
 from utils.src.python.out import out
 import utils.src.python.distance as distance
@@ -29,7 +29,7 @@ import utils.src.python.distance as distance
 
 class SearchEngine(DapInterface):
     @has_logger
-    @network_support
+    @dap_network_support
     def __init__(self, name, config):
         self._storage = {}
         nltk.download('stopwords')

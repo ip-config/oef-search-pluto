@@ -12,7 +12,6 @@ py_library(
     srcs = glob(["*Test.py"]),
     deps = [
          "//dap_attribute_store/src/python:dap_attribute_store",
-         "//api/src/python:utils",
     ],
 )
 

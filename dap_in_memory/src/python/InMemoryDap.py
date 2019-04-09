@@ -15,7 +15,7 @@ from dap_api.src.protos import dap_update_pb2
 from dap_api.src.protos import dap_interface_pb2
 from dap_api.src.python.DapQueryResult import DapQueryResult
 from typing import List
-from dap_api.src.python.network.DapNetwork import network_support
+from dap_api.src.python.network.DapNetwork import dap_network_support
 from utils.src.python.Logging import has_logger
 
 

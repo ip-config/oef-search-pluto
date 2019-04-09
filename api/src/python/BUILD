@@ -11,20 +11,6 @@ py_library(
 )
 
 py_library(
-    name = "endpoints",
-    srcs = glob(["Endpoint*.py"]),
-    deps = [
-        "//api/src/python:serialization",
-        "//api/src/python:interfaces",
-        "//api/src/proto:py_api_pb",
-        "//utils/src/python:py_utils",
-        "//fetch_teams/oef_core_protocol:py_oef_protocol",
-        "//ai_search_engine/src/python:search_engine"
-    ],
-    visibility = ["//visibility:public"],
-)
-
-py_library(
     name = "backend_router",
     srcs = ["BackendRouter.py"],
     deps = [
@@ -36,13 +22,12 @@ py_library(
 )
 
 py_library(
-    name = "utils",
-    srcs = ["ProtoWrappers.py"],
+    name = "router_builder",
+    srcs = ["RouterBuilder.py"],
     deps = [
-        "//dap_api/src/python:dap_api",
-        "//api/src/proto:py_api_pb",
-        "//fetch_teams/oef_core_protocol:py_oef_protocol",
-        "//utils/src/python:py_utils",
+        ":backend_router",
+        "//api/src/python/core:endpoints",
+        "//api/src/python/director:endpoints"
     ],
     visibility = ["//visibility:public"],
 )
@@ -55,11 +40,22 @@ py_library(
         "//api/src/python:backend_router",
         "//fetch_teams/bottle:bottle",
         "//utils/src/python:py_utils",
-        ":utils",
+        "//api/src/python/core:utils",
     ],
     data = [
         "//api/src/resources:website"
     ],
     srcs_version = "PY3",
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "network",
+    srcs = ["network.py"],
+    deps = [
+        ":backend_router",
+        "//utils/src/python:py_utils",
+        ":communication_handler",
+    ],
     visibility = ["//visibility:public"],
 )

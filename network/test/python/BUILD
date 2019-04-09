@@ -4,7 +4,7 @@ py_binary(
     main = "EchoServer.py",
     deps = [
         "//network/src/python/async_socket:async_socket",
-        "//api/src/proto:py_api_pb"
+        "//api/src/proto/core:py_api_pb"
     ],
     srcs_version = "PY3",
 )
@@ -15,7 +15,7 @@ py_binary(
     main = "Client.py",
     deps = [
         "//network/src/python/async_socket:async_socket",
-        "//api/src/proto:py_api_pb"
+        "//api/src/proto/core:py_api_pb"
     ],
     srcs_version = "PY3",
 )
