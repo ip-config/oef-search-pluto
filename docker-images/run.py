@@ -11,7 +11,7 @@ search_port = "20000"
 core_port = "10000"
 http_port = None
 
-img = "oef-search"
+img = "oef-search:latest"
 name = None
 
 for i in range(len(sys.argv)):
@@ -19,10 +19,12 @@ for i in range(len(sys.argv)):
         search_port = sys.argv[i+1]
     elif sys.argv[i] == "--core_port":
         core_port = sys.argv[i+1]
-    elif sys.argv[i] == "--name":
+    elif sys.argv[i] == "--node_key":
         name = sys.argv[i+1]
     elif sys.argv[i] == "--http_port":
         http_port = sys.argv[i+1]
+    elif sys.argv[i] == "--image":
+        img = sys.argv[i+1]
 
 print("Ports to expose: search={}, core={} for node={}".format(search_port, core_port, name))
 

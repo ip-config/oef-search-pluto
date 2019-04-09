@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import argparse
 
-PROJECT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+PROJECT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 DOCKER_DIR_PATH = os.path.abspath(os.path.dirname(__file__))
 
 

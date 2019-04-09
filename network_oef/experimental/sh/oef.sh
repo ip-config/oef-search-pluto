@@ -2,4 +2,4 @@
 
 ./node "$@"
 
-bash
+sh

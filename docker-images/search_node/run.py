@@ -2,6 +2,9 @@
 import sys
 import subprocess
 
+# Before running;
+#   docker network create -d bridge oef_search_net
+
 args = " ".join(sys.argv[1:])
 
 search_port = "20000"
@@ -14,7 +17,7 @@ name = None
 for i in range(len(sys.argv)):
     if sys.argv[i] == "--search_port":
         search_port = sys.argv[i+1]
-    elif sys.argv[i] == "--name":
+    elif sys.argv[i] == "--node_key":
         name = sys.argv[i+1]
     elif sys.argv[i] == "--http_port":
         http_port = sys.argv[i+1]
