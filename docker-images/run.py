@@ -1,6 +1,9 @@
-#!/bin/python3
+#!/usr/bin/env python3
 import sys
 import subprocess
+
+# Before running;
+#   docker network create -d bridge oef_search_net
 
 args = " ".join(sys.argv[1:])
 
@@ -8,7 +11,7 @@ search_port = "20000"
 core_port = "10000"
 http_port = None
 
-img = "oef-search-tmp"
+img = "oef-search"
 name = None
 
 for i in range(len(sys.argv)):
