@@ -8,7 +8,7 @@ from fetch_teams.oef_core_protocol import query_pb2
 from typing import List
 
 
-selected_ports = [7600]
+selected_ports = [15000]
 
 
 def get_attr_b(name, desc, t=2):
@@ -71,10 +71,14 @@ def create_kv_updates(upd):
 
 
 def create_dap_updates() -> List[dap_update_pb2.DapUpdate]:
-    update = dap_update_pb2.DapUpdate()
-    create_dm_updates(update.update.add())
-    create_kv_updates(update.update.add())
-    return [update]
+    #update = dap_update_pb2.DapUpdate()
+    #create_dm_updates(update.update.add())
+    #create_kv_updates(update.update.add())
+    upd1 = dap_update_pb2.DapUpdate.TableFieldValue()
+    create_dm_updates(upd1)
+    upd2 = dap_update_pb2.DapUpdate.TableFieldValue()
+    create_kv_updates(upd2)
+    return [upd1, upd2]
 
 
 def lookup(clss, name):
@@ -99,6 +103,7 @@ for name, conf in config_contract.items():
         for upd in updates:
             print(upd)
             ss = upd.SerializeToString()
+            print(ss)
             print(dap.update(upd))
         print("------------------\nREMOVE AKA QUERY")
         print(dap.remove(updates[0]))
