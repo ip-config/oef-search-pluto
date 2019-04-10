@@ -13,6 +13,7 @@ def initialise(package):
         main_package = package
         assert main_package != None
     else:
+        global configured_module
         configured_module = package
 
 def textfile(resourceName, as_string=False, as_file=False):
