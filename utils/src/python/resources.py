@@ -35,10 +35,15 @@ def _find__main__(path):
             return path
         path = head
 
+def get_module(packageName):
+    if configured_module:
+        return configured_module
+    return sys.modules.get(package) or loader.load_module(package)
+
 def resource(package, resourceName, as_string=False, as_file=True):
     #print("R",package, resourceName)
+    mod = get_module(package)
     loader = get_loader(package)
-    mod = sys.modules.get(package) or loader.load_module(package)
     package_filepath = mod.__file__
     if mod != None and hasattr(mod, '__file__'):
         # Modify the resourceName name to be compatible with the loader.get_data

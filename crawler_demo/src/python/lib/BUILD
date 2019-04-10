@@ -1,7 +1,24 @@
 py_library(
-    name="lib",
+    name="crawler_lib",
     visibility = ["//visibility:public"],
-    srcs = glob(["*.py"]),
+    srcs = [
+        "CrawlerAgent.py",
+        "CrawlerAgentBehaviour.py",
+        "CrawlerAgents.py",
+    ],
+    deps = [
+    ],
+    data = [
+         "//utils/src/python:py_utils",
+    ],
+)
+
+py_library(
+    name="fake_lib",
+    visibility = ["//visibility:public"],
+    srcs = [
+         "SearchNetwork.py",
+    ],
     deps = [
     ],
     data = [
