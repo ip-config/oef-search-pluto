@@ -5,8 +5,8 @@ import asyncio
 import functools
 
 
-def socket_handler(router: BackendRouter):
-    log = get_logger("DAPSocketConnectionHandler")
+def socket_handler(router: BackendRouter, name: str):
+    log = get_logger("SocketHandler"+name)
 
     @handler
     async def on_connection(transport: Transport):
@@ -36,11 +36,11 @@ def socket_handler(router: BackendRouter):
     return on_connection
 
 
-def socket_server(host: str, port: str, router: BackendRouter):
-    asyncio.run(run_server(socket_handler(router), host, port))
+def socket_server(host: str, port: str, name: str, router: BackendRouter):
+    asyncio.run(run_server(socket_handler(router, name), host, port))
 
 
-def start_network(router: BackendRouter, ip: str, socket_port: int, http_port: int = -1, ssl_certificate = None, html_dir: str = None, *, logger = None):
+def start_network(router: BackendRouter, ip: str, socket_port: int, http_port: int = -1, ssl_certificate = None, html_dir: str = None, *, logger = None, name_flag: str = "_"):
     if logger is None:
         logger = get_logger("NetworkInterfaceCreator")
     http_info = ""
@@ -51,7 +51,7 @@ def start_network(router: BackendRouter, ip: str, socket_port: int, http_port: i
     if http_port != -1:
         threads = 2
     com = CommunicationHandler(threads)
-    com.add(socket_server, ip, socket_port)
+    com.add(socket_server, ip, socket_port, "{}:{}".format(ip, socket_port))
     if http_port != -1:
         com.add(http_server, ip, http_port, ssl_certificate, html_dir=html_dir)
     com.start(router)

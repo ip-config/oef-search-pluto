@@ -172,7 +172,12 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         PlutoApp.PlutoApp.__init__(self)
         NodeAttributeInterface.__init__(self)
         self.log.update_local_name(self._id)
-        self._loop = asyncio.get_event_loop()
+        try:
+            self._loop = asyncio.get_event_loop()
+        except RuntimeError as e:
+            self.error("Failed to get event loop, because: ", str(e), "! Creating a new one..")
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
         self.director_router = RouterBuilder.DirectorAPIRouterBuilder()\
             .set_name("DirectorRouter")\
             .set_dap_manager(self.dapManager)\

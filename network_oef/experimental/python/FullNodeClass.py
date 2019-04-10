@@ -51,8 +51,9 @@ class FullNode:
         self._search_ip = ip
         self._search_port = port
 
-    def start_core(self, core_key: str, ip: str, port: int):
-        oef_core = binaryfile("fetch_teams/OEFNode", as_file=True).name
+    def start_core(self, core_key: str, ip: str, port: int, oef_core = None):
+        if oef_core is None:
+            oef_core = binaryfile("fetch_teams/OEFNode", as_file=True).name
         while True:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             if sock.connect_ex((self._search_ip, self._search_port)) != 0:
@@ -72,8 +73,12 @@ class FullNode:
         port = int(port)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if sock.connect_ex((host, port)) != 0:
+            self.info("Connection to search node @ {}:{} failed, because socket not open!".format(host, port))
             return False
-        self._search_queue.put([host, port, node_key])
+        try:
+            self._search_queue.put([host, port, node_key])
+        except Exception as e:
+            self.exception("Failed to put peer to search_queue: ", str(e))
         return True
 
     def wait(self):

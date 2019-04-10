@@ -109,6 +109,6 @@ class Director:
             await queue.put(("close",))
 
     async def wait(self):
-        for key, task in self.transports.items():
+        for key in list(self.transports.keys()):
             self.info("Waiting for com transport for ", key)
-            await task
+            await self.transports.pop(key)

@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 _loop = asyncio.new_event_loop()
+asyncio.set_event_loop(_loop)
 
 
 def socket_handler(router: BackendRouter):
