@@ -20,7 +20,7 @@ def initialise(base:str=None, package=None, package_name:str=None):
     if package:
         configured_package = package
 
-    if package_name
+    if package_name:
         configured_package_name = package_name
 
 
