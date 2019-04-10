@@ -67,6 +67,16 @@ class PlutoApp:
                         },
                     },
                 },
+                "data_model_searcher": {
+                    "class": "SearchEngine",
+                    "config": {
+                        "structure": {
+                            "data_model_table": {
+                                "data_model": "embedding"
+                            },
+                        },
+                    },
+                },
                 "address_registry": {
                     "class": "AddressRegistry",
                     "config": {
@@ -89,7 +99,7 @@ class PlutoApp:
                 #    },
                 #}
             }
-            if len(self._network_dap_config) == 0:
+            if len(self._network_dap_config) == 0 and False:
                 dapManagerConfig["data_model_searcher"] = config_contract["data_model_searcher"]
             else:
                 for name, config in self._network_dap_config.items():

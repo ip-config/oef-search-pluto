@@ -14,7 +14,7 @@ from utils.src.python.Logging import has_logger
 class CrawlerAgents(object):
 
     @has_logger
-    def __init__(self, connection_factory, grid):
+    def __init__(self, oef_agent_factory, grid):
         self.tree = CrawlerAgentBehaviour.CrawlerAgentBehaviour()
         self.grid = grid
 
@@ -36,7 +36,11 @@ class CrawlerAgents(object):
             locations[entity.name] = entity.coords
         idx = 1
         for agent in self.agents:
-            agent.set("connection_factory", connection_factory)
+            settings = oef_agent_factory.create("car-"+str(idx))
+
+            for k,v in settings.items():
+                agent.set(k, v)
+
             agent.set("locations", locations)
             agent.set("index", idx)
             if idx % 2 == 0 and True:

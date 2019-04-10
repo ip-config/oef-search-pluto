@@ -71,7 +71,6 @@ class BehaveTreeControlNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
 
         if at == 0:
             r = random.randint(0, self.chance)
-            print("R=",r,"  CHANCE=", self.chance)
             if r != 0:
                 return self.result
 

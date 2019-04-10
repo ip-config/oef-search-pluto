@@ -388,6 +388,7 @@ class DapManager(object):
         try:
             ar = self.getInstance("address_registry")
             for ident in r.identifiers:
+                self.error("LOOKUP FOR ", ident.core)
                 a = ar.resolve(ident.core)[0]
                 ident.uri = a.ip+":"+str(a.port)
                 print(DapQueryResult.DapQueryResult(pb=ident).printable())
