@@ -8,7 +8,6 @@ from behaviour_tree.src.python.lib import BehaveTreeTaskNode
 from behaviour_tree.src.python.lib import BehaveTreeLoader
 from behaviour_tree.src.python.lib import BehaveTreeControlNode
 from behaviour_tree.src.python.lib import BehaveTreeExecution
-from fake_oef.src.python.lib import FakeAgent
 from crawler_demo.src.python.lib.SearchNetwork import SearchNetwork, ConnectionFactory
 from api.src.proto.core import query_pb2, response_pb2
 from utils.src.python.Logging import has_logger
@@ -69,16 +68,14 @@ class Reset(BehaveTreeTaskNode.BehaveTreeTaskNode):
         context.set('target-x', target_loc[0])
         context.set('target-y', target_loc[1])
 
-        connection_factory = context.get("connection_factory")
         agent = context.get("agent")
-        if agent is None:
-            agent_id = "car-"+str(context.get("index"))
-            agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id=agent_id)
+        if not context.has('initialised'):
+            context.set('initialised', 1)
             agent.connect(target=source_id + "-core")
-            context.setIfAbsent("connection", source_id)
-            context.setIfAbsent("agent", agent)
-            context.setIfAbsent('x', source_loc[0])
-            context.setIfAbsent('y', source_loc[1])
+
+        context.setIfAbsent("connection", source_id)
+        context.setIfAbsent('x', source_loc[0])
+        context.setIfAbsent('y', source_loc[1])
 
         if context.get("movement_type") == MovementType.FOLLOW_PATH:
             context.set('moveto-x', target_loc[0])
