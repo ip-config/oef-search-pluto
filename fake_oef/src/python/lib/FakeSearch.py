@@ -46,7 +46,8 @@ class BroadcastFromNode(HasMessageHandler):
         if type(response) != list:
             response = [response]
         response = self.__flatten_list(response)
-        return await asyncio.gather(*[self._serializer.deserialize(serialized) for serialized in response])
+        result = await asyncio.gather(*[self._serializer.deserialize(serialized) for serialized in response])
+        return [DataWrapper(True, "", res) for res in result]
 
 
 class LazyW2V:
