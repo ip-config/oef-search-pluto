@@ -6,6 +6,7 @@ from ai_search_engine.src.python import SearchEngine
 from dap_in_memory.src.python import InMemoryDap
 from dap_in_memory.src.python import AddressRegistry
 from dap_in_memory.src.python import DataModelInstanceStore
+from dap_attribute_store.src.python.DapAttributeStore import DapAttributeStore
 import api.src.python.core.ProtoWrappers as ProtoWrappers
 from api.src.python.RouterBuilder import CoreAPIRouterBuilder
 from dap_2d_geo.src.python import DapGeo
@@ -74,6 +75,13 @@ class PlutoApp:
                             "address_registry_table": {
                                 "address_field": "address"
                             },
+                        },
+                    },
+                },
+                "attributes": {
+                    "class": "DapAttributeStore",
+                    "config": {
+                        "structure": {
                         },
                     },
                 },
