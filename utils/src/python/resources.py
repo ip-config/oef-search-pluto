@@ -3,19 +3,37 @@ from pkgutil import get_loader
 
 # https://stackoverflow.com/questions/5003755/how-to-use-pkgutils-get-data-with-csv-reader-in-python
 
+def _find__main__(path):
+    while True:
+        head, tail = os.path.split(path)
+        if head == "":
+            return False
+        if tail == "__main__":
+            return path
+        path = head
 
 configured_package_name = '__main__'
 configured_package = None
-configured_filebase = None
+detected_mode = None
 
+m = sys.modules.get("__main__", None)
+print("::::::::::::::::",m)
+if m and hasattr(m, "__file__"):
+    configured_filebase = getattr(m, "__file__")
+    if "__main__" in configured_filebase.split('/'):
+        configured_filebase = _find__main__(configured_filebase)
+        detected_mode = 'bazel'
+        
 def initialise(base:str=None, package=None, package_name:str=None):
 
     global configured_package_name
     global configured_package
     global configured_filebase
+    global detected_mode
 
     if base:
         configured_filebase = _find__main__(base)
+        detected_mode = 'filesystem'
 
     if package:
         configured_package = package
@@ -39,31 +57,32 @@ def resource_list(package):
     loader = get_loader(package)
     print(loader.dir)
 
-def _find__main__(path):
-    while True:
-        head, tail = os.path.split(path)
-        if head == "":
-            return False
-        if tail == "__main__":
-            return path
-        path = head
+
 
 def get_module():
     return configured_package or sys.modules.get(configured_package_name) or loader.load_module(configured_package_name)
 
 def resource(resourceName, as_string=False, as_file=True):
+    global detected_mode
 
-    if configured_filebase:
-    for filename in [
-         os.path.join(configured_filebase, resourceName),
-         resourceName
-    ]:
-        if os.path.exists(filename):
-            if as_file:
-                return open(resourceName, "rb")
-            with open(resourceName, "rb") as binary_file:
-                return binary_file.read()
+    if detected_mode == None or detected_mode in [ 'filesystem', 'bazel' ]:
+        for filename in [
+            os.path.join(configured_filebase, resourceName),
+            resourceName
+        ]:
+            print("Exists?", filename)
+            if os.path.exists(filename):
+                print("Yes")
+                detected_mode = 'filesystem'
+                if as_file:
+                    return open(filename, "rb")
+                if as_string:
+                    return filename
+                with open(filename, "rb") as binary_file:
+                    return binary_file.read()
+        raise Exception("no")
 
+    detected_mode = 'loader'
     #print("R",package, resourceName)
     mod = get_module()
     loader = get_loader(configured_package_name)
@@ -89,24 +108,6 @@ def resource(resourceName, as_string=False, as_file=True):
             except OSError as ex:
                 if ex.errno != 2:
                     raise
-
-            if os.path.exists(resourceName):
-                if as_file:
-                    return open(resourceName, "rb")
-                with open(resourceName, "rb") as binary_file:
-                    return binary_file.read()
-
-            global inside_bazel
-            if inside_bazel == None:
-                inside_bazel = _find__main__(package_filepath)
-
-            if inside_bazel:
-                poss_path = os.path.join(inside_bazel, resourceName)
-                if os.path.exists(poss_path):
-                    if as_file:
-                        return open(poss_path, "rb")
-                    with open(poss_path, "rb") as binary_file:
-                        return binary_file.read()
             raise ValueError("Can't load resource {}::{}".format(package, resourceName))
     else:
         raise ValueError("Not a loader for resource {}::{}".format(package, resourceName))
