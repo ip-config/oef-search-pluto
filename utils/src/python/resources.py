@@ -25,15 +25,15 @@ def initialise(base:str=None, package=None, package_name:str=None):
 
 
 def textfile(resourceName, as_string=False, as_file=False):
-    return resource(main_package, resourceName, as_string=as_string, as_file=as_file).decode("utf-8")
+    return resource(resourceName, as_string=as_string, as_file=as_file).decode("utf-8")
 
 
 def textlines(resourceName, as_string=False, as_file=False):
-    return resource(main_package, resourceName, as_string=as_string, as_file=as_file).decode("utf-8").rstrip("\n").split("\n")
+    return resource(resourceName, as_string=as_string, as_file=as_file).decode("utf-8").rstrip("\n").split("\n")
 
 
 def binaryfile(resourceName, as_string=False, as_file=False):
-    return resource(main_package, resourceName, as_string=as_string, as_file=as_file)
+    return resource(resourceName, as_string=as_string, as_file=as_file)
 
 def resource_list(package):
     loader = get_loader(package)
@@ -51,7 +51,7 @@ def _find__main__(path):
 def get_module():
     return configured_package or sys.modules.get(configured_package_name) or loader.load_module(configured_package_name)
 
-def resource(package, resourceName, as_string=False, as_file=True):
+def resource(resourceName, as_string=False, as_file=True):
     #print("R",package, resourceName)
     mod = get_module(package)
     loader = get_loader(configured_package_name)
