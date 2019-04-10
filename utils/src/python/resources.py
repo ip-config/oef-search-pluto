@@ -5,11 +5,15 @@ from pkgutil import get_loader
 
 main_package = '__main__'
 inside_bazel = None
+configured_module = None
 
 def initialise(package):
-    global main_package
-    main_package = package
-    assert main_package != None
+    if isinstance(package, str):
+        global main_package
+        main_package = package
+        assert main_package != None
+    else:
+        configured_module = package
 
 def textfile(resourceName, as_string=False, as_file=False):
     return resource(main_package, resourceName, as_string=as_string, as_file=as_file).decode("utf-8")
