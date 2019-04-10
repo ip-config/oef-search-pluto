@@ -53,7 +53,7 @@ def get_module():
 
 def resource(resourceName, as_string=False, as_file=True):
     #print("R",package, resourceName)
-    mod = get_module(package)
+    mod = get_module()
     loader = get_loader(configured_package_name)
     package_filepath = configured_filebase or mod.__file__
     if mod != None and hasattr(mod, '__file__'):
