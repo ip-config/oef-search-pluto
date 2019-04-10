@@ -77,6 +77,16 @@ class PlutoApp:
                         },
                     },
                 },
+                #"data_model_searcher": {
+                #    "class": "SearchEngine",
+                #    "config": {
+                #        "structure": {
+                #            "data_model_table": {
+                #                "data_model": "embedding"
+                #            },
+                #        },
+                #    },
+                #},
                 #"data_model_store": {
                 #    "class": "DataModelInstanceStore",
                 #    "config": {

@@ -384,15 +384,6 @@ class DapManager(object):
 
 #        print("_executeNode")
 #        print("Results;")
-        #TODO remove this with late dap
-        try:
-            ar = self.getInstance("address_registry")
-            for ident in r.identifiers:
-                a = ar.resolve(ident.core)[0]
-                ident.uri = a.ip+":"+str(a.port)
-                print(DapQueryResult.DapQueryResult(pb=ident).printable())
-        except Exception as e:
-            print("Address resolve exception", str(e))
         return r
 
     def _executeMementoChain(self, node, ordered_mementos, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
