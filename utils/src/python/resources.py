@@ -15,7 +15,7 @@ def initialise(base:str=None, package=None, package_name:str=None):
     global configured_filebase
 
     if base:
-        configured_filebase = base
+        configured_filebase = _find__main__(base)
 
     if package:
         configured_package = package
@@ -52,6 +52,18 @@ def get_module():
     return configured_package or sys.modules.get(configured_package_name) or loader.load_module(configured_package_name)
 
 def resource(resourceName, as_string=False, as_file=True):
+
+    if configured_filebase:
+    for filename in [
+         os.path.join(configured_filebase, resourceName),
+         resourceName
+    ]:
+        if os.path.exists(filename):
+            if as_file:
+                return open(resourceName, "rb")
+            with open(resourceName, "rb") as binary_file:
+                return binary_file.read()
+
     #print("R",package, resourceName)
     mod = get_module()
     loader = get_loader(configured_package_name)
