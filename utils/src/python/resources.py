@@ -3,18 +3,26 @@ from pkgutil import get_loader
 
 # https://stackoverflow.com/questions/5003755/how-to-use-pkgutils-get-data-with-csv-reader-in-python
 
-main_package = '__main__'
-inside_bazel = None
-configured_module = None
 
-def initialise(package):
-    if isinstance(package, str):
-        global main_package
-        main_package = package
-        assert main_package != None
-    else:
-        global configured_module
-        configured_module = package
+configured_package_name = '__main__'
+configured_package = None
+configured_filebase = None
+
+def initialise(base:str=None, package=None, package_name:str=None):
+
+    global configured_package_name
+    global configured_package
+    global configured_filebase
+
+    if base:
+        configured_filebase = base
+
+    if package:
+        configured_package = package
+
+    if package_name
+        configured_package_name = package_name
+
 
 def textfile(resourceName, as_string=False, as_file=False):
     return resource(main_package, resourceName, as_string=as_string, as_file=as_file).decode("utf-8")
@@ -40,16 +48,14 @@ def _find__main__(path):
             return path
         path = head
 
-def get_module(packageName):
-    if configured_module:
-        return configured_module
-    return sys.modules.get(package) or loader.load_module(package)
+def get_module():
+    return configured_package or sys.modules.get(configured_package_name) or loader.load_module(configured_package_name)
 
 def resource(package, resourceName, as_string=False, as_file=True):
     #print("R",package, resourceName)
     mod = get_module(package)
-    loader = get_loader(package)
-    package_filepath = mod.__file__
+    loader = get_loader(configured_package_name)
+    package_filepath = configured_filebase or mod.__file__
     if mod != None and hasattr(mod, '__file__'):
         # Modify the resourceName name to be compatible with the loader.get_data
         # signature - an os.path format "filename" starting with the dirname of
