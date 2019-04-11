@@ -84,7 +84,7 @@ def resource(resourceName, as_string=False, as_file=True, open_mode="rb"):
                 with open(filename, open_mode) as binary_file:
                     return binary_file.read()
         if detected_mode in [ 'filesystem', 'bazel' ]:
-            raise Exception("no")
+            raise Exception("Unable to load: {}".resourceName)
 
     detected_mode = 'loader'
     #print("R",package, resourceName)
