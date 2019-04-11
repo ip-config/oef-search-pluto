@@ -8,13 +8,17 @@ from svg_output.src.python.lib import SvgStyle
 from svg_output.src.python.lib import SvgGraph
 from svg_output.src.python.lib import SvgElements
 from behaviour_tree.src.python.lib import BehaveTreeExecution
-from crawler_demo.src.python.lib.SearchNetwork import SearchNetwork, ConnectionFactory
 from utils.src.python.Logging import has_logger
+
+DEFAULT_KINDS = [
+    CrawlerAgentBehaviour.MovementType.FOLLOW_PATH,
+    CrawlerAgentBehaviour.MovementType.CRAWL_ON_NODES,
+]
 
 class CrawlerAgents(object):
 
     @has_logger
-    def __init__(self, oef_agent_factory, grid):
+    def __init__(self, oef_agent_factory, grid, kinds=DEFAULT_KINDS):
         self.tree = CrawlerAgentBehaviour.CrawlerAgentBehaviour()
         self.grid = grid
 
@@ -43,10 +47,7 @@ class CrawlerAgents(object):
 
             agent.set("locations", locations)
             agent.set("index", idx)
-            if idx % 2 == 0 and True:
-                agent.set("movement_type", CrawlerAgentBehaviour.MovementType.FOLLOW_PATH)
-            else:
-                agent.set("movement_type", CrawlerAgentBehaviour.MovementType.CRAWL_ON_NODES)
+            agent.set("movement_type", kinds[ idx % len(kinds) ])
             idx += 1
 
     def tick(self):

@@ -6,7 +6,8 @@ py_binary(
     deps = [
          "//fake_oef/src/python/lib:lib",
          "//england_grid/src/python/lib:lib",
-         "//crawler_demo/src/python/lib:lib",
+         "//crawler_demo/src/python/lib:fake_lib",
+         "//crawler_demo/src/python/lib:crawler_lib",
          "//behaviour_tree/src/python/lib:lib",
          "//utils/src/python:py_utils",
          "//pluto_app/src/python/app:app",

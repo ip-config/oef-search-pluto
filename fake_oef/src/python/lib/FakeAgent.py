@@ -2,7 +2,7 @@ from dap_api.src.protos import dap_update_pb2
 from fake_oef.src.python.lib.ConnectionFactory import SupportsConnectionInterface, Endpoint
 from fake_oef.src.python.lib.Connection import Connection
 from utils.src.python.Logging import has_logger
-
+from api.src.proto.core import query_pb2, response_pb2
 
 class FakeAgent(SupportsConnectionInterface):
     @has_logger
@@ -40,7 +40,17 @@ class FakeAgent(SupportsConnectionInterface):
             self.log.info("Register service: %s to connection %s", service_upd.name, key)
             con.register_service(self.id, service_upd.SerializeToString())
 
-    def search(self, query):
+
+    def build_query(target=(200, 200), ttl=1):
+        q = query_pb2.Query()
+        q.model.description = "weather data"
+        q.ttl = ttl
+        q.directed_search.target.geo.lat = target[0]
+        q.directed_search.target.geo.lon = target[1]
+        return q
+
+    def search(self, target):
+        query = FakeAgent.build_query(target)
         res = []
         for key, con in self.connections.items():
             res.append(con.search(query))

@@ -9,6 +9,8 @@ from svg_output.src.python.lib import SvgElements
 from svg_output.src.python.lib import SvgStyle
 from svg_output.src.python.lib import SvgGraph
 
+from utils.src.python import resources
+
 class EnglandGrid(object):
 
     class GridEntity(object):
@@ -118,7 +120,7 @@ class EnglandGrid(object):
 
     def loadCities(self, fn="toby_loader/data/csv/centres-ordered-by-population.csv"):
         cities = 0
-        with open(fn, "r") as fh:
+        with resources.textfile(fn, as_file=True) as fh:
             reader = csv.reader(fh)
             for citynumber, row in enumerate(reader):
                 city = row[0]
@@ -173,8 +175,9 @@ class EnglandGrid(object):
             city.links.extend([ (r[x], "GND") for x in targs ])
 
     def loadAirports(self, fn="dap_2d_geo/test/resources/GlobalAirportDatabase.txt", limit=None):
-        with open("dap_2d_geo/test/resources/GlobalAirportDatabase.txt", "r") as f:
+        with resources.textfile(fn, as_file=True) as f:
             for i in f.readlines():
+                print("I=", i)
                 i = i.strip()
                 parts = i.split(":")
 
