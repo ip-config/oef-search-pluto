@@ -6,6 +6,7 @@ import os
 from utils.src.python.resources import binaryfile
 import time
 import socket
+from utils.src.python.Logging import has_logger
 
 
 def _run_search_node(name: str, node_ip: str, node_port: int, dap_port_start: int, director_api_port: int,
@@ -33,6 +34,7 @@ def _run_search_node(name: str, node_ip: str, node_port: int, dap_port_start: in
 
 
 class FullNode:
+    @has_logger
     def __init__(self):
         self._search_queue = multiprocessing.Queue()
         self._search_process = None
