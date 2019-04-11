@@ -19,5 +19,20 @@ py_binary(
          "//api/src/resources:website",
          "//docker-images:dockerfile",
     ]
+)
 
+
+py_binary(
+    name = "demo_director",
+    srcs = ["DirectorMain.py"],
+    main = "DirectorMain.py",
+    deps = [
+        "//api/experimental/python:director",
+        "//england_grid/src/python/lib:lib",
+    ],
+    srcs_version = "PY3",
+    data = [
+         "//crawler_demo/resources:resources",
+         "//england_grid/resources/images:pop-images",
+    ]
 )

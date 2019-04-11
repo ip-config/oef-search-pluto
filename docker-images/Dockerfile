@@ -26,6 +26,7 @@ WORKDIR /app/project
 RUN rm -f .bazelrc && \
     cd fetch_teams/oef-core && mkdir build && cd build && cmake .. && make -j16 && cd /app/project && \
     bazel build network_oef/experimental/python:node --force_python=PY3 && \
+    bazel build netwrok_oef/experimental/python/demo:demo_director --force_python=PY3 && \
     cp certificates/src/makefiles/oef-search/oef-search.pem /build/server.pem  && \
     cp -Lr bazel-bin /build && \
     cp network_oef/experimental/sh/oef.sh /build/
@@ -34,7 +35,7 @@ FROM qati/python3alpine_nlp
 
 WORKDIR /app
 
-COPY --from=builder /build/bazel-bin/network_oef/experimental/python/ /app/
+COPY --from=builder /build/bazel-bin/network_oef/experimental/python /app/
 COPY --from=builder /build/server.pem /app/
 COPY --from=builder /build/oef.sh /app/
 COPY --from=builder /app/project/cpp-sdk/experimental/resources /app/cpp-sdk/experimental/resources

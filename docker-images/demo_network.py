@@ -1,11 +1,9 @@
+import argparse
 from typing import List, Dict
-import time
 import subprocess
 import os
-import shutil
 from concurrent.futures import ThreadPoolExecutor
-import atexit
-import functools
+
 
 def get_workdir(start_dir: str = ""):
     if start_dir == "":
@@ -25,26 +23,22 @@ def build(image_tag: str, path: str):
         subprocess.check_call(["docker", "network", "create", "-d", "bridge", "oef_search_net"])
     except Exception as e:
         print("Docker network creation failed: ", str(e))
-    build_dir = path+"/build"
-    if not os.path.exists(build_dir):
-        os.mkdir(build_dir)
-    shutil.copyfile(path+"/Dockerfile", build_dir+"/Dockerfile")
-    shutil.copyfile(path+"/project.tar.gz", build_dir+"/project.tar.gz")
+    print('Generating source archive...')
+    cmd = [
+        'git-archive-all', os.path.join(path, 'project.tar.gz')
+    ]
+    subprocess.check_call(cmd, cwd=path)
+    print('Generating source archive...complete')
     cmd = [
         'docker',
         'build',
         '-t', image_tag,
         '.',
     ]
-    subprocess.check_call(cmd, cwd=build_dir)
+    subprocess.check_call(cmd, cwd=path)
 
 
-def kill_containers(names: List[str]):
-    for name in names:
-        subprocess.check_call(["docker", "kill", name])
-
-
-def main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, ssl_cert: str = "", *,
+def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, ssl_cert: str = "", *,
          image_tag: str, do_build: bool):
     path = get_workdir()
     if do_build:
@@ -57,7 +51,6 @@ def main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, s
     dap_port = 30000
     director_port = 40000
 
-    names = []
     for i in range(num_of_nodes):
         http_port = http_ports.get(i, -1)
         search_port = SEARCH_PORT+i
@@ -110,6 +103,23 @@ def main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, s
         cmd.extend(args)
         print("EXECUTE: ", cmd)
         pool.submit(subprocess.check_call, cmd)
-        names.append("oef_node"+str(i))
 
-    atexit.register(functools.partial(kill_containers, names))
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='DEMO search network')
+    parser.add_argument("--num_nodes", required=True, type=int, help="Number of full demo nodes")
+    parser.add_argument("--links", nargs='*',  type=str,
+                        help="Node connection list: id1:id2 ... (id: 0...num_nodes-1)")
+    parser.add_argument("--http_port_map", nargs='*', type=str, help="id:http_port (id: 0...num_nodes-1)")
+    parser.add_argument("--image", "-i", type=str, default="oef-search:latest", help="Docker image name")
+    parser.add_argument("--build", "-b", action="store_true", help="Build docker image")
+
+    args = parser.parse_args()
+
+    http_port_map = {}
+    for e in args.http_port_map:
+        k, p = e.split(":")
+        http_port_map[int(k)] = int(p)
+
+    container_main(args.num_nodes, args.links, http_port_map, "/app/server.pem", image_tag=args.image,
+                   do_build=args.build)
