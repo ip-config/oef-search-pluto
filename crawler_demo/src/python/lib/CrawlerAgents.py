@@ -24,6 +24,10 @@ class CrawlerAgents(object):
 
         self.threadpool = ThreadPoolExecutor(max_workers=1)
 
+        for k in kinds:
+            if k not in DEFAULT_KINDS:
+                print("Bad kind:", k, DEFAULT_KINDS)
+                exit(77)
         randomisers = [
             self.createRandomiser(x)
             for x
@@ -74,11 +78,6 @@ class CrawlerAgents(object):
             in self.agents
         ]
 
-        self.info(locations)
-
-        colour1 = "white"
-        colour2 = "black"
-
         crawler_styles = {
             CrawlerAgentBehaviour.MovementType.CRAWL_ON_NODES: {
                 'dot': SvgStyle.SvgStyle({"fill-opacity": 1, " fill": colour1, " stroke-width": 0.1}),
@@ -92,16 +91,33 @@ class CrawlerAgents(object):
             }
         }
 
-        dots =  [
-            SvgElements.SvgCircle(
+        kinds = set([
+            agent.get('movement_type')
+             for agent
+            in self.agents
+        ])
+        for k in kinds:
+            if k not in DEFAULT_KINDS:
+                print("Bad kind:", k, DEFAULT_KINDS)
+                exit(77)
+            if k not in crawler_styles:
+                print("Unstyled kind:", k, list(crawler_styles.keys()))
+                exit(77)
+
+        self.info(locations)
+
+        colour1 = "white"
+        colour2 = "black"
+
+        dots =  []
+        for movement_type, x,y,_,_,_ in locations:
+            style = crawler_styles[movement_type]['dot']
+            dots.append(SvgElements.SvgCircle(
                 cx=x,
                 cy=y,
                 r=3,
-                style = crawler_styles[movement_type]['dot']
-            )
-            for movement_type, x,y,_,_,_
-            in locations
-        ]
+                style=style
+            ))
 
         g = SvgGraph.SvgGraph(*dots)
 
