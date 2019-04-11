@@ -29,13 +29,19 @@ async def set_nodes(director: Director, addresses: List[str]):
 
 async def set_weather_agents(director: Director):
     names = director.get_node_names()
+    tasks = []
     for name in names:
         host, port = name.split(":")
         if host.find("oef_node") != -1:
             i = int(host.replace("oef_node", ""))
         else:
             i = int(port)-20000
-        await director.send(name, "blk_update", create_weather_agent_service(10000+i, "Core{}".format(i)))
+        task = asyncio.create_task(director.send(name, "blk_update",
+                                                 create_weather_agent_service(10000+i, "Core{}".format(i))))
+        tasks.append(task)
+    for task in tasks:
+        await task
+
 
 
 async def set_locations(director: Director):
@@ -70,7 +76,6 @@ async def main(args):
 
 
 if __name__ == "__main__":
-    print("DIRECTOR GOT ARGS: ", sys.argv)
     parser = argparse.ArgumentParser(description='DEMO Director')
     parser.add_argument("--targets", nargs='+',  type=str, help="Node addresses host:port ...")
     parser.add_argument("--type", type=str, required=True, help="weather_agent/location")
