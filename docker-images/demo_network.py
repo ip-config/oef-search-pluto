@@ -59,13 +59,24 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
     CORE_PORT = 10000
     SEARCH_PORT = 20000
     dap_port = 30000
-    director_port = 40000
+    DIRECTOR_PORT = 40000
+
+    docker_cmd = [
+        "docker",
+        "run",
+        "--rm",
+        "-it",
+        "--network=oef_search_net",
+    ]
 
     names = []
+    api_targets = []
+    director_targets = []
     for i in range(num_of_nodes):
         http_port = http_ports.get(i, -1)
         search_port = SEARCH_PORT+i
         core_port = CORE_PORT+i
+        director_port = DIRECTOR_PORT + i
         args = [
             "--node_key", "Search{}".format(i),
             "--core_key", "Core{}".format(i),
@@ -73,7 +84,7 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
             "--search_port", str(search_port),
             "--core_port", str(core_port),
             "--dap_port", str(dap_port+i),
-            "--director_api_port", str(director_port+i),
+            "--director_api_port", str(director_port),
             "--http_port", str(http_port),
             "--ssl_certificate", ssl_cert
         ]
@@ -89,20 +100,17 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
             peers.append("Search{}:".format(target)+host+":"+str(port))
         args.append("--search_peers")
         args.extend(peers)
+        node_name = "oef_node"+str(i)
 
-        cmd = [
-            "docker",
-            "run",
-            "--rm",
-            "-it",
+        cmd = docker_cmd
+        cmd.extend([
             "--name",
-            "oef_node" + str(i),
-            "--network=oef_search_net",
+            node_name,
             "-p",
             str(search_port) + ":" + str(search_port),
             "-p",
             str(core_port) + ":" + str(core_port),
-        ]
+        ])
         i += 1
 
         if http_port != -1:
@@ -111,10 +119,40 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
                 str(http_port) + ":" + str(http_port)
             ])
         cmd.append(image_tag)
+        cmd.extend([
+            "node",
+            "no_sh"
+        ])
         cmd.extend(args)
         print("EXECUTE: ", cmd)
         pool.submit(subprocess.check_call, cmd)
-        names.append("oef_node"+str(i))
+        names.append(node_name)
+        api_targets.append(node_name+":"+str(search_port))
+        director_targets.append(node_name+":"+str(director_port))
+
+    loc_director_cmd = docker_cmd
+    loc_director_cmd.extend([
+        image_tag,
+        "director",
+        "--type",
+        "location",
+        "no_sh",
+        "--targets"
+    ])
+    loc_director_cmd.extend(director_targets)
+    subprocess.check_call(loc_director_cmd)
+
+    loc_director_cmd = docker_cmd
+    loc_director_cmd.extend([
+        image_tag,
+        "director",
+        "no_sh",
+        "--type",
+        "weather_agent",
+        "--targets"
+    ])
+    loc_director_cmd.extend(api_targets)
+    subprocess.check_call(loc_director_cmd)
 
     pool.shutdown(wait=True)
 
