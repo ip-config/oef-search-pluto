@@ -8,7 +8,6 @@ from behaviour_tree.src.python.lib import BehaveTreeTaskNode
 from behaviour_tree.src.python.lib import BehaveTreeLoader
 from behaviour_tree.src.python.lib import BehaveTreeControlNode
 from behaviour_tree.src.python.lib import BehaveTreeExecution
-from api.src.proto.core import query_pb2, response_pb2
 from utils.src.python.Logging import has_logger
 from enum import Enum
 
