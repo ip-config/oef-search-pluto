@@ -132,7 +132,7 @@ class CrawlerAgents(object):
         ])
 
         linedata = [
-            ( movement_type, x, y, self.grid.getPositionOf(conn) )
+            ( movement_type, x, y, self.grid.getPositionOf(conn)  or (100,100))
             for movement_type, x, y, conn, _, _
             in locations
         ]
