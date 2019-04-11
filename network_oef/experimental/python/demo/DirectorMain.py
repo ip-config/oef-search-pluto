@@ -43,7 +43,6 @@ async def set_weather_agents(director: Director):
         await task
 
 
-
 async def set_locations(director: Director):
     grid = EnglandGrid.EnglandGrid()
     grid.load()

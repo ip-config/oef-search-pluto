@@ -155,6 +155,7 @@ def decodeConstraintValue(valueMessage):
 
 def coresToIdentifierSequence(cores: List[DapQueryResult.DapQueryResult]) -> dap_interface_pb2.IdentifierSequence:
     m = dap_interface_pb2.IdentifierSequence()
+    m.originator = False
     if cores != None:
         m.originator = False
         for c in cores:

@@ -309,7 +309,7 @@ class SearchEngine(DapInterface):
         query_memento = proto.query_memento
         graphQuery = SearchEngine.SubQuery().setSearchSystem(self).fromJSON(query_memento.memento.decode("utf-8"))
 
-        if input_idents.HasField('originator') and input_idents.originator:
+        if input_idents.originator:
             idents = None
         else:
             idents = [ DapQueryResult(pb=x) for x in input_idents.identifiers ]

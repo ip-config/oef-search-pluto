@@ -344,6 +344,7 @@ class DapManager(object):
             dapQueryRepn.visitDescending(v1)
         except DapManager.NoConstraintCompilerException as ex:
             r = dap_interface_pb2.IdentifierSequence()
+            r.originator = False
             failure = r.status
             failure.success = False
             failure.narrative.append(str(ex))
@@ -390,14 +391,16 @@ class DapManager(object):
         self.warning("_executeMementoChain working on ", node.printable())
         self.warning("_executeMementoChain will run: ", [ m[0] for m in ordered_mementos ])
         self.warning("_executeMementoChain input count ", len(cores.identifiers))
-
-        current = cores
-        for dap_name, memento in ordered_mementos:
-            proto = dap_interface_pb2.DapExecute()
-            proto.query_memento.CopyFrom(memento)
-            proto.input_idents.CopyFrom(current)
-            current = self.getInstance(dap_name).execute(proto)
-        self.warning("_executeMementoChain output ", current)
+        try:
+            current = cores
+            for dap_name, memento in ordered_mementos:
+                proto = dap_interface_pb2.DapExecute()
+                proto.query_memento.CopyFrom(memento)
+                proto.input_idents.CopyFrom(current)
+                current = self.getInstance(dap_name).execute(proto)
+        except Exception as e:
+            self.error("_executeMementoChain error: ", str(e))
+        self.warning("_executeMementoChain output count ", len(current.identifiers))
         return current
 
     def _executeLeaf(self, node, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
@@ -415,6 +418,7 @@ class DapManager(object):
     def _executeOr(self, node, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
         self.warning("_executeOr ", node.printable())
         r = dap_interface_pb2.IdentifierSequence()
+        r.originator = False
         for n in node.subnodes:
             res = self._execute(n, cores)
             for ident in res.identifiers:
@@ -436,12 +440,16 @@ class DapManager(object):
         for n in node.leaves[leafstart:]:
             cores = self._executeLeaf(n, cores)
             if len(cores.identifiers) == 0:
-                return dap_interface_pb2.IdentifierSequence()
+                result = dap_interface_pb2.IdentifierSequence()
+                result.originator = False
+                return result
 
         for n in node.subnodes[nodestart:]:
             cores = self._execute(n, cores)
             if len(cores.identifiers) == 0:
-                return dap_interface_pb2.IdentifierSequence()
+                result = dap_interface_pb2.IdentifierSequence()
+                result.originator = False
+                return result
 
         return cores
 

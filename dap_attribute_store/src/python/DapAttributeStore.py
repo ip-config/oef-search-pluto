@@ -110,6 +110,7 @@ class DapAttributeStore(DapInterface.DapInterface):
             self.log.info(" execute settings    {} = {}".format(k,v))
 
         result = dap_interface_pb2.IdentifierSequence()
+        result.originator = False
         if input_idents.originator:
             for row_key, row in self.table.items():
                 core_ident, agent_ident = row_key

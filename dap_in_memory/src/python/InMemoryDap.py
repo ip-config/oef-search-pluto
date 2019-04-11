@@ -82,6 +82,7 @@ class InMemoryDap(DapInterface.DapInterface):
     def processRows(self, rowProcessor, target_table_name, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
         #self.log.info("processRows")
         r = dap_interface_pb2.IdentifierSequence()
+        r.originator = False
 
         table = self.store.get(target_table_name, None)
         if table == None:

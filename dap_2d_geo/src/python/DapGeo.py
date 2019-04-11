@@ -243,7 +243,7 @@ class DapGeo(DapInterface.DapInterface):
 
         self.warning("idents=", idents)
         reply = dap_interface_pb2.IdentifierSequence()
-        reply.originator = False;
+        reply.originator = False
 
         for r in geoQuery.execute(set(idents)):
             c = reply.identifiers.add()

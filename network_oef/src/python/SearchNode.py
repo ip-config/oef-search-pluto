@@ -257,7 +257,7 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
                 self.info("Broadcasting search to ", target_search_node_id, ", data=", data)
                 cos.append(self._search_coms[target_search_node_id].call_node(path, data.SerializeToString()))
             else:
-                self.info("Skip broadcast to {} because last broadcast was source ({}) is the same".format(
+                self.info("Skip broadcast to {} because last broadcast source ({}) is the same".format(
                     target_search_node_id, source))
         self.info("Active co-routines: ", cos)
         try:

@@ -78,13 +78,13 @@ class PlutoApp:
                         },
                     },
                 },
-                "attributes": {
-                    "class": "DapAttributeStore",
-                    "config": {
-                        "structure": {
-                        },
-                    },
-                },
+                #"attributes": {
+                #    "class": "DapAttributeStore",
+                #    "config": {
+                #        "structure": {
+                #        },
+                #    },
+                #},
                 #"data_model_searcher": {
                 #    "class": "SearchEngine",
                 #    "config": {
