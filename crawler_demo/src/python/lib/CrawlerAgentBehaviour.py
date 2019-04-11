@@ -12,15 +12,6 @@ from utils.src.python.Logging import has_logger
 from enum import Enum
 
 
-def build_query(target=(200, 200), ttl=1):
-    q = query_pb2.Query()
-    q.model.description = "weather data"
-    q.ttl = ttl
-    q.directed_search.target.geo.lat = target[0]
-    q.directed_search.target.geo.lon = target[1]
-    return q
-
-
 def best_oef_core(nodes):
     distance = 1e16
     result = None
@@ -158,9 +149,7 @@ class QueryNodesToMoveTo(BehaveTreeTaskNode.BehaveTreeTaskNode):
         agent = context.get("agent")
         target = context.get("target")
 
-        query = build_query(target)
-
-        result = best_oef_core(agent.search(query))
+        result = best_oef_core(agent.search(target))
         if result is not None:
             self.info(result)
             agent.swap_core(result)
@@ -231,9 +220,7 @@ class QueryNearestNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         y = context.get("y")
 
         target_loc = context.get("target")
-
-        query = build_query([x, y], ttl=1)
-        result = best_oef_core(agent.search(query))
+        result = best_oef_core(agent.search(target_loc))
         if result is not None:
             self.info(result)
             agent.swap_core(result)
