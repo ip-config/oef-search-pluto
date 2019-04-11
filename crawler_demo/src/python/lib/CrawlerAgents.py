@@ -8,7 +8,6 @@ from svg_output.src.python.lib import SvgStyle
 from svg_output.src.python.lib import SvgGraph
 from svg_output.src.python.lib import SvgElements
 from behaviour_tree.src.python.lib import BehaveTreeExecution
-from crawler_demo.src.python.lib.SearchNetwork import SearchNetwork, ConnectionFactory
 from utils.src.python.Logging import has_logger
 
 DEFAULT_KINDS = [
