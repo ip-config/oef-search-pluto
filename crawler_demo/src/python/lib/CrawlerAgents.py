@@ -126,7 +126,7 @@ class CrawlerAgents(object):
         g = SvgGraph.SvgGraph(*dots)
 
         print([
-            (conn, self.grid.getPositionOf(conn))
+            (conn, self.grid.getPositionOf(conn) or (100,100))
             for movement_type, x, y, conn, _, _
             in locations
         ])
