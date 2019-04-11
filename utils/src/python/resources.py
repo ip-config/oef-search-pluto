@@ -7,7 +7,7 @@ def _find__main__(path):
     while True:
         head, tail = os.path.split(path)
         if head == "":
-            return False
+            return ""
         if tail == "__main__":
             return path
         path = head
@@ -23,7 +23,7 @@ if m and hasattr(m, "__file__"):
     if "__main__" in configured_filebase.split('/'):
         configured_filebase = _find__main__(configured_filebase)
         detected_mode = 'bazel'
-        
+
 def initialise(base:str=None, package=None, package_name:str=None):
 
     global configured_package_name

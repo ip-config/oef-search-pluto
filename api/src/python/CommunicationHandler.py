@@ -59,11 +59,10 @@ def serve_site(html_dir: str, path: str):
     #    bottle.response.headers['Content-Type'] = 'text/javascript'
     #elif path.find(".css") > 0:
     #    bottle.response.headers['Content-Type'] = 'text/css'
-    return bottle.static_file(resources.textfile(os.path.join(html_dir, path)))
+    return bottle.static_file(resources.textfile(os.path.join(html_dir, path), as_string=True), root="/")
 
 
 def http_server(host: str, port: int, crt_file: str, *, router: BackendRouter, html_dir: str = None):
-    resources.initialise(__package__)
     app = bottle.Bottle()
     srv = SSLWSGIRefServer.SSLWSGIRefServer(host=host, port=port, certificate_file=crt_file)
     app.route(path="/json/<path:path>", method="POST", callback=http_json_handler(router))

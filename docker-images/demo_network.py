@@ -133,6 +133,7 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
 
     loc_director_cmd = []
     loc_director_cmd.extend(docker_cmd)
+    loc_director_cmd.extend(["--name", "location_director"])
     loc_director_cmd.extend([
         image_tag,
         "director",
@@ -146,6 +147,7 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
 
     weather_director_cmd = []
     weather_director_cmd.extend(docker_cmd)
+    weather_director_cmd.extend(["--name", "weather_director"])
     weather_director_cmd.extend([
         image_tag,
         "director",
