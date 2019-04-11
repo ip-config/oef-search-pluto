@@ -8,7 +8,7 @@ def _find__main__(path):
     while True:
         head, tail = os.path.split(path)
         if head == "":
-            return False
+            return ""
         if tail == "__main__":
             return path
         path = head
@@ -18,7 +18,6 @@ configured_package = None
 detected_mode = None
 
 m = sys.modules.get("__main__", None)
-print("::::::::::::::::",m)
 if m and hasattr(m, "__file__"):
     configured_filebase = getattr(m, "__file__")
     if "__main__" in configured_filebase.split('/'):

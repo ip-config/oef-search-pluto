@@ -26,7 +26,7 @@ class CrawlerAgents(object):
 
         for k in kinds:
             if k not in DEFAULT_KINDS:
-                print("Bad kind:", k, DEFAULT_KINDS)
+                print("Bad kind1:", k, DEFAULT_KINDS)
                 exit(77)
         randomisers = [
             self.createRandomiser(x)
