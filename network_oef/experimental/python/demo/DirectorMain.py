@@ -17,8 +17,8 @@ async def set_weather_agents(director: Director):
     names = director.get_node_names()
     for name in names:
         host, port = name.split(":")
-        if host.find("Search") != -1:
-            i = int(host.replace("Search", ""))
+        if host.find("oef_node") != -1:
+            i = int(host.replace("oef_node", ""))
         else:
             i = int(port)-20000
         await director.send(name, "blk_update", create_weather_agent_service(10000+i, "Core{}".format(i)))
@@ -31,7 +31,7 @@ async def set_locations(director: Director):
     i = 0
     names = director.get_node_names()
     for key, entity in grid.entities.items():
-        core_name = names[i].replace("Search", "Core").encode("UTF-8")
+        core_name = names[i].replace("oef_node", "Core").encode("UTF-8")
         await director.set_location(names[i], core_name, (entity.coords[1], entity.coords[0])) #lon, lat
         i += 1
         if i >= len(names):

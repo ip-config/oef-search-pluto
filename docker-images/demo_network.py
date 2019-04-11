@@ -42,7 +42,10 @@ def build(image_tag: str, path: str):
 
 def kill_containers(names: List[str]):
     for name in names:
-        subprocess.check_call(["docker", "kill", name])
+        try:
+            subprocess.check_call(["docker", "kill", name])
+        except Exception as e:
+            print("Failed to kill container {} because: {}".format(name, str(e)))
 
 
 def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, ssl_cert: str = "", *,
@@ -58,6 +61,7 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
     dap_port = 30000
     director_port = 40000
 
+    names = []
     for i in range(num_of_nodes):
         http_port = http_ports.get(i, -1)
         search_port = SEARCH_PORT+i
@@ -110,6 +114,7 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
         cmd.extend(args)
         print("EXECUTE: ", cmd)
         pool.submit(subprocess.check_call, cmd)
+        names.append("oef_node"+str(i))
 
     pool.shutdown(wait=True)
 
