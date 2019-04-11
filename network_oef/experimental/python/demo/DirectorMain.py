@@ -5,11 +5,25 @@ import asyncio
 from api.experimental.python.DemoWeatherAgent import create_blk_update as create_weather_agent_service
 from england_grid.src.python.lib import EnglandGrid
 import sys
+import socket
+import time
 
 
 async def set_nodes(director: Director, addresses: List[str]):
     for address in addresses:
         host, port = address.split(":")
+        try:
+            host = socket.gethostbyname(host)
+        except Exception as e:
+            print("Resolution failed, because: " + str(e))
+            return False
+        port = int(port)
+        while True:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if sock.connect_ex((host, port)) == 0:
+                break
+            print(".")
+            time.sleep(2)
         await director.add_node(host, port, address)
 
 

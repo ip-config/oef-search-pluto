@@ -102,7 +102,8 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
         args.extend(peers)
         node_name = "oef_node"+str(i)
 
-        cmd = docker_cmd
+        cmd = []
+        cmd.extend(docker_cmd)
         cmd.extend([
             "--name",
             node_name,
@@ -130,7 +131,8 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
         api_targets.append(node_name+":"+str(search_port))
         director_targets.append(node_name+":"+str(director_port))
 
-    loc_director_cmd = docker_cmd
+    loc_director_cmd = []
+    loc_director_cmd.extend(docker_cmd)
     loc_director_cmd.extend([
         image_tag,
         "director",
@@ -142,8 +144,9 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
     loc_director_cmd.extend(director_targets)
     subprocess.check_call(loc_director_cmd)
 
-    loc_director_cmd = docker_cmd
-    loc_director_cmd.extend([
+    weather_director_cmd = []
+    weather_director_cmd.extend(docker_cmd)
+    weather_director_cmd.extend([
         image_tag,
         "director",
         "no_sh",
@@ -151,8 +154,8 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
         "weather_agent",
         "--targets"
     ])
-    loc_director_cmd.extend(api_targets)
-    subprocess.check_call(loc_director_cmd)
+    weather_director_cmd.extend(api_targets)
+    subprocess.check_call(weather_director_cmd)
 
     pool.shutdown(wait=True)
 
