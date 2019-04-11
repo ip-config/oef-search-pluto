@@ -10,6 +10,7 @@ py_library(
     ],
     data = [
          "//utils/src/python:py_utils",
+         "//svg_output/src/python/lib:lib",
     ],
 )
 
