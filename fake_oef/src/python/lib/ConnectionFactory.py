@@ -56,6 +56,7 @@ class ConnectionFactory(object):
 
     def add_addr(self, obj_id, addr):
         if obj_id in self._addr_store and addr != self._addr_store[obj_id]:
+            print("Different address in the store with the same id: {}".format(obj_id))
             raise KeyError("Different address in the store with the same id: {}".format(obj_id))
         self._addr_store[obj_id] = addr
 

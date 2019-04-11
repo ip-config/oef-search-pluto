@@ -50,16 +50,30 @@ def best_oef_core(nodes):
 
 import utils.src.python.resources as resources
 
+class OefAgentFactory(object):
+    def __init__(self):
+        self.connection_factory = ConnectionFactory()
+
+    def create(self, name: str) -> dict:
+        fake_agent = FakeAgent.FakeAgent(connection_factory=self.connection_factory, id=name)
+
+        return {
+            "agent": fake_agent,
+            "id": name,
+        }
+
 class App(object):
     def __init__(self):
         #self.world = World.World()
         self.grid = EnglandGrid.EnglandGrid()
         self.grid.load()
-        connection_factory = ConnectionFactory()
-        search_network = SearchNetwork(connection_factory, self.grid.entities)
+
+        oef_agent_factory = OefAgentFactory()
+
+        search_network = SearchNetwork(oef_agent_factory.connection_factory, self.grid.entities)
         search_network.build_from_entities(self.grid.entities)
 
-        self.agents = CrawlerAgents.CrawlerAgents(connection_factory, self.grid)
+        self.agents = CrawlerAgents.CrawlerAgents(oef_agent_factory, self.grid)
         self.app = bottle.Bottle()
 
     def getRoot(self):
@@ -82,30 +96,6 @@ class App(object):
         )
 
     def start(self, args):
-        #self.grid = EnglandGrid.EnglandGrid()
-        #self.grid.load()
-
-        #connection_factory = ConnectionFactory()
-        #search_network = SearchNetwork(connection_factory, self.grid.entities)
-        #search_network.build_from_entities(self.grid.entities)
-
-        #activity_observer = ActivityObserver()
-
-        #search_network.register_activity_observer(activity_observer)
-
-        #target = "Leeds"
-        #source = "Southampton"
-
-        #agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id="car")
-        #agent.connect(target=source+"-core")
-        #query = build_query((200, 200))
-        #result = best_oef_core(agent.search(query))
-        #loc = agent.get_from_core("location")
-        #print("CURRENT AGENT LOC: ", loc.lon, loc.lon)
-        #agent.swap_core(result)
-        #loc = agent.get_from_core("location")
-        #print("NEW AGENT LOC: ", loc.lon, loc.lon)
-
         self.app.route('/', method='GET', callback=functools.partial(self.getRoot))
         self.app.route('/static/<filepath:path>', method='GET', callback=functools.partial(self.getStatic))
         self.app.route('/svg', method='GET', callback=functools.partial(self.getSVG))

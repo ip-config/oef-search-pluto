@@ -70,7 +70,7 @@ class SearchEndpoint(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
                           " my distance (%.3f)", msg.ttl, msg.source_key.decode("UTF-8"), prev_distance, distance)
         except Exception as e:
             #TODO: what?
-            self.exception("Exception during location check: ", str(e))
+            self.info("Exception during location check: ", str(e))
             #return DataWrapper(False, "search", resp, 600, "Ignoring query, location check error!")
         try:
             query = self._proto_wrapper.get_instance(msg.model)

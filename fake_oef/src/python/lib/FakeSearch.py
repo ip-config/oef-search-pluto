@@ -46,8 +46,12 @@ class BroadcastFromNode(HasMessageHandler):
         if type(response) != list:
             response = [response]
         response = self.__flatten_list(response)
-        result = await asyncio.gather(*[self._serializer.deserialize(serialized) for serialized in response])
-        return [DataWrapper(True, "", res) for res in result]
+        results = await asyncio.gather(*[self._serializer.deserialize(serialized) for serialized in response])
+        return [
+            DataWrapper(True, "", x)
+            for x
+            in results
+        ]
 
 
 class LazyW2V:
@@ -214,6 +218,7 @@ class FakeSearch(PlutoApp.PlutoApp, SupportsConnectionInterface, NodeAttributeIn
             self.error("GOT update", data)
             if isinstance(data, update_pb2.Update):
                 data = data.SerializeToString()
+
         result = await self.callMe(path, data)
         if path == "update":
             self.notify_update()

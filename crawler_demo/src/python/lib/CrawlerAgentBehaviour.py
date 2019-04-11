@@ -8,20 +8,8 @@ from behaviour_tree.src.python.lib import BehaveTreeTaskNode
 from behaviour_tree.src.python.lib import BehaveTreeLoader
 from behaviour_tree.src.python.lib import BehaveTreeControlNode
 from behaviour_tree.src.python.lib import BehaveTreeExecution
-from fake_oef.src.python.lib import FakeAgent
-from crawler_demo.src.python.lib.SearchNetwork import SearchNetwork, ConnectionFactory
-from api.src.proto.core import query_pb2, response_pb2
 from utils.src.python.Logging import has_logger
 from enum import Enum
-
-
-def build_query(target=(200, 200), ttl=1):
-    q = query_pb2.Query()
-    q.model.description = "weather data"
-    q.ttl = ttl
-    q.directed_search.target.geo.lat = target[0]
-    q.directed_search.target.geo.lon = target[1]
-    return q
 
 
 def best_oef_core(nodes):
@@ -69,16 +57,14 @@ class Reset(BehaveTreeTaskNode.BehaveTreeTaskNode):
         context.set('target-x', target_loc[0])
         context.set('target-y', target_loc[1])
 
-        connection_factory = context.get("connection_factory")
         agent = context.get("agent")
-        if agent is None:
-            agent_id = "car-"+str(context.get("index"))
-            agent = FakeAgent.FakeAgent(connection_factory=connection_factory, id=agent_id)
+        if not context.has('initialised'):
+            context.set('initialised', 1)
             agent.connect(target=source_id + "-core")
-            context.setIfAbsent("connection", source_id)
-            context.setIfAbsent("agent", agent)
-            context.setIfAbsent('x', source_loc[0])
-            context.setIfAbsent('y', source_loc[1])
+
+        context.setIfAbsent("connection", source_id)
+        context.setIfAbsent('x', source_loc[0])
+        context.setIfAbsent('y', source_loc[1])
 
         if context.get("movement_type") == MovementType.FOLLOW_PATH:
             context.set('moveto-x', target_loc[0])
@@ -163,9 +149,7 @@ class QueryNodesToMoveTo(BehaveTreeTaskNode.BehaveTreeTaskNode):
         agent = context.get("agent")
         target = context.get("target")
 
-        query = build_query(target)
-
-        result = best_oef_core(agent.search(query))
+        result = best_oef_core(agent.search(target))
         if result is not None:
             self.info(result)
             agent.swap_core(result)
@@ -236,9 +220,7 @@ class QueryNearestNode(BehaveTreeTaskNode.BehaveTreeTaskNode):
         y = context.get("y")
 
         target_loc = context.get("target")
-
-        query = build_query([x, y], ttl=1)
-        result = best_oef_core(agent.search(query))
+        result = best_oef_core(agent.search(target_loc))
         if result is not None:
             self.info(result)
             agent.swap_core(result)
