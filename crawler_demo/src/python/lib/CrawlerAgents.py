@@ -18,7 +18,7 @@ DEFAULT_KINDS = [
 class CrawlerAgents(object):
 
     @has_logger
-    def __init__(self, oef_agent_factory, grid, kinds=DEFAULT_KINDS):
+    def __init__(self, oef_agent_factory, grid, kinds=DEFAULT_KINDS, agentcount=30):
         self.tree = CrawlerAgentBehaviour.CrawlerAgentBehaviour()
         self.grid = grid
 
@@ -35,7 +35,7 @@ class CrawlerAgents(object):
         randomisers = [
             self.createRandomiser(x)
             for x
-            in range(0,30)
+            in range(0, agentcount)
         ]
 
         self.agents = [
