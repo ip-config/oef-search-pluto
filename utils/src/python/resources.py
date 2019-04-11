@@ -43,12 +43,11 @@ def initialise(base:str=None, package=None, package_name:str=None):
 
 
 def textfile(resourceName, as_string=False, as_file=False):
-    return resource(resourceName, as_string=as_string, as_file=as_file).decode("utf-8")
+    return resource(resourceName, as_string=as_string, as_file=as_file, open_mode="r")
 
 
 def textlines(resourceName, as_string=False, as_file=False):
     return resource(resourceName, as_string=as_string, as_file=as_file).decode("utf-8").rstrip("\n").split("\n")
-
 
 def binaryfile(resourceName, as_string=False, as_file=False):
     return resource(resourceName, as_string=as_string, as_file=as_file)
@@ -62,23 +61,27 @@ def resource_list(package):
 def get_module():
     return configured_package or sys.modules.get(configured_package_name) or loader.load_module(configured_package_name)
 
-def resource(resourceName, as_string=False, as_file=True):
+def resource(resourceName, as_string=False, as_file=True, open_mode="rb"):
     global detected_mode
 
     if detected_mode == None or detected_mode in [ 'filesystem', 'bazel' ]:
         for filename in [
             os.path.join(configured_filebase, resourceName),
-            resourceName
+            resourceName,
+            os.path.join(configured_filebase, "external", resourceName),
+            os.path.join("external", resourceName),
         ]:
-            print("Exists?", filename)
+            #print("Exists?", filename)
             if os.path.exists(filename):
-                print("Yes")
+                #print("Yes")
                 detected_mode = 'filesystem'
                 if as_file:
-                    return open(filename, "rb")
+                    #print("returning file")
+                    return open(filename, open_mode)
                 if as_string:
+                    #print("returning name")
                     return filename
-                with open(filename, "rb") as binary_file:
+                with open(filename, open_mode) as binary_file:
                     return binary_file.read()
         raise Exception("no")
 
