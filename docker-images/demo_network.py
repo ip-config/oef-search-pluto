@@ -136,9 +136,9 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
     loc_director_cmd.extend([
         image_tag,
         "director",
+        "no_sh",
         "--type",
         "location",
-        "no_sh",
         "--targets"
     ])
     loc_director_cmd.extend(director_targets)

@@ -177,7 +177,7 @@ class EnglandGrid(object):
     def loadAirports(self, fn="dap_2d_geo/test/resources/GlobalAirportDatabase.txt", limit=None):
         with resources.textfile(fn, as_file=True) as f:
             for i in f.readlines():
-                print("I=", i)
+                #print("I=", i)
                 i = i.strip()
                 parts = i.split(":")
 
