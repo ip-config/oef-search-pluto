@@ -1,9 +1,9 @@
 #!/usr/bin/env sh
 
 if [[ "$1" = "node" ]];then
-    ./node "${@:2}"
+    ./node `echo "$@" | sed -e "s/node//g"`
 elif [[ "$1" = "director" ]];then
-    ./demo/demo_director "${@:2}"
+    ./demo/demo_director `echo "$@" | sed -e "s/director//g"`
 else
     ./node "$@"
 fi
