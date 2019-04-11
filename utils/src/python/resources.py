@@ -67,10 +67,10 @@ def resource(resourceName, as_string=False, as_file=True, open_mode="rb"):
     if detected_mode == None or detected_mode in [ 'filesystem', 'bazel' ]:
         for filename in [
             os.path.join(configured_filebase, resourceName),
-            resourceName,
-            os.path.join(configured_filebase, "external", resourceName),
-            os.path.join("external", resourceName),
-        ]:
+            resourceName ] + (
+                glob.glob(os.path.join(configured_filebase, "external", '*', resourceName)) +
+                glob.glob(os.path.join("external", '*', resourceName))
+        ):
             print("Exists?", filename)
             if os.path.exists(filename):
                 print("Yes")
