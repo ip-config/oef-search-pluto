@@ -15,6 +15,14 @@ from enum import Enum
 def best_oef_core(nodes):
     distance = 1e16
     result = None
+
+    print(nodes)
+    exit(77)
+    
+    if len(nodes)==0:
+        return None
+    if len(nodes)==1:
+        return nodes[0]
     for node in nodes:
         for res in node.result:
             if res.distance < distance:
