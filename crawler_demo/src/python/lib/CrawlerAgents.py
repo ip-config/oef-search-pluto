@@ -82,6 +82,8 @@ class CrawlerAgents(object):
             in self.agents
         ]
 
+        colour1 = "white"
+        colour2 = "black"
         crawler_styles = {
             CrawlerAgentBehaviour.MovementType.CRAWL_ON_NODES: {
                 'dot': SvgStyle.SvgStyle({"fill-opacity": 1, " fill": colour1, " stroke-width": 0.1}),
@@ -110,8 +112,6 @@ class CrawlerAgents(object):
 
         self.info(locations)
 
-        colour1 = "white"
-        colour2 = "black"
 
         dots =  []
         for movement_type, x,y,_,_,_ in locations:
