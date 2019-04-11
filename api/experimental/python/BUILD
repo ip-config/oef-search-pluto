@@ -35,6 +35,7 @@ py_binary(
         "//network/src/python/async_socket:async_socket",
         "//api/src/proto/director:py_api_pb",
         "//api/src/proto/core:py_api_pb",
+        "//dap_2d_geo/test/resources:airports",
 
     ],
     srcs_version = "PY3",

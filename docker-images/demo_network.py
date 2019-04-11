@@ -3,6 +3,8 @@ from typing import List, Dict
 import subprocess
 import os
 from concurrent.futures import ThreadPoolExecutor
+import atexit
+import functools
 
 
 def get_workdir(start_dir: str = ""):
@@ -23,7 +25,7 @@ def build(image_tag: str, path: str):
         subprocess.check_call(["docker", "network", "create", "-d", "bridge", "oef_search_net"])
     except Exception as e:
         print("Docker network creation failed: ", str(e))
-    print('Generating source archive...')
+    print('Generating source archive... (location: {})'.format(path))
     cmd = [
         'git-archive-all', os.path.join(path, 'project.tar.gz')
     ]
@@ -36,6 +38,11 @@ def build(image_tag: str, path: str):
         '.',
     ]
     subprocess.check_call(cmd, cwd=path)
+
+
+def kill_containers(names: List[str]):
+    for name in names:
+        subprocess.check_call(["docker", "kill", name])
 
 
 def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, ssl_cert: str = "", *,
@@ -103,6 +110,10 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
         cmd.extend(args)
         print("EXECUTE: ", cmd)
         pool.submit(subprocess.check_call, cmd)
+
+    pool.shutdown(wait=True)
+
+    atexit.register(functools.partial(kill_containers, names))
 
 
 if __name__ == "__main__":

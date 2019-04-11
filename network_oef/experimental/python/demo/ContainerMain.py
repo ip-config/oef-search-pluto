@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import atexit
 import functools
 
+
 def get_workdir(start_dir: str = ""):
     if start_dir == "":
         start_dir = os.path.abspath(os.path.dirname(__file__))
@@ -111,5 +112,7 @@ def main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, s
         print("EXECUTE: ", cmd)
         pool.submit(subprocess.check_call, cmd)
         names.append("oef_node"+str(i))
+
+    pool.shutdown(wait=True)
 
     atexit.register(functools.partial(kill_containers, names))

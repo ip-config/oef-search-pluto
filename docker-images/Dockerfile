@@ -10,7 +10,8 @@ RUN mkdir -p /app && mkdir /build && \
 		nss \
 		protobuf \
 		protobuf-dev \
-		linux-headers
+		linux-headers \
+		python3-dev
 
 ADD https://raw.githubusercontent.com/davido/bazel-alpine-package/master/david@ostrovsky.org-5a0369d6.rsa.pub \
     /etc/apk/keys/david@ostrovsky.org-5a0369d6.rsa.pub
@@ -26,7 +27,7 @@ WORKDIR /app/project
 RUN rm -f .bazelrc && \
     cd fetch_teams/oef-core && mkdir build && cd build && cmake .. && make -j16 && cd /app/project && \
     bazel build network_oef/experimental/python:node --force_python=PY3 && \
-    bazel build netwrok_oef/experimental/python/demo:demo_director --force_python=PY3 && \
+    bazel build network_oef/experimental/python/demo:demo_director --force_python=PY3 && \
     cp certificates/src/makefiles/oef-search/oef-search.pem /build/server.pem  && \
     cp -Lr bazel-bin /build && \
     cp network_oef/experimental/sh/oef.sh /build/

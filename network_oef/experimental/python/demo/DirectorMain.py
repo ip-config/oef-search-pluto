@@ -4,6 +4,7 @@ from typing import List
 import asyncio
 from api.experimental.python.DemoWeatherAgent import create_blk_update as create_weather_agent_service
 from england_grid.src.python.lib import EnglandGrid
+import sys
 
 
 async def set_nodes(director: Director, addresses: List[str]):
@@ -55,6 +56,7 @@ async def main(args):
 
 
 if __name__ == "__main__":
+    print("DIRECTOR GOT ARGS: ", sys.argv)
     parser = argparse.ArgumentParser(description='DEMO Director')
     parser.add_argument("--targets", nargs='+',  type=str, help="Node addresses host:port ...")
     parser.add_argument("--type", type=str, required=True, help="weather_agent/location")
