@@ -34,6 +34,17 @@ def build(image_tag: str, path: str):
     cmd = [
         'docker',
         'build',
+        '--target',
+        'builder',
+        '-t', image_tag+"_builder",
+        '.',
+    ]
+    subprocess.check_call(cmd, cwd=path)
+    cmd = [
+        'docker',
+        'build',
+        '--target',
+        'runtime',
         '-t', image_tag,
         '.',
     ]
