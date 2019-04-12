@@ -125,6 +125,10 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
             "no_sh"
         ])
         cmd.extend(args)
+        try:
+            subprocess.check_call(["docker", "kill", node_name])
+        except:
+            pass
         print("EXECUTE: ", cmd)
         pool.submit(subprocess.check_call, cmd)
         names.append(node_name)
