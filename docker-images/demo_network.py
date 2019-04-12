@@ -175,6 +175,28 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    files = [
+        "gensim-data/glove-wiki-gigaword-50/glove-wiki-gigaword-50.gz",
+        "nltk_data/corpora/stopwords.zip",
+        "nltk_data/corpora/wordnet.zip",
+        "nltk_data/tokenizers/punkt.zip",
+    ]
+    docker_dir = os.path.abspath(os.path.dirname(__file__))
+    print(docker_dir)
+    for file in files:
+        print("CREATE LINK TO {}....".format(file))
+        directory = "/".join(file.split("/")[:-1])
+        if not os.path.exists(docker_dir+"/"+directory):
+            print("CREATE DIRECTORY: ", directory)
+            os.makedirs(docker_dir+"/"+directory, exist_ok=True)
+        try:
+            subprocess.check_call(["ln", os.path.expanduser("~/"+file), file], cwd=docker_dir)
+        except Exception as e:
+            print(e)
+        if not os.path.exists(docker_dir+"/"+file):
+            print("FILE NOT FOUND: ", file)
+            exit(1)
+        print("DONE")
     http_port_map = {}
     for e in args.http_port_map:
         k, p = e.split(":")

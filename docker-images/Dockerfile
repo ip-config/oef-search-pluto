@@ -36,6 +36,8 @@ FROM qati/python3alpine_nlp
 
 WORKDIR /app
 
+COPY gensim-data /root/gensim-data
+COPY nltk_data /root/nltk-data
 COPY --from=builder /build/bazel-bin/network_oef/experimental/python /app/
 COPY --from=builder /build/server.pem /app/
 COPY --from=builder /build/oef.sh /app/
