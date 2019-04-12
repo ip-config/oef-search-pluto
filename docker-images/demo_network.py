@@ -232,5 +232,9 @@ if __name__ == "__main__":
         k, p = e.split(":")
         http_port_map[int(k)] = int(p)
 
+    log_dir = args.log_dir
+    if log_dir[-1] == "/":
+        log_dir = log_dir[:-1]
+
     container_main(args.num_nodes, args.links, http_port_map, "/app/server.pem", image_tag=args.image,
-                   do_build=args.build, log_dir=args.log_dir)
+                   do_build=args.build, log_dir=log_dir)
