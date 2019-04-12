@@ -236,5 +236,8 @@ if __name__ == "__main__":
     if log_dir[-1] == "/":
         log_dir = log_dir[:-1]
 
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
+
     container_main(args.num_nodes, args.links, http_port_map, "/app/server.pem", image_tag=args.image,
                    do_build=args.build, log_dir=log_dir)
