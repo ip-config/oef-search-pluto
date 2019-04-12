@@ -91,8 +91,7 @@ class EarlyInMemoryDap(DapInterface.DapInterface):
                 core_ident, agent_ident = key.core, key.agent
                 self.log.info("RETURNING SUPPLIED: core={}, agent={}".format(core_ident, agent_ident))
                 i = result.identifiers.add()
-                i.core = core_ident
-                i.agent = agent_ident
+                i.CopyFrom(key)
         return result
 
 

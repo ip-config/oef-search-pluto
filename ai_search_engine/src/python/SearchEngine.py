@@ -278,7 +278,7 @@ class SearchEngine(DapInterface):
                 dist = distance.cosine(data[self.target_field_name], self.enc_query)
                 result.append((*key, dist))
             ordered = sorted(result, key=lambda x: x[2])
-
+            print("FOUND AGENTS: ", ordered)
             res = DapQueryResult(ordered[0][0], ordered[0][1])
             res.score = ordered[0][2]
             yield res

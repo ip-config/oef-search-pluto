@@ -68,13 +68,16 @@ class InMemoryDap(DapInterface.DapInterface):
                 result_field.type = field_type
         return result
 
-    def processRow(self, rowProcessor, row_key, row, result: dap_interface_pb2.IdentifierSequence):
+    def processRow(self, rowProcessor, row_key, row, result: dap_interface_pb2.IdentifierSequence, original_key = None):
         core_ident, agent_ident = row_key
         if rowProcessor(row):
             #self.log.info("PASSING: core={}, agent={}".format(core_ident, agent_ident))
             i = result.identifiers.add()
-            i.core = core_ident
-            i.agent = agent_ident
+            if original_key:
+                i.CopyFrom(original_key)
+            else:
+                i.core = core_ident
+                i.agent = agent_ident
         else:
             #self.log.info("FAILING: core={}, agent={}".format(core_ident, agent_ident))
             pass
@@ -103,7 +106,7 @@ class InMemoryDap(DapInterface.DapInterface):
                         self.log.error("{} not found".format((core_ident, agent_ident)))
                         self.log.error("table keys = {}".format(table.keys()))
                     else:
-                        self.processRow(rowProcessor, (core_ident, agent_ident), row, r)
+                        self.processRow(rowProcessor, (core_ident, agent_ident), row, r, key)
         return r
 
     def runCompareFunc(row, func, target_field_name, query_field_value, log):

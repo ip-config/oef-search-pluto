@@ -99,8 +99,7 @@ class AddressRegistry(InMemoryDap.InMemoryDap):
         r.originator = False
         for key in proto.input_idents.identifiers:
             new_result = r.identifiers.add()
-            new_result.agent = key.agent
-            new_result.core = key.core
+            new_result.CopyFrom(key)
             addr = self.resolveCore(key.core)
             if addr:
                 new_result.uri = addr

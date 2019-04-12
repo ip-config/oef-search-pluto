@@ -245,6 +245,7 @@ class DapGeo(DapInterface.DapInterface):
         reply = dap_interface_pb2.IdentifierSequence()
         reply.originator = False
 
+        #BUG(KLL): missing score out of the copy
         for r in geoQuery.execute(set(idents)):
             c = reply.identifiers.add()
             c.core = r[0]
