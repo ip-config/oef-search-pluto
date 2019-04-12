@@ -125,11 +125,12 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
             "no_sh"
         ])
         cmd.extend(args)
+        cmd.extend(["--ip", "0.0.0.0"])
         try:
             subprocess.check_call(["docker", "kill", node_name])
         except:
             pass
-        print("EXECUTE: ", cmd)
+        print("EXECUTE: ", " ".join(cmd))
         pool.submit(subprocess.check_call, cmd)
         names.append(node_name)
         api_targets.append(node_name+":"+str(search_port))
@@ -181,6 +182,7 @@ if __name__ == "__main__":
 
     files = [
         "gensim-data/glove-wiki-gigaword-50/glove-wiki-gigaword-50.gz",
+        "gensim-data/glove-wiki-gigaword-50/__init__.py",
         "nltk_data/corpora/stopwords.zip",
         "nltk_data/corpora/wordnet.zip",
         "nltk_data/tokenizers/punkt.zip",
@@ -193,6 +195,12 @@ if __name__ == "__main__":
         if not os.path.exists(docker_dir+"/"+directory):
             print("CREATE DIRECTORY: ", directory)
             os.makedirs(docker_dir+"/"+directory, exist_ok=True)
+        if os.path.exists("~/"+file):
+            print("REQUIRED FILE NOT FOUND: ", "~/"+file)
+            print("You need to run gensim/nltk once in your computer so it downloads these files!")
+            print("Running non docker version of the search will also trigger downloading of these files, afterwards"
+                  " you can run this version too!")
+            exit(1)
         try:
             subprocess.check_call(["ln", os.path.expanduser("~/"+file), file], cwd=docker_dir)
         except Exception as e:
