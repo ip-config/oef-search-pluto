@@ -67,8 +67,9 @@ class Reset(BehaveTreeTaskNode.BehaveTreeTaskNode):
 
         agent = context.get("agent")
         if not context.has('initialised'):
+            conn = context.get('initial-connection') or (source_id + "-core")
+            agent.connect(target=conn)
             context.set('initialised', 1)
-            agent.connect(target=source_id + "-core")
 
         context.setIfAbsent("connection", source_id)
         context.setIfAbsent('x', source_loc[0])
