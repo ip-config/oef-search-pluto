@@ -87,13 +87,13 @@ class SearchEndpoint(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
                     item.ip = address[0]
                     item.port = int(address[1])
                     item.key = core
-                    item.score = element.score
                     items[core] = item
                     if distance:
                         #TODO multiple core
                         item.distance = distance
                 agent = items[core].agents.add()
                 agent.key = agent_id
+                agent.score = element.score
             resp.result.extend(items.values())
         except Exception as e:
             self.exception("Exception while processing query: ", str(e))
