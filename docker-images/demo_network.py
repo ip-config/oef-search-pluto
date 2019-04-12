@@ -49,7 +49,7 @@ def kill_containers(names: List[str]):
 
 
 def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, ssl_cert: str = "", *,
-         image_tag: str, do_build: bool):
+         image_tag: str, do_build: bool, log_dir: str):
     path = get_workdir()
     if do_build:
         build(image_tag, path)
@@ -100,8 +100,24 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
             peers.append("Search{}:".format(target)+host+":"+str(port))
         args.append("--search_peers")
         args.extend(peers)
-        node_name = "oef_node"+str(i)
 
+        log_cmd = []
+        set_log_dir = []
+        if len(log_dir) > 0:
+            node_log_dir = "{}/node{}".format(log_dir, i)
+            if not os.path.exists(node_log_dir):
+                os.mkdir(node_log_dir)
+            log_cmd = [
+                "-v",
+                node_log_dir+":"+"/logs"
+            ]
+            set_log_dir = [
+                "--log_dir",
+                "/logs"
+            ]
+        args.extend(set_log_dir)
+
+        node_name = "oef_node"+str(i)
         cmd = []
         cmd.extend(docker_cmd)
         cmd.extend([
@@ -112,6 +128,7 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
             "-p",
             str(core_port) + ":" + str(core_port),
         ])
+        cmd.extend(log_cmd)
         i += 1
 
         if http_port != -1:
@@ -177,6 +194,7 @@ if __name__ == "__main__":
     parser.add_argument("--http_port_map", nargs='*', type=str, help="id:http_port (id: 0...num_nodes-1)")
     parser.add_argument("--image", "-i", type=str, default="oef-search:latest", help="Docker image name")
     parser.add_argument("--build", "-b", action="store_true", help="Build docker image")
+    parser.add_argument("--log_dir", type=str, required=False, default="", help="Log directory")
 
     args = parser.parse_args()
 
@@ -215,4 +233,4 @@ if __name__ == "__main__":
         http_port_map[int(k)] = int(p)
 
     container_main(args.num_nodes, args.links, http_port_map, "/app/server.pem", image_tag=args.image,
-                   do_build=args.build)
+                   do_build=args.build, log_dir=args.log_dir)

@@ -25,16 +25,17 @@ if __name__ == "__main__":
                         help="Search peers to connect to, format: node_key:ip:port node_key:ip:port ...")
     parser.add_argument("--director_api_port", required=False, type=int, default=40000,
                         help="Director api port")
+    parser.add_argument("--log_dir", required=False, type=str, default="", help="Log directory")
 
     args = parser.parse_args()
 
     full_node = FullNode()
 
     full_node.start_search(args.node_key, args.ip, args.search_port, args.dap_port, args.director_api_port,
-                           args.http_port,  args.ssl_certificate)
+                           args.http_port,  args.ssl_certificate, log_file=args.log_dir+"/search.log")
 
     if len(args.core_key) > 0:
-        full_node.start_core(args.core_key, args.ip, args.core_port)
+        full_node.start_core(args.core_key, args.ip, args.core_port, log_file=args.log_dir+"/core.log")
 
     added_peers = 0
     if args.search_peers is not None:

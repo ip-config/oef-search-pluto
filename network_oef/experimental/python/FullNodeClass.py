@@ -55,7 +55,7 @@ class FullNode:
         self._search_ip = ip
         self._search_port = port
 
-    def start_core(self, core_key: str, ip: str, port: int, oef_core=None, log_file: str=""):
+    def start_core(self, core_key: str, ip: str, port: int, oef_core=None, log_file: str = ""):
         if oef_core is None:
             oef_core = binaryfile("fetch_teams/OEFNode", as_file=True).name
         while True:
