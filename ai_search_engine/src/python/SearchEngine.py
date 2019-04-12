@@ -278,7 +278,6 @@ class SearchEngine(DapInterface):
                 dist = distance.cosine(data[self.target_field_name], self.enc_query)
                 result.append((*key, dist))
             ordered = sorted(result, key=lambda x: x[2])
-            print("FOUND AGENTS: ", ordered)
             res = DapQueryResult(ordered[0][0], ordered[0][1])
             res.score = ordered[0][2]
             yield res
@@ -299,7 +298,6 @@ class SearchEngine(DapInterface):
             for k,funcs in SearchEngine.SubQuery.NAMES.items():
                 setattr(self, k, funcs['jtoh'](r.get(k, None)))
             return self
-
 
     def configure(self, desc: dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
         raise Exception("SearchEngine does not configure via this interface yet.")
@@ -324,7 +322,7 @@ class SearchEngine(DapInterface):
             c.core = ident.core_id
             c.agent = ident.agent_id
             c.score = ident.score
-            print("SUCCESS:", c.agent)
+            self.info("SUCCESS: ", c)
         return reply
 
     def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:
