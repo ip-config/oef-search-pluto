@@ -6,7 +6,7 @@ import functools
 
 
 def socket_handler(router: BackendRouter, name: str):
-    log = get_logger("SocketHandler"+name)
+    log = get_logger("SocketHandler@"+name)
 
     @handler
     async def on_connection(transport: Transport):

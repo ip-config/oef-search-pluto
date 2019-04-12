@@ -5,9 +5,11 @@ from api.experimental.python.DemoWeatherAgent import create_blk_update as create
 from utils.src.python.resources import binaryfile
 import asyncio
 import time
+from utils.src.python.Logging import has_logger
 
 
 class SearchNetwork:
+    @has_logger
     def __init__(self):
         self.nodes = {}
         self._addresses = {}
@@ -33,13 +35,18 @@ class SearchNetwork:
         await self._director_weather_service.wait()
 
     def create_node(self, node_key: str, ip: str, port: int, dap_port: int, director_port: int,  core_key: str = "",
-                    core_port: int = -1, http_port: int = -1, ssl_certificate: str = ""):
+                    core_port: int = -1, http_port: int = -1, ssl_certificate: str = "", log_dir: str = ""):
 
-        print("---------- CREATE NODE: ", node_key)
+        self.info("CREATE SEARCH NODE: ", node_key, " @ {}:{}".format(ip, port),
+                  ", director api @ {}:{}".format(ip, director_port))
         node = FullNode()
-        node.start_search(node_key, ip, port, dap_port, director_port, http_port, ssl_certificate)
+        search_log_file = ""
+        if len(log_dir) > 0:
+            search_log_file = log_dir+"search.log"
+        node.start_search(node_key, ip, port, dap_port, director_port, http_port, ssl_certificate, search_log_file)
         if len(core_key) > 0 and core_port > 1000:
-            node.start_core(core_key, ip, core_port, self._oef_core)
+            self.info("CREATE CORE: ", core_key, " @ {}:{}".format(ip, core_port))
+            node.start_core(core_key, ip, core_port, self._oef_core, log_file=log_dir+"core.log")
         self._addresses[node_key] = (ip, port)
         self.nodes[node_key] = node
         asyncio.run(self.set_location(ip, director_port, core_key, node_key))

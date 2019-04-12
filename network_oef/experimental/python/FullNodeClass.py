@@ -6,14 +6,15 @@ import os
 from utils.src.python.resources import binaryfile
 import time
 import socket
-from utils.src.python.Logging import has_logger
+from utils.src.python.Logging import has_logger, get_logger
 
 
 def _run_search_node(name: str, node_ip: str, node_port: int, dap_port_start: int, director_api_port: int,
-                     http_port: int, ssl_certificate: str, q: multiprocessing.Queue):
+                     http_port: int, ssl_certificate: str, q: multiprocessing.Queue, log_file: str):
     from network_oef.src.python.FullLocalSearchNode import FullSearchNone
     from utils.src.python.Logging import configure as configure_logging
-    configure_logging(id_flag="_"+name)
+    configure_logging(file=log_file)
+    logger = get_logger("NODE_RUN: "+name)
 
     node = FullSearchNone(name, node_ip, node_port, [{
         "run_py_dap": True,
@@ -21,13 +22,13 @@ def _run_search_node(name: str, node_ip: str, node_port: int, dap_port_start: in
         "port": dap_port_start
     }
     ], http_port, ssl_certificate, "api/src/resources/website", director_api_port=director_api_port)
-    print("**** Node {} started".format(name))
+    logger.info("**** Node %s started", name)
     time.sleep(1)
     while True:
         con = q.get()
-        print("**** SearchProcess ({}) {} got: ".format(name, id), con)
+        logger.info("**** SearchProcess got peer: %s @ %s ", con[2], con[0]+":"+str(con[1]))
         if len(con) != 3:
-            print("**** Stopping connection queue listening, because invalid con: ", con)
+            logger.error("**** Stopping connection queue listening, because invalid con: ", con)
             break
         node.add_remote_peer(*con)
     node.block()
@@ -43,17 +44,18 @@ class FullNode:
         self._core_process = None
 
     def start_search(self, node_key: str, ip: str, port: int, dap_port: int, director_port: int, http_port: int = -1,
-                     ssl_certificate: str = ""):
+                     ssl_certificate: str = "", log_file: str = ""):
         self._search_process = multiprocessing.Process(target=_run_search_node, args=(node_key, ip, port, dap_port,
                                                                                       director_port, http_port,
                                                                                       ssl_certificate,
-                                                                                      self._search_queue)
+                                                                                      self._search_queue,
+                                                                                      log_file)
                                                        )
         self._search_process.start()
         self._search_ip = ip
         self._search_port = port
 
-    def start_core(self, core_key: str, ip: str, port: int, oef_core = None):
+    def start_core(self, core_key: str, ip: str, port: int, oef_core=None, log_file: str=""):
         if oef_core is None:
             oef_core = binaryfile("fetch_teams/OEFNode", as_file=True).name
         while True:
@@ -62,15 +64,16 @@ class FullNode:
                 time.sleep(0.5)
             else:
                 break
+        log_file = open(log_file, 'w')
         self._core_process = subprocess.Popen([oef_core, core_key, ip, str(port), self._search_ip,
-                                               str(self._search_port)], stdout=None, stderr=None
+                                               str(self._search_port)], stdout=log_file, stderr=subprocess.STDOUT
                                               )
 
     def add_peer(self, node_key: str, host: str, port: int) -> bool:
         try:
             host = socket.gethostbyname(host)
         except Exception as e:
-            print("Resolution failed, because: " + str(e))
+            self.exception("Resolution failed, because: " + str(e))
             return False
         port = int(port)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

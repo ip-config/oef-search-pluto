@@ -49,7 +49,7 @@ def kill_containers(names: List[str]):
 
 
 def main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, ssl_cert: str = "", *,
-         image_tag: str, do_build: bool):
+         image_tag: str, do_build: bool, log_dir: str = ""):
     print("PLEASE USE docker-images/demo_network.py")
     return
     path = get_workdir()

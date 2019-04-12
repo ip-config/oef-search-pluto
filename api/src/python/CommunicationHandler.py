@@ -8,6 +8,7 @@ from functools import partial
 import utils.src.python.resources as resources
 import os
 from concurrent.futures import ThreadPoolExecutor
+from utils.src.python.Logging import has_logger
 
 
 _loop = asyncio.new_event_loop()
@@ -73,6 +74,7 @@ def http_server(host: str, port: int, crt_file: str, *, router: BackendRouter, h
 
 
 class CommunicationHandler:
+    @has_logger
     def __init__(self, max_threads):
         self.handlers = []
         self.executor = ThreadPoolExecutor(max_workers=max_threads)
@@ -86,7 +88,7 @@ class CommunicationHandler:
 
     def start(self, router: BackendRouter):
         for handler in self.handlers:
-            print("Start handler: ", handler)
+            self.warning("Start handler: ", handler)
             self.executor.submit(handler[0], *handler[1], **handler[2], router=router)
 
     def wait(self):

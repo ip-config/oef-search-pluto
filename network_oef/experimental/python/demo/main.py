@@ -15,6 +15,7 @@ if __name__ == "__main__":
     parser.add_argument("--docker", "-d",  action='store_true', help="Docker version")
     parser.add_argument("--image", "-i", type=str, default="oef-search:latest", help="Docker image name")
     parser.add_argument("--build", "-b", action="store_true", help="Build docker image")
+    parser.add_argument("--log_dir", required=False, type=str, default="", help="Search log file")
 
     args = parser.parse_args()
 
@@ -28,4 +29,4 @@ if __name__ == "__main__":
     else:
         func = process_main
 
-    func(args.num_nodes, args.links, http_port_map, args.ssl_certificate)
+    func(args.num_nodes, args.links, http_port_map, args.ssl_certificate, log_dir=args.log_dir)

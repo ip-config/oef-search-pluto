@@ -32,9 +32,9 @@ class SearchEngine(DapInterface):
     @dap_network_support
     def __init__(self, name, config):
         self._storage = {}
-        nltk.download('stopwords')
-        nltk.download('punkt')
-        nltk.download('wordnet')
+        nltk.download('stopwords', quiet=True)
+        nltk.download('punkt', quiet=True)
+        nltk.download('wordnet', quiet=True)
         self._stop_words = set(stopwords.words('english'))
         self._porter = PorterStemmer()
         self._wnl = WordNetLemmatizer()

@@ -9,6 +9,7 @@ py_binary(
         "//api/src/proto/director:py_api_pb",
         "//england_grid/src/python/lib:lib",
         "//api/experimental/python:director",
+        "//utils/src/python:py_utils",
     ],
     data = [
          "//crawler_demo/resources:resources",

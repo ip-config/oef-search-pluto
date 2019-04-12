@@ -2,9 +2,10 @@ from concurrent.futures import ThreadPoolExecutor
 from network_oef.experimental.python.demo.SearchNetwork import SearchNetwork
 from typing import List, Dict
 import time
+import os
 
 
-def main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, ssl_cert: str = ""):
+def main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, ssl_cert: str = "", log_dir: str = ""):
     search_network = SearchNetwork()
     pool = ThreadPoolExecutor(num_of_nodes)
 
@@ -19,8 +20,13 @@ def main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, s
         core_key = "Core{}".format(i)
         http_port = http_ports.get(i, -1)
         cert_file = "" if http_port == -1 else ssl_cert
+        node_log_dir = ""
+        if len(log_dir) > 0:
+            node_log_dir = "{}/node{}/".format(log_dir, i)
+            if not os.path.exists(node_log_dir):
+                os.mkdir(node_log_dir)
         ct = pool.submit(SearchNetwork.create_node, search_network, node_key, "127.0.0.1", node_port+i, dap_port+i,
-                         director_port+i, core_key, core_port+i, http_port, cert_file)
+                         director_port+i, core_key, core_port+i, http_port, cert_file, node_log_dir)
         create_tasks.append(ct)
 
     for ct in create_tasks:
