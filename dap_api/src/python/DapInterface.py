@@ -186,8 +186,7 @@ def encodeConstraintValue(data, typecode):
         valueMessage.v_d.append(data[1])
 
     elif typecode == 'data_model':
-        print("DATA MODEL")
-        print(data)
+        valueMessage.dm.CopyFrom(data)
 
     elif typecode == 'string_list':
         valueMessage.v_s.extend(data)
