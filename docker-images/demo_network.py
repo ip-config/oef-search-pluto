@@ -20,7 +20,11 @@ def get_workdir(start_dir: str = ""):
     return get_workdir(os.path.abspath(os.path.join(start_dir, '..')))
 
 
-def build(image_tag: str, path: str):
+def build(image_tag: str, path: str, fast: bool):
+    if fast:
+        print("FAST DOCKER RE-BUILD")
+    else:
+        print("DOCKER BUILD")
     try:
         subprocess.check_call(["docker", "network", "create", "-d", "bridge", "oef_search_net"])
     except Exception as e:
@@ -31,12 +35,22 @@ def build(image_tag: str, path: str):
     ]
     subprocess.check_call(cmd, cwd=path)
     print('Generating source archive...complete')
+
+    builder_image_tag = image_tag+"_builder"
+
+    f_in = open(path+"/Dockerfile.template", "r")
+    f_out = open(path+"/Dockerfile", "w")
+    lines = f_in.readlines()
+    lines[0] = lines[0].replace("PREV_LOCAL_BUILDER_IMAGE", builder_image_tag)
+    f_out.writelines(lines)
+    f_out.close()
+
     cmd = [
         'docker',
         'build',
         '--target',
         'builder',
-        '-t', image_tag+"_builder",
+        '-t', builder_image_tag,
         '.',
     ]
     subprocess.check_call(cmd, cwd=path)
@@ -60,11 +74,10 @@ def kill_containers(names: List[str]):
 
 
 def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, ssl_cert: str = "", *,
-         image_tag: str, do_build: bool, log_dir: str):
+         image_tag: str, do_build: bool, log_dir: str, fast_build: bool, docker_dir: str = ""):
     path = get_workdir()
     if do_build:
-        build(image_tag, path)
-
+        build(image_tag, docker_dir if len(docker_dir) > 0 else path, fast_build)
     pool = ThreadPoolExecutor(num_of_nodes)
 
     CORE_PORT = 10000
@@ -206,6 +219,7 @@ if __name__ == "__main__":
     parser.add_argument("--image", "-i", type=str, default="oef-search:latest", help="Docker image name")
     parser.add_argument("--build", "-b", action="store_true", help="Build docker image")
     parser.add_argument("--log_dir", type=str, required=False, default="", help="Log directory")
+    parser.add_argument("--fast_build", "-f", action="store_true", help="Enable faster rebuilding")
 
     args = parser.parse_args()
 
@@ -217,6 +231,8 @@ if __name__ == "__main__":
         "nltk_data/tokenizers/punkt.zip",
     ]
     docker_dir = os.path.abspath(os.path.dirname(__file__))
+    if args.fast_build:
+        docker_dir = docker_dir+"/faster_docker"
     print(docker_dir)
     for file in files:
         print("CREATE LINK TO {}....".format(file))
@@ -251,4 +267,4 @@ if __name__ == "__main__":
         os.makedirs(log_dir, exist_ok=True)
 
     container_main(args.num_nodes, args.links, http_port_map, "/app/server.pem", image_tag=args.image,
-                   do_build=args.build, log_dir=log_dir)
+                   do_build=args.build, log_dir=log_dir, fast_build=args.fast_build, docker_dir=docker_dir)

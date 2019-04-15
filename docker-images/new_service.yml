@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: 2019-02-07T15:02:53Z
+  labels:
+    app: oef-search
+  name: oef-search
+  namespace: default
+  resourceVersion: "23211708"
+  selfLink: /api/v1/namespaces/default/services/oef-search
+  uid: 71d7872f-2ae9-11e9-a8ec-42010a9a01da
+spec:
+  clusterIP: 10.63.249.196
+  externalTrafficPolicy: Cluster
+  loadBalancerSourceRanges:
+  - 10.0.0.0/8
+  - 77.99.50.66/32
+  - 46.17.166.103/32
+  - 81.153.59.130/32
+  - 176.251.247.169/32
+  ports:
+  - name: http
+    nodePort: 31992
+    port: 80
+    protocol: TCP
+    targetPort: 7500
+  - name: socket
+    nodePort: 32420
+    port: 7501
+    protocol: TCP
+    targetPort: 7501
+  selector:
+    app: oef-search
+  sessionAffinity: None
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+    - ip: 35.230.139.211

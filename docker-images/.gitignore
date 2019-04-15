@@ -1,0 +1,6 @@
+.project.tar.gz
+nltk_data
+gensim-data
+faster_docker/nltk_data
+faster_docker/gensim-data
+faster_docker/project.tar.gz
