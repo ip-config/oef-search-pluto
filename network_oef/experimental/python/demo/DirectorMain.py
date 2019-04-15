@@ -99,6 +99,8 @@ async def set_locations_and_connections(director: Director):
         print("SET LOCATION {}@{}:{} NODE TO {}".format(core_name, a[0], a[1], entity.name))
         addresses[core_name] = a
         peers[core_name] = [link[0].name for link in entity.links if link[1] == "GND"]
+        if core_name == "London":
+            peers[core_name].append("Birmingham")
         await director.set_location(core_name, core_name.encode("utf-8"), (entity.coords[1], entity.coords[0])) #lon, lat
     for key in peers:
         targets = [(peer, *addresses[peer]) for peer in peers[key] if peer in addresses]
