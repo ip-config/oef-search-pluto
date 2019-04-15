@@ -85,12 +85,12 @@ class CrawlerAgents(object):
         colour1 = "white"
         colour2 = "black"
         crawler_styles = {
-            CrawlerAgentBehaviour.MovementType.CRAWL_ON_NODES: {
+            CrawlerAgentBehaviour.MovementType.FOLLOW_PATH: {
                 'dot': SvgStyle.SvgStyle({"fill-opacity": 1, " fill": colour1, " stroke-width": 0.1}),
                 'line': SvgStyle.SvgStyle({"stroke": colour1, "stroke-width": 1}),
                 'dashes': SvgStyle.SvgStyle({"stroke": colour1, "stroke-width": 1, "stroke-dasharray":"3 1" }),
             },
-            CrawlerAgentBehaviour.MovementType.FOLLOW_PATH:{
+            CrawlerAgentBehaviour.MovementType.CRAWL_ON_NODES:{
                 'dot': SvgStyle.SvgStyle({"fill-opacity": 1, " fill": colour2, " stroke-width": 0.1}),
                 'line': SvgStyle.SvgStyle({"stroke": colour2, "stroke-width": 1}),
                 'dashes': SvgStyle.SvgStyle({"stroke": colour2, "stroke-width": 1, "stroke-dasharray":"3 1" }),
