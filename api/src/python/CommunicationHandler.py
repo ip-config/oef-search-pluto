@@ -60,7 +60,12 @@ def serve_site(html_dir: str, path: str):
     #    bottle.response.headers['Content-Type'] = 'text/javascript'
     #elif path.find(".css") > 0:
     #    bottle.response.headers['Content-Type'] = 'text/css'
-    return bottle.static_file(resources.textfile(os.path.join(html_dir, path), as_string=True), root="/")
+    response = ""
+    try:
+        response = bottle.static_file(resources.textfile(os.path.join(html_dir, path), as_string=True), root="/")
+    except Exception as e:
+        print("seve_site exception: ", e)
+    return response
 
 
 def http_server(host: str, port: int, crt_file: str, *, router: BackendRouter, html_dir: str = None):
