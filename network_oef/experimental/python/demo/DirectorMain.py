@@ -46,8 +46,9 @@ async def set_weather_agents(director: Director):
     names = director.get_node_names()
     tasks = []
     core_names = get_core_names()
+    print("SET WEATHER AGENTS FOR: ", names)
     for name in names:
-        host, port = name.split(":")
+        host, port = director.get_address(name)
         if host.find("oef_node") != -1:
             i = int(host.replace("oef_node", ""))
         else:
