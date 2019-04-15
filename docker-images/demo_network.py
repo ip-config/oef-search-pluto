@@ -113,6 +113,7 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
             "--ssl_certificate", ssl_cert
         ]
         peers = []
+
         for l in links:
             if l.find(str(i)) == -1:
                 continue
@@ -185,7 +186,7 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
         "director",
         "no_sh",
         "--type",
-        "location",
+        "location_and_connection",
         "--targets"
     ])
     loc_director_cmd.extend(director_targets)
@@ -266,5 +267,9 @@ if __name__ == "__main__":
     if not os.path.exists(log_dir):
         os.makedirs(log_dir, exist_ok=True)
 
-    container_main(args.num_nodes, args.links, http_port_map, "/app/server.pem", image_tag=args.image,
+    if args.links is None:
+        links = []
+    else:
+        links = args.links
+    container_main(args.num_nodes, links, http_port_map, "/app/server.pem", image_tag=args.image,
                    do_build=args.build, log_dir=log_dir, fast_build=args.fast_build, docker_dir=docker_dir)

@@ -1,157 +1,18 @@
 from pluto_app.src.python.app import PlutoApp
 from network_oef.src.python.Connection import Connection
-from api.src.proto.core import response_pb2
 from api.src.proto.core import query_pb2, update_pb2
-from api.src.python.Interfaces import HasMessageHandler, HasProtoSerializer, DataWrapper
-from api.src.python.Serialization import serializer, deserializer
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import time
-import gensim
-import abc
 from utils.src.python.Logging import has_logger
 from api.src.python.network import network_support
 import api.src.python.RouterBuilder as RouterBuilder
+from api.src.python.director.PeerEndpoint import ConnectionManager
 from utils.src.python.distance import geo_distance
-import copy
+from network_oef.src.python.Broadcast import BroadcastFromNode
 
 
-class SearchResponseSerialization(HasProtoSerializer):
-    @deserializer
-    def deserialize(self, data: bytes) -> response_pb2.SearchResponse:
-        pass
-
-    @serializer
-    def serialize(self, proto_msg: response_pb2.SearchResponse) -> bytes:
-        pass
-
-
-class BroadcastFromNode(HasMessageHandler):
-    def __init__(self, path, node):
-        self._node = node
-        self._path = path
-        self._serializer = SearchResponseSerialization()
-
-    def __flatten_list(self, src):
-        if type(src) != list:
-            if src is None:
-                return []
-            return [src]
-        result = []
-        for e in src:
-            flatten = self.__flatten_list(e)
-            result.extend(flatten)
-        return result
-
-    async def handle_message(self, msg):
-        response = await self._node.broadcast(self._path, copy.deepcopy(msg))
-        if type(response) != list:
-            response = [response]
-        response = self.__flatten_list(response)
-        transformed = []
-        for r in response:
-            if len(r.data) < 1:
-                deserialized = None
-            else:
-                deserialized = await self._serializer.deserialize(r.data)
-            transformed.append(DataWrapper(r.success, r.uri, deserialized, r.error_code, "", r.narrative, r.id))
-        return transformed
-
-
-class LazyW2V:
-    def __init__(self, model="glove-wiki-gigaword-50"):
-        self._w2v = None
-        self._model = model
-
-    def load(self):
-        self._w2v = gensim.downloader.load(self._model)
-
-    def __getitem__(self, item):
-        if not self._w2v:
-            self.load()
-        return self._w2v[item]
-
-    def __getattr__(self, item):
-        return getattr(self._w2v, item)
-
-
-class Observer(abc.ABC):
-    @abc.abstractmethod
-    def on_change(self, node_id, value=None):
-        pass
-
-
-class ObserverNotifier(Observer):
-    def __init__(self):
-        self._store = []
-
-    def register_observer(self, observer: Observer):
-        self._store.append(observer)
-
-    def on_change(self, node_id, value=None):
-        for observer in self._store:
-            observer.on_change(node_id, value)
-
-
-class MultiFieldObserver(abc.ABC):
-    class FieldObserver(Observer):
-        def __init__(self, field, multifield_observer):
-            self._field = field
-            self._multifield_observer = multifield_observer
-
-        def on_change(self, node_id, value=None):
-            return self._multifield_observer.on_change(self._field, node_id, value)
-
-    def get_field_observer(self, field_name):
-        return MultiFieldObserver.FieldObserver(field_name, self)
-
-    @abc.abstractmethod
-    def on_change(self, field, node_id, value):
-        pass
-
-
-class NodeAttributeInterface:
-    def __init__(self):
-        self._attributes = {
-            "location": None
-        }
-        self._update_observer = ObserverNotifier()
-        self._activity_observer = ObserverNotifier()
-
-    def _setup(self, dapManager):
-        self._geo_store = dapManager.getInstance("geo_search")
-        self._location_table = "locations"
-
-    def register_update_observer(self, observer: Observer):
-        self._update_observer.register_observer(observer)
-
-    def register_activity_observer(self, activity_observer: Observer):
-        self._activity_observer.register_observer(activity_observer)
-
-    def notify_update(self):
-        self._update_observer.on_change(self._id)
-
-    def notify_activity(self, t):
-        self._activity_observer.on_change(self._id, t)
-
-    @property
-    def identity(self):
-        return self._id
-
-    @property
-    def core_locations(self):
-        return self._geo_store.getGeoByTableName(self._location_table).store.values()
-
-    @property
-    def location(self):
-        return self._attributes["location"]
-
-    @location.setter
-    def location(self, location):
-        self._attributes["location"] = location
-
-
-class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
+class SearchNode(PlutoApp.PlutoApp, ConnectionManager):
     @has_logger
     @network_support
     def __init__(self, cache_lifetime: int, id: str, cleaner_pool: ThreadPoolExecutor = None):
@@ -170,7 +31,6 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
             "loc": ()
         }
         PlutoApp.PlutoApp.__init__(self)
-        NodeAttributeInterface.__init__(self)
         self.log.update_local_name(self._id)
         try:
             self._loop = asyncio.get_event_loop()
@@ -182,6 +42,7 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
             .set_name("DirectorRouter")\
             .set_dap_manager(self.dapManager)\
             .add_location_config({"table": "locations", "field": "locations.update"})\
+            .add_connection_manager(self)\
             .build()
         self._com = None
         self._com_director = None
@@ -191,7 +52,6 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
             self.add_network_dap_conf(name, conf)
         self.start()
         self.add_handler("search", BroadcastFromNode("search", self))
-        self._setup(self.dapManager)
 
         if node_ip is not None and node_port is not None and hasattr(self, "start_network"):
             self._com = self.start_network(self.router, node_ip, node_port, http_port, ssl_certificate, html_dir)
@@ -203,6 +63,10 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
             search_node_id = host + ":" + str(port)
         self.info("Create search network link with search node {} @ {}:{}".format(search_node_id, host, port))
         self._search_coms[search_node_id] = Connection(host, port)
+
+    def add_peer(self, name: str, host: str, port: int) -> bool:
+        self.connect_to_search_node(host, port, name)
+        return True
 
     def disconnect(self):
         for com in self._search_coms:
@@ -244,7 +108,6 @@ class SearchNode(PlutoApp.PlutoApp, NodeAttributeInterface):
         #proto = data.SerializeToString()
         proto_model = data.model.SerializeToString()
         t = time.time()
-        self.notify_activity(t)
         self.info("Coms to broadcast: ", self._search_coms.keys())
         for target_search_node_id in self._search_coms:
             h = hash(path + ":" + str(proto_model) + ":" + str(data.directed_search.target.geo) + ":" + str(target_search_node_id))

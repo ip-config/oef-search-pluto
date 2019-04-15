@@ -33,6 +33,9 @@ def main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, s
         print(ct.result())
 
     time.sleep(5)
+    if links is None:
+        return
+
     for l in links:
         n1, n2 = l.split(":")
         while True:
