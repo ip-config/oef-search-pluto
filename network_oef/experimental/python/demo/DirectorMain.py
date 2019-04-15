@@ -7,6 +7,8 @@ from england_grid.src.python.lib import EnglandGrid
 import sys
 import socket
 import time
+from utils.src.python.Logging import configure as configure_logging
+import logging
 
 
 def get_core_names(grid=None):
@@ -46,7 +48,6 @@ async def set_weather_agents(director: Director):
     names = director.get_node_names()
     tasks = []
     core_names = get_core_names()
-    print("SET WEATHER AGENTS FOR: ", names)
     for name in names:
         host, port = director.get_address(name)
         if host.find("oef_node") != -1:
@@ -54,6 +55,7 @@ async def set_weather_agents(director: Director):
         else:
             i = int(port)-20000
         core_name = next(core_names)
+        print("SET WEATHER AGENT FOR: ", name, "; core_name: ", core_name)
         task = asyncio.create_task(director.send(name, "blk_update",
                                                  create_weather_agent_service(10000+i, core_name)))
         tasks.append(task)
@@ -124,6 +126,7 @@ async def main(args):
 
 
 if __name__ == "__main__":
+    configure_logging(level=logging.INFO)
     parser = argparse.ArgumentParser(description='DEMO Director')
     parser.add_argument("--targets", nargs='+',  type=str, help="Node addresses host:port ...")
     parser.add_argument("--type", type=str, required=True, help="weather_agent/location/location_and_connection")

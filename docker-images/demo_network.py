@@ -190,7 +190,8 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
         "--targets"
     ])
     loc_director_cmd.extend(director_targets)
-    subprocess.check_call(loc_director_cmd)
+    print("EXECUTE: ", " ".join(loc_director_cmd))
+    subprocess.check_call(loc_director_cmd, stderr=subprocess.STDOUT, stdout=open(log_dir+"/director_lp.log", "w"))
 
     weather_director_cmd = []
     weather_director_cmd.extend(docker_cmd)
@@ -204,7 +205,9 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
         "--targets"
     ])
     weather_director_cmd.extend(api_targets)
-    subprocess.check_call(weather_director_cmd)
+    print("EXECUTE: ", " ".join(weather_director_cmd))
+    subprocess.check_call(weather_director_cmd, stderr=subprocess.STDOUT, stdout=open(log_dir+"/director_weather.log",
+                                                                                      "w"))
 
     pool.shutdown(wait=True)
 
