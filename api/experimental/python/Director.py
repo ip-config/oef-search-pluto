@@ -106,11 +106,11 @@ class Director:
         await self.push_cmd(client_name, "location", data)
 
     @block_if_first_not_found(store_name="clients")
-    async def add_peers(self, client_name: str, peers: List[Tuple[str, str, int]]):
+    async def add_peers(self, client_name: str, peers: List[Tuple[str, str, int, int]]):
         data = node_pb2.PeerUpdate()
         for peer in peers:
             p = data.add_peers.add()
-            p.name = peer[0]
+            p.name = "Search"+str(peer[3])
             p.host = peer[1]
             p.port = peer[2]
         await self.push_cmd(client_name, "peer", data)

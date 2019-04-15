@@ -104,7 +104,8 @@ async def set_locations_and_connections(director: Director):
             peers[core_name].append("London")
         await director.set_location(core_name, core_name.encode("utf-8"), (entity.coords[1], entity.coords[0])) #lon, lat
     for key in peers:
-        targets = [(peer, addresses[peer][0], addresses[peer][1]-20000) for peer in peers[key] if peer in addresses]
+        targets = [(peer, addresses[peer][0], addresses[peer][1]-20000, addresses[peer][1]-40000) for peer in peers[key]
+                   if peer in addresses]
         print("ADD PEERS for core {}: ".format(key), targets)
         await director.add_peers(key, targets)
 
