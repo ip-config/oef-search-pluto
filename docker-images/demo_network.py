@@ -38,12 +38,13 @@ def build(image_tag: str, path: str, fast: bool):
 
     builder_image_tag = image_tag+"_builder"
 
-    f_in = open(path+"/Dockerfile.template", "r")
-    f_out = open(path+"/Dockerfile", "w")
-    lines = f_in.readlines()
-    lines[0] = lines[0].replace("PREV_LOCAL_BUILDER_IMAGE", builder_image_tag)
-    f_out.writelines(lines)
-    f_out.close()
+    if fast:
+        f_in = open(path+"/Dockerfile.template", "r")
+        f_out = open(path+"/Dockerfile", "w")
+        lines = f_in.readlines()
+        lines[0] = lines[0].replace("PREV_LOCAL_BUILDER_IMAGE", builder_image_tag)
+        f_out.writelines(lines)
+        f_out.close()
 
     cmd = [
         'docker',
