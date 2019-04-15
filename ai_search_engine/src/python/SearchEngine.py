@@ -47,7 +47,7 @@ class SearchEngine(DapInterface):
         host = config.get("host", None)
         port = config.get("port", None)
 
-        if host != None and port != None:
+        if host is not None and port is not None:
             self.start_network(self, host, port)
 
         self.tablenames = []
@@ -249,6 +249,8 @@ class SearchEngine(DapInterface):
                 self.enc_query = np.add(self.enc_query, self.searchSystem._string_to_vec(self.query_field_value))
             elif self.query_field_type == "data_model":
                 self.enc_query = np.add(self.enc_query, self.searchSystem._dm_to_vec(self.query_field_value))
+            else:
+                print("!!!!!!!!!!!!!!!! WHAT? ", self.query_field_type)
             return self
 
         def setSearchSystem(self, searchSystem):

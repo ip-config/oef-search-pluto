@@ -62,12 +62,15 @@ class FullNode:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             if sock.connect_ex((self._search_ip, self._search_port)) != 0:
                 time.sleep(0.5)
+                print(".")
             else:
                 break
-        log_file = open(log_file, 'w')
+        if len(log_file) > 0:
+            log_file = open(log_file, 'w')
+        else:
+            log_file = None
         self._core_process = subprocess.Popen([oef_core, core_key, ip, str(port), self._search_ip,
-                                               str(self._search_port)], stdout=log_file, stderr=subprocess.STDOUT
-                                              )
+                                               str(self._search_port)], stdout=log_file, stderr=log_file)
 
     def add_peer(self, node_key: str, host: str, port: int) -> bool:
         try:
