@@ -67,10 +67,12 @@ class FullNode:
                 break
         if len(log_file) > 0:
             log_file = open(log_file, 'w')
+            self._core_process = subprocess.Popen([oef_core, core_key, ip, str(port), self._search_ip,
+                                                   str(self._search_port)], stdout=log_file, stderr=log_file)
         else:
-            log_file = None
-        self._core_process = subprocess.Popen([oef_core, core_key, ip, str(port), self._search_ip,
-                                               str(self._search_port)], stdout=log_file, stderr=log_file)
+            self._core_process = subprocess.Popen([oef_core, core_key, ip, str(port), self._search_ip,
+                                                   str(self._search_port)])
+
 
     def add_peer(self, node_key: str, host: str, port: int) -> bool:
         try:

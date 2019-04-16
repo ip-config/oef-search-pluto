@@ -46,7 +46,10 @@ class SearchNetwork:
         node.start_search(node_key, ip, port, dap_port, director_port, http_port, ssl_certificate, search_log_file)
         if len(core_key) > 0 and core_port > 1000:
             self.info("CREATE CORE: ", core_key, " @ {}:{}".format(ip, core_port))
-            node.start_core(core_key, ip, core_port, self._oef_core, log_file=log_dir+"core.log")
+            core_log_file = ""
+            if len(log_dir) > 0:
+                core_log_file = log_dir+"core.log"
+            node.start_core(core_key, ip, core_port, self._oef_core, log_file=core_log_file)
         self._addresses[node_key] = (ip, port)
         self.nodes[node_key] = node
         asyncio.run(self.set_location(ip, director_port, core_key, node_key))

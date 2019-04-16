@@ -10,7 +10,7 @@ import api.src.python.RouterBuilder as RouterBuilder
 from api.src.python.director.PeerEndpoint import ConnectionManager
 from utils.src.python.distance import geo_distance
 from network_oef.src.python.Broadcast import BroadcastFromNode
-from dap_api.src.python import DapQueryRepn
+from dap_api.src.python import DapQueryRepn, DapManager
 
 
 class LocationLookupVisitor(DapQueryRepn.DapQueryRepn.Visitor):
@@ -24,7 +24,7 @@ class LocationLookupVisitor(DapQueryRepn.DapQueryRepn.Visitor):
         pass
 
     def visitLeaf(self, node, depth):
-        if node.target_field_name != self.location_table_name or node.target_field_name != self.location_field_name:
+        if node.target_field_name != self.location_field_name:
             return
         if len(self.location) > 0:
             self.warning("Found multiple location in the query: ", self.location, node.query_field_value)
@@ -60,7 +60,7 @@ class SearchNode(PlutoApp.PlutoApp, ConnectionManager):
         self.director_router = RouterBuilder.DirectorAPIRouterBuilder()\
             .set_name("DirectorRouter")\
             .set_dap_manager(self.dapManager)\
-            .add_location_config({"table": "locations", "field": "locations.update"})\
+            .add_location_config({"table": "location", "field": "location.update"})\
             .add_connection_manager(self)\
             .build()
         self._com = None
@@ -111,22 +111,17 @@ class SearchNode(PlutoApp.PlutoApp, ConnectionManager):
             data.source_key = self._bin_id
             try:
                 plane_info = self.dapManager.getPlaneInformation("location")
-                self.warning("WABBLE 1")
                 location = plane_info["values"]
-                self.warning("WABBLE 2")
                 if len(location) > 1:
                     self.warning("Got more then 1 location from dapManager (I'm using first, ignoring the rest now): ",
                                  location)
 
-                self.warning("WABBLE 3")
                 if not data.directed_search.target.HasField("geo"):
-                    self.warning("WABBLE 3.1")
                     visitor = LocationLookupVisitor(plane_info["table_name"], plane_info["field_name"])
-                    self.warning("WABBLE 3.2")
                     query_rpn = self.dapManager.makeQuery(data.model)
-                    self.warning("WABBLE 4")
+                    v = DapManager.DapManager.PopulateFieldInformationVisitor(self.dapManager)
+                    query_rpn.visit(v)
                     query_rpn.visit(visitor)
-                    self.warning("WABBLE 5")
                     target_location = visitor.location
                     if len(target_location) == 2:
                         self.warning("WABBLE 6")
