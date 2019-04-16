@@ -131,7 +131,7 @@ class SearchNode(PlutoApp.PlutoApp, ConnectionManager):
                 location = location[0].value.l
                 data.directed_search.distance.geo = geo_distance(location, target)
             except Exception as e:
-                self.warning("Set distance failed in broadcast, because: ", str(e))
+                self.warning("Set distance failed in broadcast, because: ", type(e), str(e))
         else:
             self.warning("query is not api query (missing TTL)")
         cos = []
