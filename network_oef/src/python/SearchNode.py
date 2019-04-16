@@ -116,7 +116,7 @@ class SearchNode(PlutoApp.PlutoApp, ConnectionManager):
                     self.warning("Got more then 1 location from dapManager (I'm using first, ignoring the rest now): ",
                                  location)
 
-                if not data.directed_search.target.hasField("geo"):
+                if not data.directed_search.target.HasField("geo"):
                     visitor = LocationLookupVisitor(plane_info["table_name"], plane_info["field_name"])
                     query_rpn = self.dapManager.makeQuery(data)
                     query_rpn.visit(visitor)
