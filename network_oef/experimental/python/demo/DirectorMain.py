@@ -9,6 +9,7 @@ import socket
 import time
 from utils.src.python.Logging import configure as configure_logging
 import logging
+import json
 
 
 def get_core_names(grid=None):
@@ -24,24 +25,28 @@ def get_core_names(grid=None):
     return core_names
 
 
+async def set_node(director: Director, host: str, port: str, name: str):
+    try:
+        host = socket.gethostbyname(host)
+    except Exception as e:
+        print("Resolution failed, because: " + str(e))
+        return False
+    port = int(port)
+    while True:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if sock.connect_ex((host, port)) == 0:
+            break
+        print(".")
+        time.sleep(2)
+    await director.add_node(host, port, name)
+
+
 async def set_nodes(director: Director, addresses: List[str]):
     names = get_core_names()
     for address in addresses:
         host, port = address.split(":")
-        try:
-            host = socket.gethostbyname(host)
-        except Exception as e:
-            print("Resolution failed, because: " + str(e))
-            return False
-        port = int(port)
-        while True:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            if sock.connect_ex((host, port)) == 0:
-                break
-            print(".")
-            time.sleep(2)
         name = next(names)
-        await director.add_node(host, port, name)
+        await set_node(director, host, port, name)
 
 
 async def set_weather_agents(director: Director):
@@ -102,18 +107,58 @@ async def set_locations_and_connections(director: Director):
             peers[core_name].append("Birmingham")
         if core_name == "Birmingham":
             peers[core_name].append("London")
-        await director.set_location(core_name, core_name.encode("utf-8"), (entity.coords[1], entity.coords[0])) #lon, lat
+        await director.set_location(core_name, core_name.encode("utf-8"), (entity.coords[1], entity.coords[0]))#lon, lat
     for key in peers:
-        targets = [(peer, addresses[peer][0], addresses[peer][1]-20000, addresses[peer][1]-40000) for peer in peers[key]
-                   if peer in addresses]
-        print("ADD PEERS for core {}: ".format(key), targets)
+        targets = [("Search"+str(addresses[peer][1]-40000), addresses[peer][0], addresses[peer][1]-20000)
+                   for peer in peers[key] if peer in addresses]
+        print("ADD PEERS for search {}: ".format(key), targets)
         await director.add_peers(key, targets)
+
+
+async def config_from_json(director: Director, json_config: str):
+    with open(json_config, "r") as f:
+        config = json.load(f)
+    print(config)
+
+    uri_map = {}
+
+    for c in config:
+        host, port = c["director_uri"].split(":")
+        name = c["name"]
+        await set_node(director, host, port, name)
+        coords = c["location"]
+        core_name = name+"-core"
+        print("SET LOCATION {}@{} NODE TO {}".format(core_name, c["core_uri"], coords))
+        await director.set_location(name, core_name.encode("utf-8"), tuple(coords))
+        uri_map[name] = c["uri"]
+
+    for c in config:
+        peers = [(peer+"-search", *uri_map[peer].split(":")) for peer in c["peers"] if peer in uri_map]
+        print("ADD PEERS for search {}: ".format(c["name"]), peers)
+        await director.add_peers(c["name"], peers)
+
+    await director.reset()
+
+    tasks = []
+    for c in config:
+        host, port = c["uri"].split(":")
+        name = c["name"]
+        core_name = name+"-core"
+        await set_node(director, host, port, c["name"])
+        print("SET WEATHER AGENT FOR: ", name, "; core_name: ", core_name)
+        core_host, core_port = c["core_uri"].split(":")
+        task = asyncio.create_task(director.send(name, "blk_update",
+                                                 create_weather_agent_service(int(core_port), core_name)))
+        tasks.append(task)
+    for task in tasks:
+        await task
 
 
 async def main(args):
     director = Director()
 
-    await set_nodes(director, args.targets)
+    if args.targets is not None and len(args.targets) > 0:
+        await set_nodes(director, args.targets)
 
     if args.type == "location":
         await set_locations(director)
@@ -121,6 +166,11 @@ async def main(args):
         await set_weather_agents(director)
     elif args.type == "location_and_connection":
         await set_locations_and_connections(director)
+    elif args.type == "json_config":
+        if len(args.config_file) == 0:
+            print("json_config requires a json config file!")
+            return
+        await config_from_json(director, args.config_file)
     else:
         print("Command type {} not supported!".format(args.type))
 
@@ -133,7 +183,8 @@ if __name__ == "__main__":
     configure_logging(level=logging.INFO)
     parser = argparse.ArgumentParser(description='DEMO Director')
     parser.add_argument("--targets", nargs='+',  type=str, help="Node addresses host:port ...")
-    parser.add_argument("--type", type=str, required=True, help="weather_agent/location/location_and_connection")
+    parser.add_argument("--type", "-t", type=str, required=True, help="weather_agent/location/location_and_connection/json_config")
+    parser.add_argument("--config_file", type=str, required=False, default="", help="JSON config file for json_config")
     args_ = parser.parse_args()
 
     asyncio.run(main(args_))

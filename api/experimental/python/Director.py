@@ -106,13 +106,13 @@ class Director:
         await self.push_cmd(client_name, "location", data)
 
     @block_if_first_not_found(store_name="clients")
-    async def add_peers(self, client_name: str, peers: List[Tuple[str, str, int, int]]):
+    async def add_peers(self, client_name: str, peers: List[Tuple[str, str, int]]):
         data = node_pb2.PeerUpdate()
         for peer in peers:
             p = data.add_peers.add()
-            p.name = "Search"+str(peer[3])
+            p.name = peer[0]
             p.host = peer[1]
-            p.port = peer[2]
+            p.port = int(peer[2])
         await self.push_cmd(client_name, "peer", data)
 
 
@@ -125,6 +125,12 @@ class Director:
     async def close_all(self):
         for key, queue in self.clients.items():
             await queue.put(("close",))
+
+    async def reset(self):
+        await self.close_all()
+        self.clients = {}
+        self.transports = {}
+        self.addresses = {}
 
     async def wait(self):
         for key in list(self.transports.keys()):
