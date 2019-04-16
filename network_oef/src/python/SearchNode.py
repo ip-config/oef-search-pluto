@@ -123,7 +123,7 @@ class SearchNode(PlutoApp.PlutoApp, ConnectionManager):
                     self.warning("WABBLE 3.1")
                     visitor = LocationLookupVisitor(plane_info["table_name"], plane_info["field_name"])
                     self.warning("WABBLE 3.2")
-                    query_rpn = self.dapManager.makeQuery(data)
+                    query_rpn = self.dapManager.makeQuery(data.model)
                     self.warning("WABBLE 4")
                     query_rpn.visit(visitor)
                     self.warning("WABBLE 5")
