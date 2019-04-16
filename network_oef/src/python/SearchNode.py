@@ -120,7 +120,9 @@ class SearchNode(PlutoApp.PlutoApp, ConnectionManager):
 
                 self.warning("WABBLE 3")
                 if not data.directed_search.target.HasField("geo"):
+                    self.warning("WABBLE 3.1")
                     visitor = LocationLookupVisitor(plane_info["table_name"], plane_info["field_name"])
+                    self.warning("WABBLE 3.2")
                     query_rpn = self.dapManager.makeQuery(data)
                     self.warning("WABBLE 4")
                     query_rpn.visit(visitor)
@@ -132,6 +134,7 @@ class SearchNode(PlutoApp.PlutoApp, ConnectionManager):
                         data.directed_search.target.geo.lon = target_location[0]
                         data.directed_search.target.geo.lat = target_location[1]
                         self.warning("WABBLE 7")
+                self.warning("WABBLE 3.3")
                 target = data.directed_search.target.geo
                 # TODO: multiple core
                 # TODO: nicer way?
