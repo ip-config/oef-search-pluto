@@ -118,6 +118,7 @@ async def set_locations_and_connections(director: Director):
 async def config_from_json(director: Director, json_config: str):
     with open(json_config, "r") as f:
         config = json.load(f)
+    internal_hosts = config["internal_hosts"]
     config = config["nodes"]
     print(config)
 
@@ -134,7 +135,8 @@ async def config_from_json(director: Director, json_config: str):
         uri_map[name] = c["uri"]
 
     for c in config:
-        peers = [(peer+"-search", *uri_map[peer].split(":")) for peer in c["peers"] if peer in uri_map]
+        peers = [(peer, *uri_map[peer].split(":")) for peer in c["peers"] if peer in uri_map]
+        peers = [(d[0]+"-search", d[1] if d[0] not in internal_hosts else internal_hosts[d[0]], d[2]) for d in peers]
         print("ADD PEERS for search {}: ".format(c["name"]), peers)
         await director.add_peers(c["name"], peers)
 
