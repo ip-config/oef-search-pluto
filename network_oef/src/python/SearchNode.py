@@ -10,6 +10,25 @@ import api.src.python.RouterBuilder as RouterBuilder
 from api.src.python.director.PeerEndpoint import ConnectionManager
 from utils.src.python.distance import geo_distance
 from network_oef.src.python.Broadcast import BroadcastFromNode
+from dap_api.src.python import DapQueryRepn
+
+
+class LocationLookupVisitor(DapQueryRepn.DapQueryRepn.Visitor):
+    @has_logger
+    def __init__(self, location_table_name, location_field_name):
+        self.location_table_name = location_table_name
+        self.location_field_name = location_field_name
+        self.location = []
+
+    def visitNode(self, node, depth):
+        pass
+
+    def visitLeaf(self, node, depth):
+        if node.target_field_name != self.location_table_name or node.target_field_name != self.location_field_name:
+            return
+        if len(self.location) > 0:
+            self.warning("Found multiple location in the query: ", self.location, node.query_field_value)
+        self.location = node.query_field_value
 
 
 class SearchNode(PlutoApp.PlutoApp, ConnectionManager):
@@ -91,14 +110,25 @@ class SearchNode(PlutoApp.PlutoApp, ConnectionManager):
             source = data.source_key.decode("UTF-8")
             data.source_key = self._bin_id
             try:
-                location = self.dapManager.getPlaneInformation("location")["values"]
+                plane_info = self.dapManager.getPlaneInformation("location")
+                location = plane_info["values"]
                 if len(location) > 1:
                     self.warning("Got more then 1 location from dapManager (I'm using first, ignoring the rest now): ",
                                  location)
+
+                if not data.directed_search.target.hasField("geo"):
+                    visitor = LocationLookupVisitor(plane_info["table_name"], plane_info["field_name"])
+                    query_rpn = self.dapManager.makeQuery(data)
+                    query_rpn.visit(visitor)
+                    target_location = visitor.location
+                    if len(target_location) == 2:
+                        self.info("LOCATION in the query, setting up header to include location: ", target_location)
+                        data.directed_search.target.geo.lon = target_location[0]
+                        data.directed_search.target.geo.lat = target_location[1]
+                target = data.directed_search.target.geo
                 # TODO: multiple core
                 # TODO: nicer way?
                 location = location[0].value.l
-                target = data.directed_search.target.geo
                 data.directed_search.distance.geo = geo_distance(location, target)
             except Exception as e:
                 self.warning("Set distance failed in broadcast, because: ", str(e))

@@ -10,6 +10,7 @@ py_binary(
         "//england_grid/src/python/lib:lib",
         "//api/experimental/python:director",
         "//utils/src/python:py_utils",
+        "//dap_api/src/python:dap_api"
     ],
     data = [
          "//crawler_demo/resources:resources",
