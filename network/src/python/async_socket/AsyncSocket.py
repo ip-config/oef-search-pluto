@@ -146,7 +146,7 @@ def _handler(func):
 
 
 async def _server(func, host, port):
-    server = await asyncio.start_server(_handler(func), host, port)
+    server = await asyncio.start_server(_handler(func), port=port)
     return await server.serve_forever()
 
 
