@@ -118,6 +118,7 @@ async def set_locations_and_connections(director: Director):
 async def config_from_json(director: Director, json_config: str):
     with open(json_config, "r") as f:
         config = json.load(f)
+    config = config["nodes"]
     print(config)
 
     uri_map = {}
