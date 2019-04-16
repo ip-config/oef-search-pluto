@@ -9,7 +9,6 @@ import utils.src.python.resources as resources
 import os
 from concurrent.futures import ThreadPoolExecutor
 from utils.src.python.Logging import has_logger
-import socket
 
 
 _loop = asyncio.new_event_loop()
@@ -71,7 +70,7 @@ def serve_site(html_dir: str, path: str):
 
 def http_server(host: str, port: int, crt_file: str, *, router: BackendRouter, html_dir: str = None):
     app = bottle.Bottle()
-    srv = SSLWSGIRefServer.SSLWSGIRefServer(host=socket.INADDR_ANY, port=port, certificate_file=crt_file)
+    srv = SSLWSGIRefServer.SSLWSGIRefServer(host="0.0.0.0", port=port, certificate_file=crt_file)
     app.route(path="/json/<path:path>", method="POST", callback=http_json_handler(router))
     if html_dir is not None:
         app.route(path="/website/<path:path>", method="GET", callback=partial(serve_site, html_dir))
