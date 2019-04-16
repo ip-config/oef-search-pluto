@@ -111,25 +111,34 @@ class SearchNode(PlutoApp.PlutoApp, ConnectionManager):
             data.source_key = self._bin_id
             try:
                 plane_info = self.dapManager.getPlaneInformation("location")
+                self.warning("WABBLE 1")
                 location = plane_info["values"]
+                self.warning("WABBLE 2")
                 if len(location) > 1:
                     self.warning("Got more then 1 location from dapManager (I'm using first, ignoring the rest now): ",
                                  location)
 
+                self.warning("WABBLE 3")
                 if not data.directed_search.target.HasField("geo"):
                     visitor = LocationLookupVisitor(plane_info["table_name"], plane_info["field_name"])
                     query_rpn = self.dapManager.makeQuery(data)
+                    self.warning("WABBLE 4")
                     query_rpn.visit(visitor)
+                    self.warning("WABBLE 5")
                     target_location = visitor.location
                     if len(target_location) == 2:
+                        self.warning("WABBLE 6")
                         self.info("LOCATION in the query, setting up header to include location: ", target_location)
                         data.directed_search.target.geo.lon = target_location[0]
                         data.directed_search.target.geo.lat = target_location[1]
+                        self.warning("WABBLE 7")
                 target = data.directed_search.target.geo
                 # TODO: multiple core
                 # TODO: nicer way?
                 location = location[0].value.l
+                self.warning("WABBLE 8")
                 data.directed_search.distance.geo = geo_distance(location, target)
+                self.warning("WABBLE 9")
             except Exception as e:
                 self.warning("Set distance failed in broadcast, because: ", type(e), str(e))
         else:
