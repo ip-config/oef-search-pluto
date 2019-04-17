@@ -19,7 +19,6 @@ def gensim_setup():
     gmodel = gensim.downloader.load(model)
     gmodel.init_sims(replace=True)
     gmodel.save(model_bin)
-    create_symlinks([model_bin, gensim_dir+model+".bin.vectors.npy"])
 
 
 def get_workdir(start_dir: str = ""):
@@ -50,10 +49,6 @@ def build(image_tag: str, path: str, fast: bool):
     ]
     subprocess.check_call(cmd, cwd=path)
     print('Generating source archive...complete')
-
-    print("Gensim setup....")
-    gensim_setup()
-    print("Gensim setup...complete")
 
     builder_image_tag = image_tag+"_builder"
 
@@ -235,6 +230,10 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
 
 
 def create_symlinks(target=None):
+    print("Gensim setup....")
+    gensim_setup()
+    print("Gensim setup...complete")
+
     files = [
         "gensim-data/glove-wiki-gigaword-50/glove-wiki-gigaword-50.gz",
         "gensim-data/glove-wiki-gigaword-50/__init__.py",
