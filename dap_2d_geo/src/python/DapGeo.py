@@ -246,7 +246,7 @@ class DapGeo(DapInterface.DapInterface):
                 (identifier.core, identifier.agent): identifier
                 for identifier
                 in input_idents.identifiers
-            }
+            })
             idents = coreagent_to_identifier.keys()
 
 
