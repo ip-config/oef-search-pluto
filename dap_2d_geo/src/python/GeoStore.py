@@ -67,7 +67,7 @@ class GeoStore(object):
         entity2 = entity
         loc = self.store.get(entity, None)
         if loc == None:
-            self.error("no data for entity=", entity)
+            self.warning("no data for entity=", entity)
             entity = (entity[0], b'',)
             loc = self.store.get(entity, None)
             if loc == None:
@@ -87,13 +87,13 @@ class GeoStore(object):
             left = (bearing - bearing_width + 360) % 360
             right = (bearing + bearing_width + 360) % 360
 
-        self.error("entities=", entities)
+        self.info("entities=", entities)
         for entity in list(entities):
-            self.error("entity=", entity)
+            self.info("entity=", entity)
             r = self.entityToData(location, entity)
             if r == None:
                 continue
-            self.error("data=", r)
+            self.info("data=", r)
             _, d, br = r
             if d > radius_in_m:
                 continue
