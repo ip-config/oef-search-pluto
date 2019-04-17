@@ -64,13 +64,18 @@ class GeoStore(object):
         return False
 
     def entityToData(self, location, entity):
+        entity2 = entity
         loc = self.store.get(entity, None)
         if loc == None:
             self.error("no data for entity=", entity)
-            return None
+            entity = (entity[0], b'',)
+            loc = self.store.get(entity, None)
+            if loc == None:
+                self.error("no data for entity=", entity)
+                return None
         d = self.EquirectangularDistance(location, loc)
         br = GeoStore.InitialBearing(location, loc)
-        return (entity, int(d), int(br))
+        return (entity2, int(d), int(br))
 
     def accept(self, entities, location, radius_in_m, bearing=None, bearing_width=None):
         left = None
