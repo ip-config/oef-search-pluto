@@ -394,10 +394,14 @@ class DapManager(object):
         try:
             current = cores
             for dap_name, memento in ordered_mementos:
-                proto = dap_interface_pb2.DapExecute()
-                proto.query_memento.CopyFrom(memento)
-                proto.input_idents.CopyFrom(current)
-                current = self.getInstance(dap_name).execute(proto)
+                try:
+                    proto = dap_interface_pb2.DapExecute()
+                    proto.query_memento.CopyFrom(memento)
+                    proto.input_idents.CopyFrom(current)
+                    current = self.getInstance(dap_name).execute(proto)
+                except Exception as e:
+                    self.error("_executeMementoChain error: {} dapname={}".format(str(e), dap_name))
+                    raise e
         except Exception as e:
             self.error("_executeMementoChain error: ", str(e))
         self.warning("_executeMementoChain output count ", len(current.identifiers))

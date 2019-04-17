@@ -84,7 +84,6 @@ class DapGeoTest(unittest.TestCase):
         print("RESULTS:", results)
         assert len(results) == 2
         assert output.HasField("status") == False
-        assert(True == False)
 
     def testProx2(self):
 
