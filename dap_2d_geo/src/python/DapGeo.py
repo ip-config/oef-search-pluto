@@ -147,9 +147,9 @@ class DapGeo(DapInterface.DapInterface):
             entities = set(entities)
 
             for location in self.locations:
-                self.dap.warning("TRYING:", entities)
-                ok = self.geo.accept(entities, location, self.radius)
-                print("OK=", ok)
+                self.dap.info("TRYING:", entities)
+                ok = list(self.geo.accept(entities, location, self.radius))
+                self.dap.info("OK=", ok)
                 for k in ok:
                     r.add(k[0])
                     entities.remove(k[0])
@@ -237,6 +237,7 @@ class DapGeo(DapInterface.DapInterface):
         coreagent_to_identifier = {}
 
         if input_idents.HasField('originator') and input_idents.originator:
+            exit(77)
             self.warning("geoQuery.tablename=", geoQuery.tablename)
             idents = list(self.geos[geoQuery.tablename].getAllKeys())
             self.warning("idents=", idents)

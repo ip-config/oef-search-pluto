@@ -139,6 +139,7 @@ class DapQueryRepnFromProtoBuf(object):
         if constraint_pb.HasField("embedding"):
             return self._CONSTRAINT_EMBEDDING_toRepn(constraint_pb.embedding, attr_name)
 
+        self.log.error(constraint_pb)
         raise Exception("_CONSTRAINT_toRepn ==> None")
 
     def _CONSTRAINT_EXPR_toRepn(self, ce_pb):
@@ -155,6 +156,7 @@ class DapQueryRepnFromProtoBuf(object):
             subs = ce_pb.not_.expr
             combiner = ProtoHelpers.COMBINER_NONE
         else:
+            self.log.error(ce_pb)
             raise Exception("_CONSTRAINT_EXPR_toRepn ==> None")
 
         r = DapQueryRepn.DapQueryRepn.Branch(combiner=combiner)
