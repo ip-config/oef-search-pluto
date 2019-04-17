@@ -68,8 +68,8 @@ async def set_weather_agents(director: Director):
         await task
 
 
-async def set_locations(director: Director):
-    grid = EnglandGrid.EnglandGrid()
+async def set_locations(director: Director, city_num: int):
+    grid = EnglandGrid.EnglandGrid(city_num)
     grid.load()
     core_names = get_core_names(grid)
     i = 0
@@ -85,8 +85,8 @@ async def set_locations(director: Director):
             break
 
 
-async def set_locations_and_connections(director: Director):
-    grid = EnglandGrid.EnglandGrid()
+async def set_locations_and_connections(director: Director, city_num: int):
+    grid = EnglandGrid.EnglandGrid(city_num)
     grid.load()
 
     core_names = get_core_names(grid)
@@ -164,11 +164,11 @@ async def main(args):
         await set_nodes(director, args.targets)
 
     if args.type == "location":
-        await set_locations(director)
+        await set_locations(director, args.city_num)
     elif args.type == "weather_agent":
         await set_weather_agents(director)
     elif args.type == "location_and_connection":
-        await set_locations_and_connections(director)
+        await set_locations_and_connections(director, args.city_num)
     elif args.type == "json_config":
         if len(args.config_file) == 0:
             print("json_config requires a json config file!")
@@ -188,6 +188,7 @@ if __name__ == "__main__":
     parser.add_argument("--targets", nargs='+',  type=str, help="Node addresses host:port ...")
     parser.add_argument("--type", "-t", type=str, required=True, help="weather_agent/location/location_and_connection/json_config")
     parser.add_argument("--config_file", type=str, required=False, default="", help="JSON config file for json_config")
+    parser.add_argument("--city_num", type=int, required=False, default=50, help="How many cities?")
     args_ = parser.parse_args()
 
     asyncio.run(main(args_))

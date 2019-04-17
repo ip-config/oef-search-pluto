@@ -25,9 +25,10 @@ class EnglandGrid(object):
             self.region = EnglandGrid.GridEntity._regionnumber
             EnglandGrid.GridEntity._regionnumber +=1
 
-    def __init__(self):
+    def __init__(self, city_limit: int = 50):
         self.entities = {}
         self.entity_locations = {}
+        self.city_limit = city_limit
 
         self.pop = EnglandPopDistro.EnglandPopDistro()
         self.pop.load("optimframe/src/data")
@@ -128,7 +129,7 @@ class EnglandGrid(object):
                 pop = row[3]
                 self.addEntity(EnglandGrid.GridEntity(city, coords, "CITY", { "pop": int(pop) }))
                 cities += 1
-                if cities >= 50:
+                if cities >= self.city_limit:
                     break
 
     def connectAirportsAndCities(self):
