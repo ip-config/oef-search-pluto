@@ -22,7 +22,7 @@ def _run_search_node(name: str, node_ip: str, node_port: int, dap_port_start: in
         "port": dap_port_start
     }
     ], http_port, ssl_certificate, "api/src/resources/website", director_api_port=director_api_port)
-    logger.info("**** Node %s started", name)
+    logger.error("**** Node %s started", name)
     time.sleep(1)
     try:
         while True:
@@ -35,6 +35,8 @@ def _run_search_node(name: str, node_ip: str, node_port: int, dap_port_start: in
         node.block()
     except Exception as e:
         logger.exception("Exception in run_search_node: ", e)
+    except:
+        logger.exception("Exception")
     logger.error("******* EXIT SEARCH NODE")
 
 
@@ -97,6 +99,6 @@ class FullNode:
 
     def wait(self):
         self._search_process.join()
-        self.error("****** SEARCH PROCESS EXITED")
+        self.error("****** SEARCH PROCESS EXITED: ", self._search_process.exitcode)
         self._core_process.wait()
         self.error("****** CORE PROCESS EXITED")
