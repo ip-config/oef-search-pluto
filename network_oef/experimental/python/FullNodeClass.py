@@ -47,6 +47,7 @@ class FullNode:
         self._search_process = None
         self._search_ip = None
         self._search_port = None
+        self._node_key = ""
         self._core_process = None
 
     def start_search(self, node_key: str, ip: str, port: int, dap_port: int, director_port: int, http_port: int = -1,
@@ -60,6 +61,7 @@ class FullNode:
         self._search_process.start()
         self._search_ip = ip
         self._search_port = port
+        self._node_key = node_key
 
     def start_core(self, core_key: str, ip: str, port: int, oef_core=None, log_file: str = ""):
         if oef_core is None:
@@ -78,7 +80,6 @@ class FullNode:
         else:
             self._core_process = subprocess.Popen([oef_core, core_key, ip, str(port), self._search_ip,
                                                    str(self._search_port)])
-
 
     def add_peer(self, node_key: str, host: str, port: int) -> bool:
         try:
@@ -99,6 +100,6 @@ class FullNode:
 
     def wait(self):
         self._search_process.join()
-        self.error("****** SEARCH PROCESS EXITED: ", self._search_process.exitcode)
+        self.error("****** SEARCH PROCESS EXITED: ", self._search_process.exitcode, " (node key: ", self._node_key, ")")
         self._core_process.wait()
         self.error("****** CORE PROCESS EXITED")
