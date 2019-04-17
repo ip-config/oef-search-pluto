@@ -32,6 +32,7 @@ def _run_search_node(name: str, node_ip: str, node_port: int, dap_port_start: in
             break
         node.add_remote_peer(*con)
     node.block()
+    logger.error("******* EXIT SEARCH NODE")
 
 
 class FullNode:
