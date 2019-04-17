@@ -24,14 +24,17 @@ def _run_search_node(name: str, node_ip: str, node_port: int, dap_port_start: in
     ], http_port, ssl_certificate, "api/src/resources/website", director_api_port=director_api_port)
     logger.info("**** Node %s started", name)
     time.sleep(1)
-    while True:
-        con = q.get()
-        logger.info("**** SearchProcess got peer: %s @ %s ", con[2], con[0]+":"+str(con[1]))
-        if len(con) != 3:
-            logger.error("**** Stopping connection queue listening, because invalid con: ", con)
-            break
-        node.add_remote_peer(*con)
-    node.block()
+    try:
+        while True:
+            con = q.get()
+            logger.info("**** SearchProcess got peer: %s @ %s ", con[2], con[0]+":"+str(con[1]))
+            if len(con) != 3:
+                logger.error("**** Stopping connection queue listening, because invalid con: ", con)
+                break
+            node.add_remote_peer(*con)
+        node.block()
+    except Exception as e:
+        logger.exception("Exception in run_search_node: ", e)
     logger.error("******* EXIT SEARCH NODE")
 
 
