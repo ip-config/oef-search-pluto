@@ -5,6 +5,20 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 import atexit
 import functools
+import os
+import gensim
+import gensim.downloader
+
+
+def gensim_setup():
+    model = "glove-wiki-gigaword-50"
+    gensim_dir = os.path.expanduser("~/gensim-data/")
+    model_bin = gensim_dir + model + ".bin"
+    if os.path.exists(gensim_dir) and os.path.exists(model_bin):
+        return
+    gmodel = gensim.downloader.load(model)
+    gmodel.init_sims(replace=True)
+    gmodel.save(model_bin)
 
 
 def get_workdir(start_dir: str = ""):
@@ -35,6 +49,10 @@ def build(image_tag: str, path: str, fast: bool):
     ]
     subprocess.check_call(cmd, cwd=path)
     print('Generating source archive...complete')
+
+    print("Gensim setup....")
+    gensim_setup()
+    print("Gensim setup...complete")
 
     builder_image_tag = image_tag+"_builder"
 

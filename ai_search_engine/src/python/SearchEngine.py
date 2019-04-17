@@ -22,9 +22,17 @@ from fetch_teams.oef_core_protocol import query_pb2
 from utils.src.python.Logging import has_logger
 from typing import List
 from dap_api.src.python.network.DapNetwork import dap_network_support
-
-from utils.src.python.out import out
 import utils.src.python.distance as distance
+import os
+
+
+def _load_gensim(model: str, logger):
+    bin_file = os.path.expanduser("~/gensim-data/")+model+".bin"
+    if os.path.exists(bin_file):
+        logger.info("Loading gensim data from binary file: "+bin_file)
+        return gensim.models.KeyedVectors.load(bin_file)
+    logger.warning("No binary gensim data, downloading and loading from tar.gz")
+    return gensim.downloader.load(model)
 
 
 class SearchEngine(DapInterface):
@@ -66,7 +74,7 @@ class SearchEngine(DapInterface):
 
     def _string_to_vec(self, description: str):
         if not self._w2v:
-            self._w2v = gensim.downloader.load("glove-wiki-gigaword-50") #"word2vec-google-news-300")
+            self._w2v = _load_gensim("glove-wiki-gigaword-50", self.log) #"word2vec-google-news-300")
 
         #print("Encode desc: ", description)
         if description.find("_") > -1:
