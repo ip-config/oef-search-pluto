@@ -94,4 +94,6 @@ class FullNode:
 
     def wait(self):
         self._search_process.join()
+        self.error("****** SEARCH PROCESS EXITED")
         self._core_process.wait()
+        self.error("****** CORE PROCESS EXITED")
