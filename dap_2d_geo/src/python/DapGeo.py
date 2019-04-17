@@ -238,18 +238,27 @@ class DapGeo(DapInterface.DapInterface):
             self.warning("geoQuery.tablename=", geoQuery.tablename)
             idents = list(self.geos[geoQuery.tablename].getAllKeys())
             self.warning("idents=", idents)
+            coreagent_to_identifier = {}
         else:
-            idents = input_idents.identifiers
+            coreagent_to_identifier = {
+                (identifier.core, identifier.agent): identifier
+                for identifier
+                in input_idents.identifiers
+            }
+            idents = coreagent_to_scores.keys()
+
 
         self.warning("idents=", idents)
         reply = dap_interface_pb2.IdentifierSequence()
         reply.originator = False
 
-        #BUG(KLL): missing score out of the copy
         for r in geoQuery.execute(set(idents)):
             c = reply.identifiers.add()
-            c.core = r[0]
-            c.agent = r[1]
+            if r in coreagent_to_identifier:
+                c.CopyFrom(coreagent_to_identifier[r])
+            else:
+                c.core = r[0]
+                c.agent = r[1]
         return reply
 
     def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:

@@ -400,7 +400,7 @@ class DapManager(object):
                     proto.input_idents.CopyFrom(current)
                     current = self.getInstance(dap_name).execute(proto)
                 except Exception as e:
-                    self.error("_executeMementoChain error: {} dapname={}".format(str(e), dap_name))
+                    self.exception("_executeMementoChain error: {} dapname={}".format(str(e), dap_name))
                     raise e
         except Exception as e:
             self.error("_executeMementoChain error: ", str(e))
