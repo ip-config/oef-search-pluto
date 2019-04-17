@@ -147,9 +147,9 @@ class DapGeo(DapInterface.DapInterface):
             entities = set(entities)
 
             for location in self.locations:
-                self.dap.warning("TRYING:", entities)
-                ok = self.geo.accept(entities, location, self.radius)
-                print("OK=", ok)
+                self.dap.info("TRYING:", entities)
+                ok = list(self.geo.accept(entities, location, self.radius))
+                self.dap.info("OK=", ok)
                 for k in ok:
                     r.add(k[0])
                     entities.remove(k[0])
@@ -234,22 +234,34 @@ class DapGeo(DapInterface.DapInterface):
 
         geoQuery.setGeo(self.getGeoByTableName(geoQuery.tablename))
 
+        coreagent_to_identifier = {}
+
         if input_idents.HasField('originator') and input_idents.originator:
+            exit(77)
             self.warning("geoQuery.tablename=", geoQuery.tablename)
             idents = list(self.geos[geoQuery.tablename].getAllKeys())
             self.warning("idents=", idents)
+            coreagent_to_identifier = {}
         else:
-            idents = input_idents.identifiers
+            coreagent_to_identifier.update({
+                (identifier.core, identifier.agent): identifier
+                for identifier
+                in input_idents.identifiers
+            })
+            idents = coreagent_to_identifier.keys()
+
 
         self.warning("idents=", idents)
         reply = dap_interface_pb2.IdentifierSequence()
         reply.originator = False
 
-        #BUG(KLL): missing score out of the copy
         for r in geoQuery.execute(set(idents)):
             c = reply.identifiers.add()
-            c.core = r[0]
-            c.agent = r[1]
+            if r in coreagent_to_identifier:
+                c.CopyFrom(coreagent_to_identifier[r])
+            else:
+                c.core = r[0]
+                c.agent = r[1]
         return reply
 
     def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:

@@ -9,6 +9,7 @@ class GeoStore(object):
         self.store = {}
 
     def place(self, entity, location):
+        self.log.info("PLACE: {} at {}".format(entity, location))
         self.store[entity] = location
 
     def get(self, entity):
@@ -65,7 +66,7 @@ class GeoStore(object):
     def entityToData(self, location, entity):
         loc = self.store.get(entity, None)
         if loc == None:
-            self.error("no data entity=", entity)
+            self.error("no data for entity=", entity)
             return None
         d = self.EquirectangularDistance(location, loc)
         br = GeoStore.InitialBearing(location, loc)
