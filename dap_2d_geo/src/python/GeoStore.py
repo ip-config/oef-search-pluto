@@ -1,4 +1,5 @@
 #really naive implementaiotn.
+#really naive implementaiotn.
 
 import math
 from utils.src.python.Logging import has_logger
@@ -7,6 +8,7 @@ class GeoStore(object):
     @has_logger
     def __init__(self, left=180, right=-180, top=75, bottom=-75):
         self.store = {}
+        self.distance_limit = 5000000
 
     def place(self, entity, location):
         self.log.info("PLACE: {} at {}".format(entity, location))
@@ -75,7 +77,7 @@ class GeoStore(object):
                 return None
         d = self.EquirectangularDistance(location, loc)
         br = GeoStore.InitialBearing(location, loc)
-        return (entity2, int(d), int(br))
+        return (entity2, int(d), int(br), loc)
 
     def accept(self, entities, location, radius_in_m, bearing=None, bearing_width=None):
         left = None
@@ -94,7 +96,15 @@ class GeoStore(object):
             if r == None:
                 continue
             self.info("data=", r)
-            _, d, br = r
+            _, d, br, target_loc = r
+            if d > self.distance_limit:
+                self.warning("EquirectangularDistance distance {} is greater then the limit {}! "
+                             "Probably coordinate problem! ".format(d, self.distance_limit))
+                dx = location[0]-target_loc[0]
+                dy = location[1]-target_loc[1]
+                d = math.sqrt(dx*dx+dy*dy)
+                self.info("Recalculated distance: ", d)
+
             if d > radius_in_m:
                 continue
             if left != None:

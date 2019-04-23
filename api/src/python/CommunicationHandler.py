@@ -42,6 +42,7 @@ def http_json_handler(router):
         global _loop
         log.info("Got json request over http")
         try:
+            asyncio.set_event_loop(_loop)
             response = _loop.run_until_complete(router.route(path, bottle.request.json))
             bottle.response.headers['Content-Type'] = 'application/json'
             return response.data
@@ -52,6 +53,7 @@ def http_json_handler(router):
 
 def socket_server(host: str, port: str, router: BackendRouter):
     global _loop
+    asyncio.set_event_loop(_loop)
     _loop.create_task(run_server(socket_handler(router), host, port))
 
 

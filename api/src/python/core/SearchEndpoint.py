@@ -95,6 +95,7 @@ class SearchEndpoint(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
                 agent.key = agent_id
                 agent.score = element.score
             resp.result.extend(items.values())
+            self.info("SEARCH RESULT: ", resp)
         except Exception as e:
             self.exception("Exception while processing query: ", str(e))
             return DataWrapper(False, "search", resp, 500, str(e))

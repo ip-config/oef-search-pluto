@@ -171,6 +171,7 @@ class SearchNode(PlutoApp.PlutoApp, ConnectionManager):
             for r in resp:
                 if not r.success:
                     self.info("Response to broadcast is error: code=", r.error_code, ", message: ", r.msg())
+                self.info("Broadcast response: ", r.data)
             return resp
         return []
 
