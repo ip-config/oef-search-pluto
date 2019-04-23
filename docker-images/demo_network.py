@@ -8,7 +8,7 @@ import functools
 import os
 import gensim
 import gensim.downloader
-
+import json
 
 def gensim_setup():
     model = "glove-wiki-gigaword-50"
@@ -80,155 +80,6 @@ def build(image_tag: str, path: str, fast: bool):
     subprocess.check_call(cmd, cwd=path)
 
 
-def kill_containers(names: List[str]):
-    for name in names:
-        try:
-            subprocess.check_call(["docker", "kill", name])
-        except Exception as e:
-            print("Failed to kill container {} because: {}".format(name, str(e)))
-
-
-def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, ssl_cert: str = "", *,
-         image_tag: str, do_build: bool, log_dir: str, fast_build: bool, docker_dir: str = ""):
-    path = get_workdir()
-    if do_build:
-        build(image_tag, docker_dir if len(docker_dir) > 0 else path, fast_build)
-    pool = ThreadPoolExecutor(num_of_nodes)
-
-    CORE_PORT = 10000
-    SEARCH_PORT = 20000
-    dap_port = 30000
-    DIRECTOR_PORT = 40000
-
-    docker_cmd = [
-        "docker",
-        "run",
-        "--rm",
-        "-it",
-        "--network=oef_search_net",
-    ]
-
-    names = []
-    api_targets = []
-    director_targets = []
-    for i in range(num_of_nodes):
-        http_port = http_ports.get(i, -1)
-        search_port = SEARCH_PORT+i
-        core_port = CORE_PORT+i
-        director_port = DIRECTOR_PORT + i
-        args = [
-            "--node_key", "Search{}".format(i),
-            "--core_key", "Core{}".format(i),
-            "--ip", "0.0.0.0",
-            "--search_port", str(search_port),
-            "--core_port", str(core_port),
-            "--dap_port", str(dap_port+i),
-            "--director_api_port", str(director_port),
-            "--http_port", str(http_port),
-            "--ssl_certificate", ssl_cert
-        ]
-        peers = []
-
-        for l in links:
-            if l.find(str(i)) == -1:
-                continue
-            i1, i2 = l.split(":")
-            target = i1 if i1 != str(i) else i2
-            target = int(target)
-            host = "oef_node{}".format(target)
-            port = SEARCH_PORT+target
-            peers.append("Search{}:".format(target)+host+":"+str(port))
-        args.append("--search_peers")
-        args.extend(peers)
-
-        log_cmd = []
-        set_log_dir = []
-        if len(log_dir) > 0:
-            node_log_dir = "{}/node{}".format(log_dir, i)
-            if not os.path.exists(node_log_dir):
-                os.mkdir(node_log_dir)
-            log_cmd = [
-                "-v",
-                node_log_dir+":"+"/logs"
-            ]
-            set_log_dir = [
-                "--log_dir",
-                "/logs"
-            ]
-        args.extend(set_log_dir)
-
-        node_name = "oef_node"+str(i)
-        cmd = []
-        cmd.extend(docker_cmd)
-        cmd.extend([
-            "--name",
-            node_name,
-            "-p",
-            str(search_port) + ":" + str(search_port),
-            "-p",
-            str(core_port) + ":" + str(core_port),
-        ])
-        cmd.extend(log_cmd)
-        i += 1
-
-        if http_port != -1:
-            cmd.extend([
-                "-p",
-                str(http_port) + ":" + str(http_port)
-            ])
-        cmd.append(image_tag)
-        cmd.extend([
-            "node",
-            "no_sh"
-        ])
-        cmd.extend(args)
-        cmd.extend(["--ip", "0.0.0.0"])
-        try:
-            subprocess.check_call(["docker", "kill", node_name])
-        except:
-            pass
-        print("EXECUTE: ", " ".join(cmd))
-        pool.submit(subprocess.check_call, cmd)
-        names.append(node_name)
-        api_targets.append(node_name+":"+str(search_port))
-        director_targets.append(node_name+":"+str(director_port))
-
-    loc_director_cmd = []
-    loc_director_cmd.extend(docker_cmd)
-    loc_director_cmd.extend(["--name", "location_director"])
-    loc_director_cmd.extend([
-        image_tag,
-        "director",
-        "no_sh",
-        "--type",
-        "location_and_connection",
-        "--targets"
-    ])
-    loc_director_cmd.extend(director_targets)
-    print("EXECUTE: ", " ".join(loc_director_cmd))
-    subprocess.check_call(loc_director_cmd, stderr=subprocess.STDOUT, stdout=open(log_dir+"/director_lp.log", "w"))
-
-    weather_director_cmd = []
-    weather_director_cmd.extend(docker_cmd)
-    weather_director_cmd.extend(["--name", "weather_director"])
-    weather_director_cmd.extend([
-        image_tag,
-        "director",
-        "no_sh",
-        "--type",
-        "weather_agent",
-        "--targets"
-    ])
-    weather_director_cmd.extend(api_targets)
-    print("EXECUTE: ", " ".join(weather_director_cmd))
-    subprocess.check_call(weather_director_cmd, stderr=subprocess.STDOUT, stdout=open(log_dir+"/director_weather.log",
-                                                                                      "w"))
-
-    pool.shutdown(wait=True)
-
-    atexit.register(functools.partial(kill_containers, names))
-
-
 def create_symlinks(target=None):
     print("Gensim setup....")
     gensim_setup()
@@ -273,6 +124,175 @@ def create_symlinks(target=None):
     return docker_dir
 
 
+def kill_containers(names: List[str]):
+    for name in names:
+        try:
+            subprocess.check_call(["docker", "kill", name])
+        except Exception as e:
+            print("Failed to kill container {} because: {}".format(name, str(e)))
+
+
+def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, int] = {}, ssl_cert: str = "", *,
+         image_tag: str, do_build: bool, log_dir: str, fast_build: bool, docker_dir: str = "",
+                   run_director: bool = True, config_file: str = ""):
+    path = get_workdir()
+    if do_build:
+        build(image_tag, docker_dir if len(docker_dir) > 0 else path, fast_build)
+    pool = ThreadPoolExecutor(num_of_nodes)
+
+    CORE_PORT = 10000
+    SEARCH_PORT = 20000
+    DAP_PORT = 30000
+    DIRECTOR_PORT = 40000
+
+    config = None
+    if len(config_file) > 0:
+        with open(config_file, "r") as f:
+            config = json.load(f)
+        if len(config["nodes"]) != num_of_nodes:
+            print("!!!!!!!! NUMBER OF NODES DOES NOT MATCH CONFIG FILE")
+            return
+
+    docker_cmd = [
+        "docker",
+        "run",
+        "--rm",
+        "-it",
+        "--network=oef_search_net",
+    ]
+
+    names = []
+    api_targets = []
+    director_targets = []
+    for i in range(num_of_nodes):
+        http_port = http_ports.get(i, -1)
+        if config is not None:
+            nc = config["nodes"][i]
+            search_port = int(nc["uri"].split(":")[1])
+            core_port = int(nc["core_uri"].split(":")[1])
+            director_port =int(nc["director_uri"].split(":")[1])
+            node_name = config["internal_hosts"][nc["name"]]
+        else:
+            search_port = SEARCH_PORT + i
+            core_port = CORE_PORT + i
+            director_port = DIRECTOR_PORT + i
+            node_name = "oef_node" + str(i)
+
+        args = [
+            "--node_key", "Search{}".format(i),
+            "--core_key", "Core{}".format(i),
+            "--ip", "0.0.0.0",
+            "--search_port", str(search_port),
+            "--core_port", str(core_port),
+            "--dap_port", str(DAP_PORT+i),
+            "--director_api_port", str(director_port),
+            "--http_port", str(http_port),
+            "--ssl_certificate", ssl_cert
+        ]
+        peers = []
+
+        for l in links:
+            if l.find(str(i)) == -1:
+                continue
+            i1, i2 = l.split(":")
+            target = i1 if i1 != str(i) else i2
+            target = int(target)
+            host = "oef_node{}".format(target)
+            port = SEARCH_PORT+target
+            peers.append("Search{}:".format(target)+host+":"+str(port))
+        args.append("--search_peers")
+        args.extend(peers)
+
+        log_cmd = []
+        set_log_dir = []
+        if len(log_dir) > 0:
+            node_log_dir = "{}/node{}".format(log_dir, i)
+            if not os.path.exists(node_log_dir):
+                os.mkdir(node_log_dir)
+            log_cmd = [
+                "-v",
+                node_log_dir+":"+"/logs"
+            ]
+            set_log_dir = [
+                "--log_dir",
+                "/logs"
+            ]
+        args.extend(set_log_dir)
+
+        cmd = []
+        cmd.extend(docker_cmd)
+        cmd.extend([
+            "--name",
+            node_name,
+            "-p",
+            str(search_port) + ":" + str(search_port),
+            "-p",
+            str(core_port) + ":" + str(core_port),
+            "-p",
+            str(director_port)+":"+str(director_port)
+        ])
+        cmd.extend(log_cmd)
+        i += 1
+
+        if http_port != -1:
+            cmd.extend([
+                "-p",
+                str(http_port) + ":" + str(http_port)
+            ])
+        cmd.append(image_tag)
+        cmd.extend([
+            "node",
+            "no_sh"
+        ])
+        cmd.extend(args)
+        cmd.extend(["--ip", "0.0.0.0"])
+        try:
+            subprocess.check_call(["docker", "kill", node_name])
+        except:
+            pass
+        print("EXECUTE: ", " ".join(cmd))
+        pool.submit(subprocess.check_call, cmd)
+        names.append(node_name)
+        api_targets.append(node_name+":"+str(search_port))
+        director_targets.append(node_name+":"+str(director_port))
+
+    if run_director:
+        director_cmd = []
+        director_cmd.extend(docker_cmd)
+        director_cmd.extend(["--name", "location_director"])
+        director_cmd.extend([
+            image_tag,
+            "director",
+            "no_sh",
+            "--type",
+            "location_and_connection",
+            "--targets"
+        ])
+        director_cmd.extend(director_targets)
+        print("EXECUTE: ", " ".join(director_cmd))
+        subprocess.check_call(director_cmd, stderr=subprocess.STDOUT, stdout=open(log_dir+"/director_lp.log", "w"))
+
+    weather_director_cmd = []
+    weather_director_cmd.extend(docker_cmd)
+    weather_director_cmd.extend(["--name", "weather_director"])
+    weather_director_cmd.extend([
+        image_tag,
+        "director",
+        "no_sh",
+        "--type",
+        "weather_agent",
+        "--targets"
+    ])
+    weather_director_cmd.extend(api_targets)
+    print("EXECUTE: ", " ".join(weather_director_cmd))
+    subprocess.check_call(weather_director_cmd, stderr=subprocess.STDOUT, stdout=open(log_dir+"/director_weather.log",
+                                                                                      "w"))
+
+    pool.shutdown(wait=True)
+
+    atexit.register(functools.partial(kill_containers, names))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='DEMO search network')
     parser.add_argument("--num_nodes", required=True, type=int, help="Number of full demo nodes")
@@ -283,6 +303,9 @@ if __name__ == "__main__":
     parser.add_argument("--build", "-b", action="store_true", help="Build docker image")
     parser.add_argument("--log_dir", type=str, required=False, default="", help="Log directory")
     parser.add_argument("--fast_build", "-f", action="store_true", help="Enable faster rebuilding")
+    parser.add_argument("--run_director", action="store_true", default=False,
+                        help="Run director to set location and connectivity")
+    parser.add_argument("--config_file", "-c", required=False, default="JSON configuration file used by director")
 
     args = parser.parse_args()
 
@@ -305,4 +328,5 @@ if __name__ == "__main__":
     else:
         links = args.links
     container_main(args.num_nodes, links, http_port_map, "/app/server.pem", image_tag=args.image,
-                   do_build=args.build, log_dir=log_dir, fast_build=args.fast_build, docker_dir=docker_dir)
+                   do_build=args.build, log_dir=log_dir, fast_build=args.fast_build, docker_dir=docker_dir,
+                   run_director=args.run_director, config_file=args.config_file)

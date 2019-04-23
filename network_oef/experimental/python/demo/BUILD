@@ -38,3 +38,18 @@ py_binary(
          "//england_grid/resources/images:pop-images",
     ]
 )
+
+py_binary(
+    name = "gen_config",
+    srcs = ["gen_config.py"],
+    main = "gen_config.py",
+    deps = [
+        "//england_grid/src/python/lib:lib",
+        "//utils/src/python:py_utils",
+    ],
+    srcs_version = "PY3",
+    data = [
+         "//crawler_demo/resources:resources",
+         "//england_grid/resources/images:pop-images",
+    ]
+)
