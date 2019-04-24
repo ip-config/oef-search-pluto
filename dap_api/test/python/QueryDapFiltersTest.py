@@ -40,8 +40,8 @@ class QueryDapFiltersTest(unittest.TestCase):
     def _createUpdate(self, agent_name):
         update = dap_update_pb2.DapUpdate()
         newvalue = update.update.add()
-        newvalue.tablename = "wibbles"
-        newvalue.fieldname = "wibble"
+        newvalue.tablename = "not_a_valid_tablename"
+        newvalue.fieldname = "not_a_valid_fieldname"
         newvalue.value.type = 2
         newvalue.value.s = "moo"
         newvalue.key.agent = agent_name.encode("utf-8")
@@ -139,6 +139,8 @@ class QueryDapFiltersTest(unittest.TestCase):
             dapManager.update(update)
 
             update = self._createUpdate(agent)
+            update.update.add()
+            update.update[0].tablename = "data_model_table"
             update.update[0].fieldname = "data_model"
             update.update[0].value.type = 6
             update.update[0].value.dm.CopyFrom(model)
@@ -170,7 +172,7 @@ class QueryDapFiltersTest(unittest.TestCase):
             in output.identifiers
         ])
 
-        self.log.warning(agents)
+        self.log.warning("agents={}".format(agents))
 
         assert(agents == [
             b"007/James/Bond",
@@ -266,6 +268,7 @@ class QueryDapFiltersTest(unittest.TestCase):
         ]:
             update = self._createUpdate(agent)
             update.update[0].fieldname = "data_model"
+            update.update[0].tablename = "data_model_table"
             update.update[0].value.type = 6
             update.update[0].value.dm.CopyFrom(model)
             self.dapManager.update(update)
@@ -296,8 +299,16 @@ class QueryDapFiltersTest(unittest.TestCase):
             in output.identifiers
         ])
 
+        
+
         assert(agents == sorted([
             b"007/James/Bond",
             b"86/Maxwell/Smart",
             b"White/Spy",
         ]))
+
+if __name__ == "__main__":
+    from utils.src.python.Logging import configure as configure_logging
+    configure_logging()
+    unittest.main() # run all tests
+

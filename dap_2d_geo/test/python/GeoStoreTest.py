@@ -56,7 +56,7 @@ class GeoStoreTest(unittest.TestCase):
 
         r = [
             (entity, int(dist/1000))
-            for (entity, dist, br) in r
+            for (entity, dist, br, _) in r
         ]
 
         assert ('CVT/ENGLAND', 20) in r
@@ -71,7 +71,10 @@ class GeoStoreTest(unittest.TestCase):
         ])
 
         r = list(self.g.searchWithData(self.BHX, 250000))
-
+        r = [
+            (entity, int(dist), br)
+            for (entity, dist, br, _) in r
+        ]
         output = sorted(r, key=lambda x: x[0])
         expected = [
             ('BHX/ENGLAND', 0, 0),
@@ -80,8 +83,8 @@ class GeoStoreTest(unittest.TestCase):
                  # Yes, misspelled in data.
             ('YEO/UK', 171994, 201),
         ]
-        #print(output)
-        #print(expected)
+        print("OUTPUT=", output)
+        print("EXPECT=", expected)
 
         assert output == expected
 
@@ -105,6 +108,10 @@ class GeoStoreTest(unittest.TestCase):
     def testBiggerWithBearings(self):
         self.add()
         r = sorted(list(self.g.searchWithData(self.BHX, 400000, bearing=0, bearing_width=20)), key=lambda x: x[0])
+        r = [
+            (entity, int(dist), br)
+            for (entity, dist, br, _) in r
+        ]
         expected = [
             ('BHX/ENGLAND', 0, 0),
             ('CAX/ENGLAND', 284903, 346),

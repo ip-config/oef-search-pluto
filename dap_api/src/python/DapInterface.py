@@ -137,6 +137,7 @@ def decodeConstraintValue(valueMessage):
         'int64_list':    lambda x: x.v_i64,
 
         'data_model':    lambda x: x.dm,
+        'embedding':    lambda x: x.v_d,
 
         'string_pair':  lambda x: (x.v_s[0], x.v_s[1],),
         'string_pair_list':  lambda x: [ ( x.v_d[i], x.v_d[i+1], ) for i in range(0, len(x.v_d), 2) ],

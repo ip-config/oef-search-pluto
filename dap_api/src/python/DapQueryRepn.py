@@ -235,7 +235,9 @@ class DapQueryRepn(object):
             for leaf in node.leaves:
                 visitor.visitLeaf(leaf, depth+1)
 
-    def fromConstraintProtoList(self, queryFromProto, ce_list_pb):
+    def fromConstraintProtoList(self, queryFromProto=None, ce_list_pb=None):
+        if not queryFromProto:
+            queryFromProto = DapQueryRepnFromProtoBuf.DapQueryRepnFromProtoBuf()
         self.root.Clear()
         for ce_pb in ce_list_pb:
             self.root.Add(queryFromProto._CONSTRAINT_EXPR_toRepn(ce_pb))

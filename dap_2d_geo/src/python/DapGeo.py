@@ -33,16 +33,24 @@ class DapGeo(DapInterface.DapInterface):
             self.geos[table_name] = GeoStore.GeoStore()
             for field_name, config in fields.items():
 
+                r = {
+                    'type': 'location',
+                    'distance_calculator': GeoStore.GeoStore.EquirectangularDistance,
+                }
                 if isinstance(config, dict):
-                    t = config['type']
-                    opt = set(config['options'])
+                    r['type'] = config['type']
+                    r['options'] = set(config['options'])
                 elif isinstance(config, str):
-                    t = config
-                    opt = set()
+                    r['type'] = config
+                    r['options'] = set()
                 else:
                     raise Exception("Unexpected specification for a field")
-                self.fields_by_table.setdefault(table_name, {}).setdefault(field_name, {})['options'] = opt
-                self.fields_by_table.setdefault(table_name, {}).setdefault(field_name, {})['type'] = t
+
+                if 'os-grid' in r['options']:
+                    r['distance_calculator'] = GeoStore.GeoStore.OSGridDistance
+
+                self.fields_by_table.setdefault(table_name, {}).setdefault(field_name, {}).update(r)
+
         self.operatorFactory = DapOperatorFactory.DapOperatorFactory()
 
     def configure(self, desc: dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
