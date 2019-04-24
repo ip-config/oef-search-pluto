@@ -305,7 +305,7 @@ if __name__ == "__main__":
     parser.add_argument("--fast_build", "-f", action="store_true", help="Enable faster rebuilding")
     parser.add_argument("--run_director", action="store_true", default=False,
                         help="Run director to set location and connectivity")
-    parser.add_argument("--config_file", "-c", required=False, default="JSON configuration file used by director")
+    parser.add_argument("--config_file", "-c", required=False, help="JSON configuration file used by director", default="")
 
     args = parser.parse_args()
 
