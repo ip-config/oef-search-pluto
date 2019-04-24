@@ -62,6 +62,7 @@ class PlutoApp:
                                     "type": "location",
                                     "options": [
                                         "plane",
+                                        "os-grid",
                                     ]
                                 }
                             },
