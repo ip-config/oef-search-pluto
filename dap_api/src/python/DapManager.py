@@ -303,6 +303,26 @@ class DapManager(object):
         for x in dapQueryRepn.printable():
             self.log.info("{}   {}".format(prefix, x))
 
+    def makeQueryFromConstraint(self, query_constraint_pb):
+        dapQueryRepn = DapQueryRepn.DapQueryRepn()
+        dapQueryRepn.fromConstraintProtoList(None, [ query_constraint_pb ])
+
+        # now fill in all the types.
+
+        v = DapManager.PopulateFieldInformationVisitor(self)
+        dapQueryRepn.visit(v)
+        self.printQuery("FIELD_INFO_PASS ", dapQueryRepn)
+
+        v = DapManager.CollectDapsVisitor()
+        dapQueryRepn.visit(v)
+        self.printQuery("COLLECT_PASS    ", dapQueryRepn)
+
+        v = DapManager.AddMoreDapsBasedOnOptionsVisitor(self)
+        dapQueryRepn.visit(v)
+        self.printQuery("EXTRA_DAPS_PASS ", dapQueryRepn)
+
+        return dapQueryRepn
+
     def makeQuery(self, query_pb):
         dapQueryRepn = DapQueryRepn.DapQueryRepn()
 

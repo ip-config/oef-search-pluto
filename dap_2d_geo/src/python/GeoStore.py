@@ -25,7 +25,7 @@ class GeoStore(object):
         self.store.pop(entity, None)
 
     # Approximation to great circle distance; SHORT DISTANCES ONLY!
-    def EquirectangularDistance(self, pos1, pos2):
+    def EquirectangularDistance(pos1, pos2):
 
         radius = 6371000  # Earth's mean radius in m.
 
@@ -39,6 +39,17 @@ class GeoStore(object):
         x = (lam2-lam1) * math.cos((phi1+phi2)/2);
         y = (phi2-phi1);
         d = math.sqrt((x*x + y*y)) * radius;
+        return d
+
+    def OSGridDistance(pos1, pos2):
+        # Grid coords are in km east and km north from an origin off
+        # the coast of Cornwall. It's a nominally flat grid so..
+
+        # remember the result should be in METRES
+
+        dx = (pos1[0]-pos2[0])*1000
+        dy = (pos1[1]-pos2[1])*1000
+        d = math.sqrt(dx*dx+dy*dy)
         return d
 
     # Bearing of POS2 from POS1 along a great circle.
@@ -65,7 +76,7 @@ class GeoStore(object):
                 return True
         return False
 
-    def entityToData(self, location, entity):
+    def entityToData(self, location, entity, distance_calculator):
         entity2 = entity
         loc = self.store.get(entity, None)
         if loc == None:
@@ -75,11 +86,18 @@ class GeoStore(object):
             if loc == None:
                 self.error("no data for entity=", entity)
                 return None
-        d = self.EquirectangularDistance(location, loc)
+        d = distance_calculator(location, loc)
         br = GeoStore.InitialBearing(location, loc)
         return (entity2, int(d), int(br), loc)
 
-    def accept(self, entities, location, radius_in_m, bearing=None, bearing_width=None):
+    def accept(self,
+                   entities,
+                   location,
+                   radius_in_m,
+                   bearing=None,
+                   bearing_width=None,
+                   distance_calculator = EquirectangularDistance
+                   ):
         left = None
         right = None
 
@@ -92,18 +110,19 @@ class GeoStore(object):
         self.info("entities=", entities)
         for entity in list(entities):
             self.info("entity=", entity)
-            r = self.entityToData(location, entity)
+            r = self.entityToData(location, entity, distance_calculator=distance_calculator)
             if r == None:
                 continue
             self.info("data=", r)
             _, d, br, target_loc = r
-            if d > self.distance_limit:
-                self.warning("EquirectangularDistance distance {} is greater then the limit {}! "
-                             "Probably coordinate problem! ".format(d, self.distance_limit))
-                dx = location[0]-target_loc[0]
-                dy = location[1]-target_loc[1]
-                d = math.sqrt(dx*dx+dy*dy)
-                self.info("Recalculated distance: ", d)
+
+            #if d > self.distance_limit:
+            #    self.warning("EquirectangularDistance distance {} is greater then the limit {}! "
+            #                 "Probably coordinate problem! ".format(d, self.distance_limit))
+            #    dx = (location[0]-target_loc[0])*1000
+            #    dy = (location[1]-target_loc[1])*1000
+            #    d = math.sqrt(dx*dx+dy*dy)
+            #    self.info("Recalculated distance: ", d)
 
             if d > radius_in_m:
                 continue

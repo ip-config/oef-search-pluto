@@ -180,7 +180,7 @@ class InMemoryDap(DapInterface.DapInterface):
             key = tfv.key
             core_ident, agent_ident = key.core, key.agent
             if tfv.fieldname not in self.fields:
-                r.narrative.append("No such field  key={},{} fname={}".format(core_ident, agent_ident, tfv.fieldname))
+                r.narrative.append("ImMemoryDap:update No such field  key={},{} fname={}".format(core_ident, agent_ident, tfv.fieldname))
                 r.success = False
                 break
             else:
@@ -188,12 +188,12 @@ class InMemoryDap(DapInterface.DapInterface):
                 ftype = self.fields[tfv.fieldname]["type"]
 
             if tbname not in self.tablenames:
-                r.narrative.append("Bad tablename tname={} not in {}".format(tbname, ','.join(self.tablenames)))
+                r.narrative.append("ImMemoryDap:update Bad tablename tname={} not in {}".format(tbname, ','.join(self.tablenames)))
                 r.success = False
                 break
 
             if ftype != k:
-                r.narrative.append("Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, tfv.key.core, tfv.fieldname, ftype, k))
+                r.narrative.append("ImMemoryDap:update Bad Type tname={} key={} fname={} ftype={} vtype={}".format(tbname, tfv.key.core, tfv.fieldname, ftype, k))
                 r.success = False
                 break
 
