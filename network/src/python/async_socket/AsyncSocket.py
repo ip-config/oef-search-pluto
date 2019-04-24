@@ -48,6 +48,7 @@ class Transport:
         self._writer = writer
         self._int_size = len(struct.pack("!I", 0))
         self._call_store = TransportCallStore()
+        self._read_lock = asyncio.Lock()
 
     async def write_msg(self, msg: transport_pb2.TransportHeader, data: bytes):
         smsg = msg.SerializeToString()
@@ -100,10 +101,11 @@ class Transport:
             if data is not None:
                 return data
         try:
-            hsize, bsize = await self._read_size()
-            if hsize == 0:
-                return DataWrapper(False, "", b'', 104, "Connection closed by peer (got 0 size)")
-            data = await self._read(hsize+bsize)
+            async with self._read_lock:
+                hsize, bsize = await self._read_size()
+                if hsize == 0:
+                    return DataWrapper(False, "", b'', 104, "Connection closed by peer (got 0 size)")
+                data = await self._read(hsize+bsize)
             msg = transport_pb2.TransportHeader()
             msg.ParseFromString(data[:hsize])
             if msg.status.success:

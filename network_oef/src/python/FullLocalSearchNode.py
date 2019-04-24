@@ -18,7 +18,8 @@ def _lookup(clss, name):
 class FullSearchNone:
 
     @has_logger
-    def __init__(self, node_name: str, ip: str, node_port: int, network_dap_config: List[dict], http_port: int = -1, ssl_certificate: str = None, html_dir: str = None, *, director_api_port: int):
+    def __init__(self, node_name: str, ip: str, node_port: int, network_dap_config: List[dict], http_port: int = -1,
+                 ssl_certificate: str = None, html_dir: str = None, *, director_api_port: int, log_dir: str = ""):
         """
 
         :param node_port: search node port
@@ -28,24 +29,28 @@ class FullSearchNone:
 
         self.daps = []
         tmp_dict = {}
-        for conf in network_dap_config:
-            if not conf["run_py_dap"]:
-                continue
-            cs = config_from_dap_json(conf["file"])
-            for ckey, c in cs.items():
-                c["config"]["host"] = "127.0.0.1"
-                c["config"]["port"] = conf["port"]
-                cls = _lookup(classes, c["class"])
-                if cls is None:
-                    self.warning("Class not found: ", c["class"])
-                    continue
-                self.daps.append(cls(ckey, c["config"]))
-            cps = proxy_config_from_dap_json(conf["file"])
-            for cpkey, cp in cps.items():
-                cp["config"]["port"] = conf["port"]
-                tmp_dict[cpkey] = cp
-        time.sleep(1)
         self.search_node = SearchNode(5, node_name)
+        self.search_node.set_log_dir(log_dir)
+        for conf in network_dap_config:
+            if conf["run_mode"] == "PY":
+                cs = config_from_dap_json(conf["file"])
+                for ckey, c in cs.items():
+                    c["config"]["host"] = "127.0.0.1"
+                    c["config"]["port"] = conf["port"]
+                    cls = _lookup(classes, c["class"])
+                    if cls is None:
+                        self.warning("Class not found: ", c["class"])
+                        continue
+                    self.daps.append(cls(ckey, c["config"]))
+                cps = proxy_config_from_dap_json(conf["file"])
+                for cpkey, cp in cps.items():
+                    cp["config"]["port"] = conf["port"]
+                    tmp_dict[cpkey] = cp
+                time.sleep(1)
+            elif conf["run_mode"] == "CPP":
+                self.search_node.set_dap_port(conf["name"], conf["port"])
+            else:
+                self.error("Only PY/CPP DAP run modes supported!")
         self.search_node.init(ip, node_port, tmp_dict, http_port, ssl_certificate, html_dir, director_port=director_api_port)
 
     def add_remote_peer(self, host: str, port: int, node_id: str = None):

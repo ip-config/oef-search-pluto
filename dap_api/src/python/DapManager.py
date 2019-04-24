@@ -2,7 +2,11 @@ import sys
 import inspect
 import json
 import re
+import copy
 import time
+import subprocess
+import socket
+import atexit
 
 from utils.src.python.Logging import has_logger
 from dap_api.src.python import DapOperatorFactory
@@ -15,6 +19,59 @@ from dap_api.src.protos import dap_update_pb2
 from dap_api.src.python import SubQueryInterface
 from dap_api.src.protos import dap_interface_pb2
 from dap_api.src.protos import dap_update_pb2
+
+
+def dap_json_from_config(name, config):
+    new_config = {
+        "host": config["host"],
+        "port": config["port"],
+        "description": {
+            "name": name
+        }
+    }
+    desc = new_config["description"]
+    desc["table"] = []
+    for tb_name, fields in config["structure"].items():
+        t = {
+            "name": tb_name,
+            "field": [
+                {
+                    "name": field_name,
+                    "type": field_type
+                } for field_name, field_type in fields.items()
+            ]
+        }
+        desc["table"].append(t)
+    return json.dumps(new_config)
+
+
+def create_dap_process(logger, name: str, config: dict, exe_dir: str, log_dir: str):
+    exe = config["binary"]
+    json_config = dap_json_from_config(name, config)
+    if len(exe_dir) == 0:
+        logger.warning("No exe_dir set! Can't run C++ dap without it!")
+        return None
+    logger.info("*********** BINARY DAP EXECUTION DIR: %s", exe_dir)
+    logger.warning("*********** RUN DAP: %s  with the following config: %s", exe, json_config)
+    cmd = [
+        exe,
+        "--configjson",
+        json_config,
+    ]
+    if len(log_dir) == 0:
+        remoteProcess = subprocess.Popen(cmd, cwd=exe_dir)
+    else:
+        log_file = open(log_dir+"/"+name+".log", "w")
+        remoteProcess = subprocess.Popen(cmd, cwd=exe_dir, stdout=log_file, stderr=log_file)
+    while True:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if sock.connect_ex((config["host"], config["port"])) != 0:
+            time.sleep(0.5)
+            print(".")
+        else:
+            logger.info("DAP %s @ %s:%d started, port open!", exe, config["host"], config["port"])
+            break
+    return remoteProcess
 
 
 class DapManager(object):
@@ -139,12 +196,20 @@ class DapManager(object):
         self.classmakers = {}
         self.log.update_local_name("DapManager")
         self.planes = {}
+        self.dap_processes = []
 
     def addClass(self, name, maker):
         self.classmakers[name] = maker
 
-    def setup(self, module, config):
+    def _process_cleaner(self):
+        self.error("Cleaning DAP processes!")
+        for proc in self.dap_processes:
+            if proc is not None:
+                proc.kill()
+
+    def setup(self, module, config, exe_dir="", log_dir=""):
         self.classmakers.update(self._listClasses(module))
+        atexit.register(DapManager._process_cleaner, self)
 
         if module==None or config==None:
             raise Exception("need a module and config")
@@ -155,6 +220,12 @@ class DapManager(object):
 
             if not klass_name or not configuration:
                 raise Exception("{} is not well formed. Requires both 'class' and 'config' objects.".format(k))
+
+            if klass_name.find("exe.") != -1:
+                # its a binary dap, we need to run it and create a proxy
+                process_config = copy.deepcopy(configuration)
+                self.dap_processes.append(create_dap_process(self.log, klass_name, process_config, exe_dir, log_dir))
+                klass_name = "DapNetworkProxy"
 
             klass = self.classmakers.get(klass_name, None)
             if not klass:

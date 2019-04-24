@@ -17,11 +17,15 @@ def _run_search_node(name: str, node_ip: str, node_port: int, dap_port_start: in
     logger = get_logger("NODE_RUN: "+name)
 
     node = FullSearchNone(name, node_ip, node_port, [{
-        "run_py_dap": True,
-        "file": "ai_search_engine/src/resources/dap_config.json",
-        "port": dap_port_start
+        #"run_py_dap": True,
+        #"file": "ai_search_engine/src/resources/dap_config.json",
+        #"port": dap_port_start,
+        "run_mode": "CPP", #PY/CPP
+        "port": dap_port_start,
+        "name": "in_memory_dap"
     }
-    ], http_port, ssl_certificate, "api/src/resources/website", director_api_port=director_api_port)
+    ], http_port, ssl_certificate, "api/src/resources/website", director_api_port=director_api_port,
+                          log_dir=os.path.split(log_file)[0])
     logger.error("**** Node %s started", name)
     time.sleep(1)
     try:

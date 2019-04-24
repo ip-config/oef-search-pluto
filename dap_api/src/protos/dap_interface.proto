@@ -25,6 +25,7 @@ message ValueMessage
         optional bool b    = 7;
 
         optional fetch.oef.pb.Query.DataModel dm = 8;
+        optional fetch.oef.pb.Query.Attribute a = 9;
 
         repeated string v_s  = 102;
         repeated float v_f   = 103;
