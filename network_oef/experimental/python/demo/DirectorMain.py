@@ -59,7 +59,7 @@ async def set_weather_agents(director: Director):
             i = int(host.replace("oef_node", ""))
         else:
             i = int(port)-20000
-        core_name = next(core_names)
+        core_name = next(core_names)+"-core"
         print("SET WEATHER AGENT FOR: ", name, "; core_name: ", core_name)
         task = asyncio.create_task(director.send(name, "blk_update",
                                                  create_weather_agent_service(10000+i, core_name)))
@@ -78,7 +78,7 @@ async def set_locations(director: Director, city_num: int):
         if entity.kind != "CITY":
             continue
         print("SET LOCATION {} NODE TO {}".format(names[i], entity.name))
-        core_name = next(core_names)
+        core_name = next(core_names)+"-core"
         await director.set_location(names[i], core_name.encode("UTF-8"), (entity.coords[1], entity.coords[0])) #lon, lat
         i += 1
         if i >= len(names):
@@ -96,7 +96,7 @@ async def set_locations_and_connections(director: Director, city_num: int):
     for key, entity in grid.entities.items():
         if entity.kind != "CITY":
             continue
-        core_name = next(core_names)
+        core_name = next(core_names)+"-core"
         a = director.get_address(core_name)
         if len(a) == 0:
             continue
