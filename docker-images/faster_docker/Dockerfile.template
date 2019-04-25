@@ -29,6 +29,8 @@ COPY --from=builder /app/project/cpp-sdk/experimental/resources /app/cpp-sdk/exp
 COPY --from=builder /app/project/ai_search_engine/src/resources/ /app/ai_search_engine/src/resources
 
 RUN apk add protobuf && \
+    apk add tcpdump && \
+    apk add iproute2 && \
     pip3 install colorlog && \
     chmod +x /app/oef.sh
 

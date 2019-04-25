@@ -43,6 +43,7 @@ class TransportCallStore:
 
 
 class Transport:
+    @has_logger
     def __init__(self, reader, writer):
         self._reader = reader
         self._writer = writer
@@ -101,7 +102,9 @@ class Transport:
             if data is not None:
                 return data
         try:
+            self.warning("+++++++++ READ MUTEX LOCK WAIT")
             async with self._read_lock:
+                self.warning("++++++ READ")
                 hsize, bsize = await self._read_size()
                 if hsize == 0:
                     return DataWrapper(False, "", b'', 104, "Connection closed by peer (got 0 size)")
