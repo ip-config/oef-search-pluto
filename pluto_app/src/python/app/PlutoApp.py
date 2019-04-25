@@ -112,19 +112,19 @@ class PlutoApp:
                         },
                     },
                 },
-                "in_memory_dap": {
-                    "class": "exe.InMemoryDap",
-                    "config": {
-                        "binary": "cpp_dap_in_memory/src/cpp/cpp_dap_in_memory_server",
-                        "host": "127.0.0.1",
-                        "port": self._port_injector.get("in_memory_dap"),
-                        "structure": {
-                            "value_table": {
-                                "field": "string"
-                            }
-                        }
-                    }
-                },
+                #"in_memory_dap": {
+                #    "class": "exe.InMemoryDap",
+                #    "config": {
+                #        "binary": "cpp_dap_in_memory/src/cpp/cpp_dap_in_memory_server",
+                #        "host": "127.0.0.1",
+                #        "port": self._port_injector.get("in_memory_dap"),
+                #        "structure": {
+                #            "value_table": {
+                #                "field": "string"
+                #            }
+                #        }
+                #    }
+                #},
                 #"attributes": {
                 #    "class": "DapAttributeStore",
                 #    "config": {
