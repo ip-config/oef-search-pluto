@@ -14,7 +14,9 @@ class Connection(object):
         self.log.update_local_name(target_ip+":"+str(target_port))
 
     async def connect(self):
+        self.info("Connecting to {}:{}...".format(self._host, self._port))
         r, w = await asyncio.open_connection(self._host, self._port)
+        self.info("Connecting to {}:{}... DONE".format(self._host, self._port))
         self._transport = Transport(r, w)
 
     def disconnect(self):
