@@ -146,7 +146,7 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
     DIRECTOR_PORT = 40000
 
     config = None
-    if len(config_file) > 0:
+    if config_file != None:
         with open(config_file, "r") as f:
             config = json.load(f)
         if len(config["nodes"]) != num_of_nodes:
@@ -305,7 +305,7 @@ if __name__ == "__main__":
     parser.add_argument("--fast_build", "-f", action="store_true", help="Enable faster rebuilding")
     parser.add_argument("--run_director", action="store_true", default=False,
                         help="Run director to set location and connectivity")
-    parser.add_argument("--config_file", "-c", required=False, help="JSON configuration file used by director", default="")
+    parser.add_argument("--config_file", "-c", required=False, help="JSON configuration file used by director")
 
     args = parser.parse_args()
 

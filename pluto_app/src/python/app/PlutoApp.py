@@ -94,7 +94,8 @@ class PlutoApp:
                                 "location.location": {
                                     "type": "location",
                                     "options": [
-                                        "plane", "os-grid"
+                                        "plane",
+                                        "os-grid",
                                     ]
                                 }
                             },
