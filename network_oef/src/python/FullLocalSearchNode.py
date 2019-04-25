@@ -29,7 +29,7 @@ class FullSearchNone:
 
         self.daps = []
         tmp_dict = {}
-        self.search_node = SearchNode(2, node_name)
+        self.search_node = SearchNode(6, node_name)
         self.search_node.set_log_dir(log_dir)
         for conf in network_dap_config:
             if conf["run_mode"] == "PY":
