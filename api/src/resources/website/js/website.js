@@ -838,8 +838,14 @@ var website = function (_, Kotlin, $module$kotlinx_serialization_runtime_js) {
   AgentInfo.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.key, other.key) && Kotlin.equals(this.score, other.score)))));
   };
+  var emptyList = Kotlin.kotlin.collections.emptyList_287e2$;
   function SearchResultItem(key, ip, port, distance, agents) {
     SearchResultItem$Companion_getInstance();
+    if (distance === void 0)
+      distance = 0.0;
+    if (agents === void 0) {
+      agents = emptyList();
+    }
     this.key = key;
     this.ip = ip;
     this.port = port;
