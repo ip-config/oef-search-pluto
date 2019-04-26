@@ -198,7 +198,6 @@ class InMemoryDap(DapInterface.DapInterface):
                 break
 
             if commit:
-                self.error("==>", tbname)
                 self.store.setdefault(tbname, {}).setdefault((core_ident, agent_ident), {})[tfv.fieldname] = v
 #                self.log.info("Stored {} into {} for {},{}".format(
 #                    tfv.fieldname, tbname, core_ident, agent_ident
