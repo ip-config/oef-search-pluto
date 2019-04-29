@@ -18,16 +18,24 @@ DEFAULT_KINDS = [
 class CrawlerAgents(object):
 
     @has_logger
-    def __init__(self, oef_agent_factory, grid, kinds=DEFAULT_KINDS):
+    def __init__(self, oef_agent_factory, grid, kinds=DEFAULT_KINDS, agentcount=30):
         self.tree = CrawlerAgentBehaviour.CrawlerAgentBehaviour()
         self.grid = grid
 
         self.threadpool = ThreadPoolExecutor(max_workers=1)
 
+        for k in kinds:
+            if k not in DEFAULT_KINDS:
+                print("Bad kind1:", k)
+                print("Bad kind1:", DEFAULT_KINDS)
+                print("Bad kind1:", type(k))
+                print("Bad kind1:", [ type(kk) for kk in DEFAULT_KINDS])
+                print("Bad kind1:", [ kk == k for kk in DEFAULT_KINDS])
+                exit(77)
         randomisers = [
             self.createRandomiser(x)
             for x
-            in range(0,30)
+            in range(0, agentcount)
         ]
 
         self.agents = [
@@ -74,39 +82,57 @@ class CrawlerAgents(object):
             in self.agents
         ]
 
-        self.info(locations)
-
         colour1 = "white"
         colour2 = "black"
-
         crawler_styles = {
-            CrawlerAgentBehaviour.MovementType.CRAWL_ON_NODES: {
+            CrawlerAgentBehaviour.MovementType.FOLLOW_PATH: {
                 'dot': SvgStyle.SvgStyle({"fill-opacity": 1, " fill": colour1, " stroke-width": 0.1}),
                 'line': SvgStyle.SvgStyle({"stroke": colour1, "stroke-width": 1}),
                 'dashes': SvgStyle.SvgStyle({"stroke": colour1, "stroke-width": 1, "stroke-dasharray":"3 1" }),
             },
-            CrawlerAgentBehaviour.MovementType.FOLLOW_PATH:{
+            CrawlerAgentBehaviour.MovementType.CRAWL_ON_NODES:{
                 'dot': SvgStyle.SvgStyle({"fill-opacity": 1, " fill": colour2, " stroke-width": 0.1}),
                 'line': SvgStyle.SvgStyle({"stroke": colour2, "stroke-width": 1}),
                 'dashes': SvgStyle.SvgStyle({"stroke": colour2, "stroke-width": 1, "stroke-dasharray":"3 1" }),
             }
         }
 
-        dots =  [
-            SvgElements.SvgCircle(
+        kinds = set([
+            agent.get('movement_type')
+             for agent
+            in self.agents
+        ])
+        for k in kinds:
+            if k not in DEFAULT_KINDS:
+                print("Bad kind:", k, DEFAULT_KINDS)
+                exit(77)
+            if k not in crawler_styles:
+                print("Unstyled kind:", k, list(crawler_styles.keys()))
+                exit(77)
+
+        self.info(locations)
+
+
+        dots =  []
+        for movement_type, x,y,_,_,_ in locations:
+            style = crawler_styles[movement_type]['dot']
+            dots.append(SvgElements.SvgCircle(
                 cx=x,
                 cy=y,
                 r=3,
-                style = crawler_styles[movement_type]['dot']
-            )
-            for movement_type, x,y,_,_,_
-            in locations
-        ]
+                style=style
+            ))
 
         g = SvgGraph.SvgGraph(*dots)
 
+        #print([
+        #    (conn, self.grid.getPositionOf(conn) or (100,100))
+        #    for movement_type, x, y, conn, _, _
+        #    in locations
+        #])
+
         linedata = [
-            ( movement_type, x, y, self.grid.getPositionOf(conn) )
+            ( movement_type, x, y, self.grid.getPositionOf(conn)  or (100,100))
             for movement_type, x, y, conn, _, _
             in locations
         ]

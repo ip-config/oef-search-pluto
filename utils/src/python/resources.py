@@ -1,4 +1,5 @@
 import os, sys, io
+import glob
 from pkgutil import get_loader
 
 # https://stackoverflow.com/questions/5003755/how-to-use-pkgutils-get-data-with-csv-reader-in-python
@@ -7,7 +8,7 @@ def _find__main__(path):
     while True:
         head, tail = os.path.split(path)
         if head == "":
-            return False
+            return ""
         if tail == "__main__":
             return path
         path = head
@@ -17,7 +18,6 @@ configured_package = None
 detected_mode = None
 
 m = sys.modules.get("__main__", None)
-print("::::::::::::::::",m)
 if m and hasattr(m, "__file__"):
     configured_filebase = getattr(m, "__file__")
     if "__main__" in configured_filebase.split('/'):
@@ -67,23 +67,24 @@ def resource(resourceName, as_string=False, as_file=True, open_mode="rb"):
     if detected_mode == None or detected_mode in [ 'filesystem', 'bazel' ]:
         for filename in [
             os.path.join(configured_filebase, resourceName),
-            resourceName,
-            os.path.join(configured_filebase, "external", resourceName),
-            os.path.join("external", resourceName),
-        ]:
-            #print("Exists?", filename)
+            resourceName ] + (
+                glob.glob(os.path.join(configured_filebase, "external", '*', resourceName)) +
+                glob.glob(os.path.join("external", '*', resourceName))
+        ):
+            print("Exists?", filename)
             if os.path.exists(filename):
-                #print("Yes")
+                print("Yes")
                 detected_mode = 'filesystem'
                 if as_file:
-                    #print("returning file")
+                    print("returning file")
                     return open(filename, open_mode)
                 if as_string:
-                    #print("returning name")
+                    print("returning name")
                     return filename
                 with open(filename, open_mode) as binary_file:
                     return binary_file.read()
-        raise Exception("no")
+        if detected_mode in [ 'filesystem', 'bazel' ]:
+            raise Exception("Unable to load: {}".resourceName)
 
     detected_mode = 'loader'
     #print("R",package, resourceName)

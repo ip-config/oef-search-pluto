@@ -15,6 +15,14 @@ from enum import Enum
 def best_oef_core(nodes):
     distance = 1e16
     result = None
+
+    print(nodes)
+    exit(77)
+    
+    if len(nodes)==0:
+        return None
+    if len(nodes)==1:
+        return nodes[0]
     for node in nodes:
         for res in node.result:
             if res.distance < distance:
@@ -59,8 +67,9 @@ class Reset(BehaveTreeTaskNode.BehaveTreeTaskNode):
 
         agent = context.get("agent")
         if not context.has('initialised'):
+            conn = context.get('initial-connection') or (source_id + "-core")
+            agent.connect(target=conn)
             context.set('initialised', 1)
-            agent.connect(target=source_id + "-core")
 
         context.setIfAbsent("connection", source_id)
         context.setIfAbsent('x', source_loc[0])
