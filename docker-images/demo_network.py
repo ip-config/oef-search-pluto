@@ -272,22 +272,21 @@ def container_main(num_of_nodes: int, links: List[str], http_ports: Dict[int, in
         print("EXECUTE: ", " ".join(director_cmd))
         subprocess.check_call(director_cmd, stderr=subprocess.STDOUT, stdout=open(log_dir+"/director_lp.log", "w"))
 
-    weather_director_cmd = []
-    weather_director_cmd.extend(docker_cmd)
-    weather_director_cmd.extend(["--name", "weather_director"])
-    weather_director_cmd.extend([
-        image_tag,
-        "director",
-        "no_sh",
-        "--type",
-        "weather_agent",
-        "--targets"
-    ])
-    weather_director_cmd.extend(api_targets)
-    print("EXECUTE: ", " ".join(weather_director_cmd))
-    subprocess.check_call(weather_director_cmd, stderr=subprocess.STDOUT, stdout=open(log_dir+"/director_weather.log",
+        weather_director_cmd = []
+        weather_director_cmd.extend(docker_cmd)
+        weather_director_cmd.extend(["--name", "weather_director"])
+        weather_director_cmd.extend([
+            image_tag,
+            "director",
+            "no_sh",
+            "--type",
+            "weather_agent",
+            "--targets"
+        ])
+        weather_director_cmd.extend(api_targets)
+        print("EXECUTE: ", " ".join(weather_director_cmd))
+        subprocess.check_call(weather_director_cmd, stderr=subprocess.STDOUT, stdout=open(log_dir+"/director_weather.log",
                                                                                       "w"))
-
     pool.shutdown(wait=True)
 
     atexit.register(functools.partial(kill_containers, names))

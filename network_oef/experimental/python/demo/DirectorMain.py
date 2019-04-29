@@ -148,10 +148,10 @@ async def config_from_json(director: Director, json_config: str):
         name = c["name"]
         core_name = name+"-core"
         await set_node(director, host, port, c["name"])
-        print("SET WEATHER AGENT FOR: ", name, "; core_name: ", core_name)
         core_host, core_port = c["core_uri"].split(":")
+        print("SET WEATHER AGENT FOR: ", name, "; core_name: ", core_name, "; address: {}:{}".format(core_host, core_port))
         task = asyncio.create_task(director.send(name, "blk_update",
-                                                 create_weather_agent_service(int(core_port), core_name)))
+                                                 create_weather_agent_service(int(core_port), core_name, core_host)))
         tasks.append(task)
     for task in tasks:
         await task
