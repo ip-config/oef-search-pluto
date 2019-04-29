@@ -124,9 +124,11 @@ class EnglandGrid(object):
         with resources.textfile(fn, as_file=True) as fh:
             reader = csv.reader(fh)
             for citynumber, row in enumerate(reader):
-                city = row[0]
-                coords = (int(row[2]), 699-int(row[1]))
-                pop = row[3]
+
+
+                city, southing, easting, pop = row
+                coords = (int(easting), 699-int(southing))
+
                 self.addEntity(EnglandGrid.GridEntity(city, coords, "CITY", { "pop": int(pop) }))
                 cities += 1
                 if cities >= self.city_limit:

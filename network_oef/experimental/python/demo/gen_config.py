@@ -31,13 +31,17 @@ def main(num: int, file: str):
     internal_hosts = config["internal_hosts"]
     for i in range(num):
         entity = next(city_it)
+
+        easting = entity.coords[0]
+        northing = entity.coords[1]
+
         #EXTERNAL INFO
         entry = {
             "uri": "127.0.0.1:{}".format(SEARCH_PORT+i),
             "core_uri": "127.0.0.1:{}".format(CORE_PORT+i),
             "director_uri": "127.0.0.1:{}".format(DIRECTOR_PORT+i),
             "name": entity.name,
-            "location": (entity.coords[1], entity.coords[0]), #lon, lat
+            "location": (easting, northing),
             "peers": [link[0].name for link in entity.links if link[1] == "GND"]
         }
         nodes.append(entry)
