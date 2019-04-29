@@ -3,6 +3,7 @@ from api.src.python.core.SearchEndpoint import SearchEndpoint
 from api.src.python.core.UpdateEndpoint import UpdateEndpoint, BlkUpdateEndpoint
 from api.src.python.core.RemoveEndpoint import RemoveEndpoint
 from api.src.python.director.LocationEndpoint import LocationEndpoint
+from api.src.python.director.PeerEndpoint import ConnectionManager, PeerEndpoint
 
 
 class CoreAPIRouterBuilder:
@@ -57,6 +58,7 @@ class DirectorAPIRouterBuilder:
         self._name = ""
         self._dap_manager = None
         self._location_endpoint = None
+        self._peer_endpoint = None
 
     def set_name(self, name):
         self._name = name
@@ -70,7 +72,13 @@ class DirectorAPIRouterBuilder:
         self._location_endpoint = LocationEndpoint(self._dap_manager, db_structure)
         return self
 
+    def add_connection_manager(self, manager: ConnectionManager):
+        self._peer_endpoint = PeerEndpoint(manager)
+        return self
+
     def build(self):
         self._router.register_serializer("location", self._location_endpoint)
         self._router.register_handler("location", self._location_endpoint)
+        self._router.register_serializer("peer", self._peer_endpoint)
+        self._router.register_handler("peer", self._peer_endpoint)
         return self._router

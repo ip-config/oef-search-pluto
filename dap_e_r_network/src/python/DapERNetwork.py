@@ -239,7 +239,8 @@ class DapERNetwork(DapInterface.DapInterface):
             idents = [ DapQueryResult(x) for x in input_idents.identifiers ]
 
         reply = dap_interface_pb2.IdentifierSequence()
-        reply.originator = False;
+        reply.originator = False
+        #BUG(KLL): missing score out of the copy
         for core in graphQuery.execute(idents):
             c = reply.identifiers.add()
             c.core = core[0].encode("utf-8")

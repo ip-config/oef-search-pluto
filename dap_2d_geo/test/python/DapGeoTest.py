@@ -84,3 +84,25 @@ class DapGeoTest(unittest.TestCase):
         print("RESULTS:", results)
         assert len(results) == 2
         assert output.HasField("status") == False
+
+    def testProx2(self):
+
+        self._setupAgents()
+
+        qm = query_pb2.Query.Model()
+        qAnd = qm.constraints.add()
+        q1 = qAnd.and_.expr.add()
+
+        q1.constraint.attribute_name = "location"
+        q1.constraint.relation.op = 0
+        q1.constraint.distance.center.lat = 52.454
+        q1.constraint.distance.center.lon = -1.748
+        q1.constraint.distance.distance = 150 * 1000
+
+        dapQuery = self.dapManager.makeQuery(qm)
+        output = self.dapManager.execute(dapQuery)
+        results = list(output.identifiers)
+        print("RESULTS:", results)
+        print("RESULTS:", len(results))
+        assert len(results) == 2
+        assert output.HasField("status") == False

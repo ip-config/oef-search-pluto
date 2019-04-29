@@ -4,8 +4,10 @@ from abc import abstractmethod
 from fetch_teams.oef_core_protocol import query_pb2
 from dap_api.src.python import DapQueryRepn
 from dap_api.src.python import ProtoHelpers
+from utils.src.python.Logging import has_logger
 
 class DapQueryRepnFromProtoBuf(object):
+    @has_logger
     def __init__(self):
         pass
 
@@ -102,7 +104,23 @@ class DapQueryRepnFromProtoBuf(object):
         )
 
     def _CONSTRAINT_DISTANCE_toRepn(self, distance_pb, attr_name):
-        pass
+        loc = DapQueryRepn.DapQueryRepn.Leaf(
+            operator=ProtoHelpers.OPERATOR_EQ,
+            query_field_value=(distance_pb.center.lat, distance_pb.center.lon),
+            query_field_type="location",
+            target_field_name=attr_name + ".location",
+        )
+        rad = DapQueryRepn.DapQueryRepn.Leaf(
+            operator=ProtoHelpers.OPERATOR_EQ,
+            query_field_value=distance_pb.distance,
+            query_field_type="double",
+            target_field_name=attr_name + ".radius",
+        )
+
+        r = DapQueryRepn.DapQueryRepn.Branch(combiner="all")
+        r.Add(loc)
+        r.Add(rad)
+        return r
 
     def _CONSTRAINT_toRepn(self, constraint_pb):
         attr_name = constraint_pb.attribute_name
@@ -121,6 +139,7 @@ class DapQueryRepnFromProtoBuf(object):
         if constraint_pb.HasField("embedding"):
             return self._CONSTRAINT_EMBEDDING_toRepn(constraint_pb.embedding, attr_name)
 
+        self.log.error(constraint_pb)
         raise Exception("_CONSTRAINT_toRepn ==> None")
 
     def _CONSTRAINT_EXPR_toRepn(self, ce_pb):
@@ -137,6 +156,7 @@ class DapQueryRepnFromProtoBuf(object):
             subs = ce_pb.not_.expr
             combiner = ProtoHelpers.COMBINER_NONE
         else:
+            self.log.error(ce_pb)
             raise Exception("_CONSTRAINT_EXPR_toRepn ==> None")
 
         r = DapQueryRepn.DapQueryRepn.Branch(combiner=combiner)

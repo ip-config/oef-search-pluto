@@ -137,6 +137,12 @@ new_system_python_headers_repository(
         name="python_headers",
 )
 
+load("//tools:git_archive.bzl", "project_tar_gz_repository")
+project_tar_gz_repository(
+    name="git_project",
+    path=__workspace_dir__
+)
+
 git_repository(
     name = "com_github_nelhage_rules_boost",
     commit = "6d6fd834281cb8f8e758dd9ad76df86304bf1869",

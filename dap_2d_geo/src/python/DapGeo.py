@@ -33,16 +33,24 @@ class DapGeo(DapInterface.DapInterface):
             self.geos[table_name] = GeoStore.GeoStore()
             for field_name, config in fields.items():
 
+                r = {
+                    'type': 'location',
+                    'distance_calculator': GeoStore.GeoStore.EquirectangularDistance,
+                }
                 if isinstance(config, dict):
-                    t = config['type']
-                    opt = set(config['options'])
+                    r['type'] = config['type']
+                    r['options'] = set(config['options'])
                 elif isinstance(config, str):
-                    t = config
-                    opt = set()
+                    r['type'] = config
+                    r['options'] = set()
                 else:
                     raise Exception("Unexpected specification for a field")
-                self.fields_by_table.setdefault(table_name, {}).setdefault(field_name, {})['options'] = opt
-                self.fields_by_table.setdefault(table_name, {}).setdefault(field_name, {})['type'] = t
+
+                if 'os-grid' in r['options']:
+                    r['distance_calculator'] = GeoStore.GeoStore.OSGridDistance
+
+                self.fields_by_table.setdefault(table_name, {}).setdefault(field_name, {}).update(r)
+
         self.operatorFactory = DapOperatorFactory.DapOperatorFactory()
 
     def configure(self, desc: dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
@@ -147,12 +155,15 @@ class DapGeo(DapInterface.DapInterface):
             entities = set(entities)
 
             for location in self.locations:
-                self.dap.warning("TRYING:", entities)
-                ok = self.geo.accept(entities, location, self.radius)
-                print("OK=", ok)
-                for k in ok:
+                self.dap.info("TRYING:", entities)
+                accepted = list(self.geo.accept(entities, location, self.radius))
+                self.dap.info("OK=", accepted)
+                for k in accepted:
                     r.add(k[0])
-                    entities.remove(k[0])
+                    try:
+                        entities.remove(k[0])
+                    except KeyError as e:
+                        pass
                     self.dap.warning("ACCEPT:", k[0])
             return r
 
@@ -234,21 +245,33 @@ class DapGeo(DapInterface.DapInterface):
 
         geoQuery.setGeo(self.getGeoByTableName(geoQuery.tablename))
 
+        coreagent_to_identifier = {}
+
         if input_idents.HasField('originator') and input_idents.originator:
             self.warning("geoQuery.tablename=", geoQuery.tablename)
             idents = list(self.geos[geoQuery.tablename].getAllKeys())
             self.warning("idents=", idents)
+            coreagent_to_identifier = {}
         else:
-            idents = input_idents.identifiers
+            coreagent_to_identifier.update({
+                (identifier.core, identifier.agent): identifier
+                for identifier
+                in input_idents.identifiers
+            })
+            idents = coreagent_to_identifier.keys()
+
 
         self.warning("idents=", idents)
         reply = dap_interface_pb2.IdentifierSequence()
-        reply.originator = False;
+        reply.originator = False
 
         for r in geoQuery.execute(set(idents)):
             c = reply.identifiers.add()
-            c.core = r[0]
-            c.agent = r[1]
+            if r in coreagent_to_identifier:
+                c.CopyFrom(coreagent_to_identifier[r])
+            else:
+                c.core = r[0]
+                c.agent = r[1]
         return reply
 
     def constructQueryConstraintObject(self, dapQueryRepnLeaf: DapQueryRepn.DapQueryRepn.Leaf) -> SubQueryInterface:

@@ -4,7 +4,7 @@ from ai_search_engine.src.python.SearchEngine import SearchEngine
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
 from dap_api.src.python.DapQuery import DapQuery
-from dap_api.src.python import DapQueryRepn
+from dap_api.src.protos import dap_interface_pb2
 
 
 def get_attr_b(name, desc, t=2):
@@ -39,7 +39,7 @@ class SearchEngineTest(unittest.TestCase):
         newvalue.value.dm.name = data_model.name
         newvalue.value.dm.description = data_model.description
         newvalue.value.dm.attributes.extend(data_model.attributes)
-        newvalue.key = agent_name.encode("utf-8")
+        newvalue.key.agent = agent_name.encode("utf-8")
         return update
 
     @classmethod
@@ -118,20 +118,28 @@ class SearchEngineTest(unittest.TestCase):
         print("======================================QUERY BOOK======================================")
         print(dmq2)
 
-        query_wrapper =  DapQueryRepn.DapQueryRepn.Leaf(
-            operator="CLOSE_TO",
-            query_field_value=dmq1,
-            query_field_type="data_model",
-            target_field_name="data_model",
-            target_table_name="dm_store",
-        )
-        query = self.se.constructQueryConstraintObject(query_wrapper)
 
-        results1 = list(query.execute())
+        qproto = dap_interface_pb2.ConstructQueryConstraintObjectRequest()
+        qproto.operator = "CLOSE_TO"
+        qproto.target_table_name="dm_store"
+        qproto.target_field_name="data_model"
+        qproto.target_field_type="data_model"
+        qproto.query_field_type="data_model"
+        qproto.query_field_value.typecode = "data_model"
+        qproto.query_field_value.dm.CopyFrom(dmq1)
+        qproto.dap_name = "search_engine"
+        memento = self.se.prepareConstraint(qproto)
 
-        query_wrapper.query_field_value = dmq2
-        query = self.se.constructQueryConstraintObject(query_wrapper)
-        results2 = list(query.execute())
+        query_memento = dap_interface_pb2.DapExecute()
+        query_memento.input_idents.originator = True
+        query_memento.query_memento.CopyFrom(memento)
+
+        results1 = list(self.se.execute(query_memento).identifiers)
+
+        qproto.query_field_value.dm.CopyFrom(dmq2)
+        memento = self.se.prepareConstraint(qproto)
+        query_memento.query_memento.CopyFrom(memento)
+        results2 = list(self.se.execute(query_memento).identifiers)
 
         print("Looking for weather")
         print(results1)
@@ -151,19 +159,27 @@ class SearchEngineTest(unittest.TestCase):
         print("======================================QUERY NOVEL======================================")
         print(sq2)
 
-        query_wrapper = DapQueryRepn.DapQueryRepn.Leaf(
-            operator="CLOSE_TO",
-            query_field_value=sq1,
-            query_field_type="string",
-            target_field_name="data_model",
-            target_table_name="dm_store",
-        )
-        query = self.se.constructQueryConstraintObject(query_wrapper)
-        results1 = list(query.execute())
+        qproto = dap_interface_pb2.ConstructQueryConstraintObjectRequest()
+        qproto.operator = "CLOSE_TO"
+        qproto.target_table_name = "dm_store"
+        qproto.target_field_name = "data_model"
+        qproto.target_field_type = "data_model"
+        qproto.query_field_type = "string"
+        qproto.query_field_value.typecode = "string"
+        qproto.query_field_value.s = sq1
+        qproto.dap_name = "search_engine"
+        memento = self.se.prepareConstraint(qproto)
 
-        query_wrapper.query_field_value = sq2
-        query = self.se.constructQueryConstraintObject(query_wrapper)
-        results2 = list(query.execute())
+        query_memento = dap_interface_pb2.DapExecute()
+        query_memento.input_idents.originator = True
+        query_memento.query_memento.CopyFrom(memento)
+
+        results1 = list(self.se.execute(query_memento).identifiers)
+
+        qproto.query_field_value.s = sq2
+        memento = self.se.prepareConstraint(qproto)
+        query_memento.query_memento.CopyFrom(memento)
+        results2 = list(self.se.execute(query_memento).identifiers)
 
         print("Looking for weather")
         print("Looking for book")

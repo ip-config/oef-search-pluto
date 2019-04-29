@@ -7,8 +7,10 @@ from utils.src.python.Logging import get_logger, has_logger
 from asyncio import Queue
 from typing import Tuple
 from api.src.proto.director import core_pb2
+from api.src.proto.director import node_pb2
 import time
 import numpy as np
+from typing import List, Tuple
 
 
 def create_client(ip: str, port: int):
@@ -70,6 +72,7 @@ class Director:
     def __init__(self):
         self.clients = {}
         self.transports = {}
+        self.addresses = {}
 
     async def add_node(self, ip: str, port: int, name: str = ""):
         if len(name) == 0:
@@ -79,6 +82,7 @@ class Director:
         self.clients[name] = queue
         self.info("create task")
         self.transports[name] = asyncio.create_task(transport())
+        self.addresses[name] = (ip, port)
 
     def get_node_names(self):
         return list(self.clients.keys())
@@ -89,6 +93,9 @@ class Director:
         except Exception as e:
             self.exception(e)
 
+    def get_address(self, name: str):
+        return self.addresses.get(name, ())
+
     @block_if_first_not_found(store_name="clients")
     async def set_location(self, client_name: str, core_key: str, location: Tuple[float, float]):
         self.info(client_name, ": Set location for core ", core_key, " to ", location)
@@ -97,6 +104,17 @@ class Director:
         data.location.lon = location[0]
         data.location.lat = location[1]
         await self.push_cmd(client_name, "location", data)
+
+    @block_if_first_not_found(store_name="clients")
+    async def add_peers(self, client_name: str, peers: List[Tuple[str, str, int]]):
+        data = node_pb2.PeerUpdate()
+        for peer in peers:
+            p = data.add_peers.add()
+            p.name = peer[0]
+            p.host = peer[1]
+            p.port = int(peer[2])
+        await self.push_cmd(client_name, "peer", data)
+
 
     #TODO: this is only for the demo
     @block_if_first_not_found(store_name="clients")
@@ -108,7 +126,13 @@ class Director:
         for key, queue in self.clients.items():
             await queue.put(("close",))
 
+    async def reset(self):
+        await self.close_all()
+        self.clients = {}
+        self.transports = {}
+        self.addresses = {}
+
     async def wait(self):
-        for key, task in self.transports.items():
+        for key in list(self.transports.keys()):
             self.info("Waiting for com transport for ", key)
-            await task
+            await self.transports.pop(key)

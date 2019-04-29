@@ -74,6 +74,7 @@ class EarlyInMemoryDap(DapInterface.DapInterface):
 
     def execute(self, proto: dap_interface_pb2.DapExecute) -> dap_interface_pb2.IdentifierSequence:
         result = dap_interface_pb2.IdentifierSequence()
+        result.originator = False
         cores = proto.input_idents
         query_memento = proto.query_memento
         j = json.loads(query_memento.memento.decode("utf-8"))
@@ -90,8 +91,7 @@ class EarlyInMemoryDap(DapInterface.DapInterface):
                 core_ident, agent_ident = key.core, key.agent
                 self.log.info("RETURNING SUPPLIED: core={}, agent={}".format(core_ident, agent_ident))
                 i = result.identifiers.add()
-                i.core = core_ident
-                i.agent = agent_ident
+                i.CopyFrom(key)
         return result
 
 

@@ -1,9 +1,11 @@
 import unittest
+import sys
 
 from ai_search_engine.src.python import SearchEngine
 from dap_in_memory.src.python import InMemoryDap
 from dap_api.src.protos import dap_update_pb2
 from fetch_teams.oef_core_protocol import query_pb2
+from dap_api.src.python import DapManager
 
 
 def get_attr_b(name, desc, type=2):
@@ -17,7 +19,24 @@ def get_attr_b(name, desc, type=2):
 class QueryEmbeddingsTest(unittest.TestCase):
     def setUp(self):
         """Call before every test case."""
-        self.dap1 = InMemoryDap.InMemoryDap("dap1", { "structure": { "wibbles": { "wibble": "string", "service": "embedding"} } } );
+        self.dapManager = DapManager.DapManager()
+
+        dapManagerConfig = {
+            "data_model_searcher": {
+                "class": "SearchEngine",
+                "config": {
+                    "structure": {
+                        "data_model_table": {
+                            "service": "data_model"
+                        },
+                    },
+                },
+            },
+        }
+        self.dapManager.setup(
+            sys.modules[__name__],
+            dapManagerConfig)
+        self.dapManager.setDataModelEmbedder('data_model_searcher', 'data_model_table', 'service')
 
     def tearDown(self):
         """Call after every test case."""
@@ -30,24 +49,24 @@ class QueryEmbeddingsTest(unittest.TestCase):
         newvalue.fieldname = "wibble"
         newvalue.value.type = 2
         newvalue.value.s = "moo"
-        newvalue.key.agent_name = "007/James/Bond"
-        newvalue.key.core_uri.append("localhost:10000")
+        newvalue.key.agent = b"007/James/Bond"
+        newvalue.key.core = b"localhost:10000"
         return update
 
     def _createQueryProto(self):
         q = py_oef_protocol_pb2.ConstraintExpr()
 
     def _setupAgents(self):
-        for agent_name, wibble_value in [
-            ("007/James/Bond", "apple"),
-            ("White/Spy", "banana"),
-            ("Black/Spy", "carrot"),
-            ("86/Maxwell/Smart", "carrot"),
-        ]:
-            update = self._createUpdate()
-            update.update[0].key.agent_name = agent_name
-            update.update[0].value.s = wibble_value
-            self.dap1.update(update)
+        #for agent_name, wibble_value in [
+        #    (b"007/James/Bond", "apple"),
+        #    (b"White/Spy", "banana"),
+        #    (b"Black/Spy", "carrot"),
+        #    (b"86/Maxwell/Smart", "carrot"),
+        #]:
+        #    update = self._createUpdate()
+        #    update.update[0].key.agent = agent_name
+        #    update.update[0].value.s = wibble_value
+        #    self.dapManager.update(update)
 
         dm1 = query_pb2.Query.DataModel()
         dm1.name = "weather_data"
@@ -83,7 +102,13 @@ class QueryEmbeddingsTest(unittest.TestCase):
         print(dm1)
         print("======================================BOOK STORE======================================")
         print(dm2)
-        engine = SearchEngine.SearchEngine()
+        engine = SearchEngine.SearchEngine('temporary', {
+            "structure": {
+                "data_model_table": {
+                    "data_model": "data_model"
+                    },
+                },
+            })
 
         embed1 = engine._dm_to_vec(dm1)
         embed2 = engine._dm_to_vec(dm2)
@@ -116,16 +141,17 @@ class QueryEmbeddingsTest(unittest.TestCase):
         print(dmq2)
 
         for agent_name, wibble_value in [
-            ("007/James/Bond", embed1),
-            ("White/Spy", embed1),
-            ("Black/Spy", embed2),
-            ("86/Maxwell/Smart", embed3),
+            (b"007/James/Bond", dm1),
+            (b"White/Spy", dm1),
+            (b"Black/Spy", dm2),
+            (b"86/Maxwell/Smart", dm3),
         ]:
             update = self._createUpdate()
             update.update[0].fieldname = "service"
+            update.update[0].tablename = "service"
             update.update[0].value.type = 6
-            update.update[0].key.agent_name = agent_name
-            update.update[0].value.embedding.v.extend(wibble_value)
+            update.update[0].key.agent = agent_name
+            update.update[0].value.dm.CopyFrom(wibble_value)
             self.dapManager.update(update)
 
 
@@ -140,8 +166,8 @@ class QueryEmbeddingsTest(unittest.TestCase):
         q.constraint.relation.op = 0
         q.constraint.embedding.val.v.extend(self.embed3)
 
-        dapQuery = self.dap1.makeQuery(q, "wibbles")
-        results = list(self.dap1.query(dapQuery))
+        dapQuery1 = self.dapManager.makeQueryFromConstraint(q)
+        results = list(self.dapManager.execute(dapQuery1))
 
         q2 = query_pb2.Query.ConstraintExpr()
 
@@ -149,8 +175,8 @@ class QueryEmbeddingsTest(unittest.TestCase):
         q2.constraint.relation.op = 0
         q2.constraint.embedding.val.v.extend(self.embed4)
 
-        dapQuery2 = self.dap1.makeQuery(q2, "wibbles")
-        results2 = list(self.dap1.query(dapQuery2))
+        dapQuery2 = self.dapManager.makeQuery(q2)
+        results2 = list(self.dapManager.execute(dapQuery2))
 
         print("Looking for weather")
         print(results)

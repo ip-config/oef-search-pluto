@@ -49,7 +49,6 @@ class SearchEndpoint(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
 
     async def handle_message(self, msg: query_pb2.Query) -> DataWrapper[response_pb2.SearchResponse]:
         resp = response_pb2.SearchResponse()
-
         distance = None
         try:
             location = self._dap_manager.getPlaneInformation("location")["values"]
@@ -88,14 +87,15 @@ class SearchEndpoint(HasProtoSerializer, HasMessageHandler, HasResponseMerger):
                     item.ip = address[0]
                     item.port = int(address[1])
                     item.key = core
-                    item.score = element.score
                     items[core] = item
                     if distance:
                         #TODO multiple core
                         item.distance = distance
                 agent = items[core].agents.add()
                 agent.key = agent_id
+                agent.score = element.score
             resp.result.extend(items.values())
+            self.info("SEARCH RESULT: ", resp)
         except Exception as e:
             self.exception("Exception while processing query: ", str(e))
             return DataWrapper(False, "search", resp, 500, str(e))

@@ -2,7 +2,11 @@ import sys
 import inspect
 import json
 import re
+import copy
 import time
+import subprocess
+import socket
+import atexit
 
 from utils.src.python.Logging import has_logger
 from dap_api.src.python import DapOperatorFactory
@@ -15,6 +19,59 @@ from dap_api.src.protos import dap_update_pb2
 from dap_api.src.python import SubQueryInterface
 from dap_api.src.protos import dap_interface_pb2
 from dap_api.src.protos import dap_update_pb2
+
+
+def dap_json_from_config(name, config):
+    new_config = {
+        "host": config["host"],
+        "port": config["port"],
+        "description": {
+            "name": name
+        }
+    }
+    desc = new_config["description"]
+    desc["table"] = []
+    for tb_name, fields in config["structure"].items():
+        t = {
+            "name": tb_name,
+            "field": [
+                {
+                    "name": field_name,
+                    "type": field_type
+                } for field_name, field_type in fields.items()
+            ]
+        }
+        desc["table"].append(t)
+    return json.dumps(new_config)
+
+
+def create_dap_process(logger, name: str, config: dict, exe_dir: str, log_dir: str):
+    exe = config["binary"]
+    json_config = dap_json_from_config(name, config)
+    if len(exe_dir) == 0:
+        logger.warning("No exe_dir set! Can't run C++ dap without it!")
+        return None
+    logger.info("*********** BINARY DAP EXECUTION DIR: %s", exe_dir)
+    logger.warning("*********** RUN DAP: %s  with the following config: %s", exe, json_config)
+    cmd = [
+        exe,
+        "--configjson",
+        json_config,
+    ]
+    if len(log_dir) == 0:
+        remoteProcess = subprocess.Popen(cmd, cwd=exe_dir)
+    else:
+        log_file = open(log_dir+"/"+name+".log", "w")
+        remoteProcess = subprocess.Popen(cmd, cwd=exe_dir, stdout=log_file, stderr=log_file)
+    while True:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if sock.connect_ex((config["host"], config["port"])) != 0:
+            time.sleep(0.5)
+            print(".")
+        else:
+            logger.info("DAP %s @ %s:%d started, port open!", exe, config["host"], config["port"])
+            break
+    return remoteProcess
 
 
 class DapManager(object):
@@ -139,12 +196,20 @@ class DapManager(object):
         self.classmakers = {}
         self.log.update_local_name("DapManager")
         self.planes = {}
+        self.dap_processes = []
 
     def addClass(self, name, maker):
         self.classmakers[name] = maker
 
-    def setup(self, module, config):
+    def _process_cleaner(self):
+        self.error("Cleaning DAP processes!")
+        for proc in self.dap_processes:
+            if proc is not None:
+                proc.kill()
+
+    def setup(self, module, config, exe_dir="", log_dir=""):
         self.classmakers.update(self._listClasses(module))
+        atexit.register(DapManager._process_cleaner, self)
 
         if module==None or config==None:
             raise Exception("need a module and config")
@@ -155,6 +220,12 @@ class DapManager(object):
 
             if not klass_name or not configuration:
                 raise Exception("{} is not well formed. Requires both 'class' and 'config' objects.".format(k))
+
+            if klass_name.find("exe.") != -1:
+                # its a binary dap, we need to run it and create a proxy
+                process_config = copy.deepcopy(configuration)
+                self.dap_processes.append(create_dap_process(self.log, klass_name, process_config, exe_dir, log_dir))
+                klass_name = "DapNetworkProxy"
 
             klass = self.classmakers.get(klass_name, None)
             if not klass:
@@ -303,6 +374,26 @@ class DapManager(object):
         for x in dapQueryRepn.printable():
             self.log.info("{}   {}".format(prefix, x))
 
+    def makeQueryFromConstraint(self, query_constraint_pb):
+        dapQueryRepn = DapQueryRepn.DapQueryRepn()
+        dapQueryRepn.fromConstraintProtoList(None, [ query_constraint_pb ])
+
+        # now fill in all the types.
+
+        v = DapManager.PopulateFieldInformationVisitor(self)
+        dapQueryRepn.visit(v)
+        self.printQuery("FIELD_INFO_PASS ", dapQueryRepn)
+
+        v = DapManager.CollectDapsVisitor()
+        dapQueryRepn.visit(v)
+        self.printQuery("COLLECT_PASS    ", dapQueryRepn)
+
+        v = DapManager.AddMoreDapsBasedOnOptionsVisitor(self)
+        dapQueryRepn.visit(v)
+        self.printQuery("EXTRA_DAPS_PASS ", dapQueryRepn)
+
+        return dapQueryRepn
+
     def makeQuery(self, query_pb):
         dapQueryRepn = DapQueryRepn.DapQueryRepn()
 
@@ -344,6 +435,7 @@ class DapManager(object):
             dapQueryRepn.visitDescending(v1)
         except DapManager.NoConstraintCompilerException as ex:
             r = dap_interface_pb2.IdentifierSequence()
+            r.originator = False
             failure = r.status
             failure.success = False
             failure.narrative.append(str(ex))
@@ -384,30 +476,26 @@ class DapManager(object):
 
 #        print("_executeNode")
 #        print("Results;")
-        #TODO remove this with late dap
-        try:
-            ar = self.getInstance("address_registry")
-            for ident in r.identifiers:
-                self.error("LOOKUP FOR ", ident.core)
-                a = ar.resolve(ident.core)[0]
-                ident.uri = a.ip+":"+str(a.port)
-                print(DapQueryResult.DapQueryResult(pb=ident).printable())
-        except Exception as e:
-            print("Address resolve exception", str(e))
         return r
 
     def _executeMementoChain(self, node, ordered_mementos, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
         self.warning("_executeMementoChain working on ", node.printable())
         self.warning("_executeMementoChain will run: ", [ m[0] for m in ordered_mementos ])
         self.warning("_executeMementoChain input count ", len(cores.identifiers))
-
-        current = cores
-        for dap_name, memento in ordered_mementos:
-            proto = dap_interface_pb2.DapExecute()
-            proto.query_memento.CopyFrom(memento)
-            proto.input_idents.CopyFrom(current)
-            current = self.getInstance(dap_name).execute(proto)
-        self.warning("_executeMementoChain output ", current)
+        try:
+            current = cores
+            for dap_name, memento in ordered_mementos:
+                try:
+                    proto = dap_interface_pb2.DapExecute()
+                    proto.query_memento.CopyFrom(memento)
+                    proto.input_idents.CopyFrom(current)
+                    current = self.getInstance(dap_name).execute(proto)
+                except Exception as e:
+                    self.exception("_executeMementoChain error: {} dapname={}".format(str(e), dap_name))
+                    raise e
+        except Exception as e:
+            self.error("_executeMementoChain error: ", str(e))
+        self.warning("_executeMementoChain output count ", len(current.identifiers))
         return current
 
     def _executeLeaf(self, node, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
@@ -425,6 +513,7 @@ class DapManager(object):
     def _executeOr(self, node, cores: dap_interface_pb2.IdentifierSequence) -> dap_interface_pb2.IdentifierSequence:
         self.warning("_executeOr ", node.printable())
         r = dap_interface_pb2.IdentifierSequence()
+        r.originator = False
         for n in node.subnodes:
             res = self._execute(n, cores)
             for ident in res.identifiers:
@@ -446,12 +535,16 @@ class DapManager(object):
         for n in node.leaves[leafstart:]:
             cores = self._executeLeaf(n, cores)
             if len(cores.identifiers) == 0:
-                return dap_interface_pb2.IdentifierSequence()
+                result = dap_interface_pb2.IdentifierSequence()
+                result.originator = False
+                return result
 
         for n in node.subnodes[nodestart:]:
             cores = self._execute(n, cores)
             if len(cores.identifiers) == 0:
-                return dap_interface_pb2.IdentifierSequence()
+                result = dap_interface_pb2.IdentifierSequence()
+                result.originator = False
+                return result
 
         return cores
 

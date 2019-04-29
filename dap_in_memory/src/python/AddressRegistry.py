@@ -31,7 +31,19 @@ class AddressRegistry(InMemoryDap.InMemoryDap):
         return address
 
     def resolveCore(self, core_name):
-        return self.coreToURI.get(core_name, None)
+        result = self.coreToURI.get(core_name, None)
+        if result is None:
+            found = None
+            for tbname in self.store:
+                r = self.store[tbname].get((core_name, b''), None)
+                if r is not None:
+                    found = r.get("address_field", None)
+                    if found is not None:
+                        break
+            if found is not None:
+                result = found.ip + ":" + str(found.port)
+                self.storeCore(core_name, result)
+        return result
 
     def storeCore(self, core_name, uri):
         self.coreToURI[core_name] = uri
@@ -50,6 +62,7 @@ class AddressRegistry(InMemoryDap.InMemoryDap):
             if upd:
 
                 k, v = ProtoHelpers.decodeAttributeValueToTypeValue(upd.value)
+                key = (upd.key.core, b'')
 
                 if upd.fieldname not in self.fields:
                     raise DapBadUpdateRow("No such field", None, upd.key.core, upd.fieldname, k)
@@ -61,7 +74,7 @@ class AddressRegistry(InMemoryDap.InMemoryDap):
                     raise DapBadUpdateRow("Bad type", tbname, upd.key.core, upd.fieldname, k)
 
                 if commit:
-                    success |= self.store[tbname][upd.key.core].pop(upd.fieldname, None) is not None
+                    success |= self.store[tbname][key].pop(upd.fieldname, None) is not None
         return success
 
     def removeAll(self, key):
@@ -86,8 +99,7 @@ class AddressRegistry(InMemoryDap.InMemoryDap):
         r.originator = False
         for key in proto.input_idents.identifiers:
             new_result = r.identifiers.add()
-            new_result.agent = key.agent
-            new_result.core = key.core
+            new_result.CopyFrom(key)
             addr = self.resolveCore(key.core)
             if addr:
                 new_result.uri = addr

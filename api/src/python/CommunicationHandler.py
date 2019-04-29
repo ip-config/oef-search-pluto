@@ -8,9 +8,11 @@ from functools import partial
 import utils.src.python.resources as resources
 import os
 from concurrent.futures import ThreadPoolExecutor
+from utils.src.python.Logging import has_logger
 
 
 _loop = asyncio.new_event_loop()
+asyncio.set_event_loop(_loop)
 
 
 def socket_handler(router: BackendRouter):
@@ -40,6 +42,7 @@ def http_json_handler(router):
         global _loop
         log.info("Got json request over http")
         try:
+            asyncio.set_event_loop(_loop)
             response = _loop.run_until_complete(router.route(path, bottle.request.json))
             bottle.response.headers['Content-Type'] = 'application/json'
             return response.data
@@ -50,21 +53,26 @@ def http_json_handler(router):
 
 def socket_server(host: str, port: str, router: BackendRouter):
     global _loop
+    asyncio.set_event_loop(_loop)
     _loop.create_task(run_server(socket_handler(router), host, port))
 
 
 def serve_site(html_dir: str, path: str):
-    if path.find(".js") > 0:
-        bottle.response.headers['Content-Type'] = 'text/javascript'
-    elif path.find(".css") > 0:
-        bottle.response.headers['Content-Type'] = 'text/css'
-    return resources.textfile(os.path.join(html_dir, path))
+    #if path.find(".js") > 0:
+    #    bottle.response.headers['Content-Type'] = 'text/javascript'
+    #elif path.find(".css") > 0:
+    #    bottle.response.headers['Content-Type'] = 'text/css'
+    response = ""
+    try:
+        response = bottle.static_file(resources.textfile(os.path.join(html_dir, path), as_string=True), root="/")
+    except Exception as e:
+        print("seve_site exception: ", e)
+    return response
 
 
 def http_server(host: str, port: int, crt_file: str, *, router: BackendRouter, html_dir: str = None):
-    resources.initialise(__package__)
     app = bottle.Bottle()
-    srv = SSLWSGIRefServer.SSLWSGIRefServer(host=host, port=port, certificate_file=crt_file)
+    srv = SSLWSGIRefServer.SSLWSGIRefServer(host="0.0.0.0", port=port, certificate_file=crt_file)
     app.route(path="/json/<path:path>", method="POST", callback=http_json_handler(router))
     if html_dir is not None:
         app.route(path="/website/<path:path>", method="GET", callback=partial(serve_site, html_dir))
@@ -73,6 +81,7 @@ def http_server(host: str, port: int, crt_file: str, *, router: BackendRouter, h
 
 
 class CommunicationHandler:
+    @has_logger
     def __init__(self, max_threads):
         self.handlers = []
         self.executor = ThreadPoolExecutor(max_workers=max_threads)
@@ -86,7 +95,7 @@ class CommunicationHandler:
 
     def start(self, router: BackendRouter):
         for handler in self.handlers:
-            print("Start handler: ", handler)
+            self.warning("Start handler: ", handler)
             self.executor.submit(handler[0], *handler[1], **handler[2], router=router)
 
     def wait(self):

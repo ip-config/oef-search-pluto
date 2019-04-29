@@ -44,9 +44,10 @@ def create_address_attribute_update(key: str, ip: str, port: int):
     return upd
 
 
-def create_blk_update(port: int) -> update_pb2.Update.BulkUpdate:
-
-    upd1 = create_update("oef:Weather"+str(port),
+def create_blk_update(port: int, core_name: str = "", host: str = "127.0.0.1") -> update_pb2.Update.BulkUpdate:
+    if len(core_name) == 0:
+        core_name = "oef:Weather"+str(port)
+    upd1 = create_update(core_name,
                          "Agent"+str(port),
                          "weather_data",
                          "All possible weather data.", [
@@ -54,7 +55,7 @@ def create_blk_update(port: int) -> update_pb2.Update.BulkUpdate:
                              get_attr_b("temperature", "Provides wind speed measurements.", 1),
                              get_attr_b("air_pressure", "Provides wind speed measurements.", 2)
                          ])
-    upd2 = create_address_attribute_update("oef:Weather"+str(port), "127.0.0.1", port)
+    upd2 = create_address_attribute_update(core_name, host, port)
     blk_upd = update_pb2.Update.BulkUpdate()
     blk_upd.list.extend([upd1, upd2])
     return blk_upd

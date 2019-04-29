@@ -4,6 +4,7 @@ import time
 from typing import List, Tuple
 import struct
 import socket
+from utils.src.python.Logging import has_logger
 
 
 class Transport:
@@ -82,6 +83,7 @@ class Transport:
 
 
 class ClientSocket:
+    @has_logger
     def __init__(self, host: str, port: int, logger):
         self.transport = None
         self.host = host

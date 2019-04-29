@@ -15,6 +15,8 @@ bazel build dap_2d_geo/experimental/python:app &&   bazel-bin/dap_2d_geo/experim
 
 bazel test dap_attribute_store/test/python:tests
 
+bazel test ai_search_engine/test/python:tests
+
 bazel test pluto_app/test/python:tests
 
 set +x

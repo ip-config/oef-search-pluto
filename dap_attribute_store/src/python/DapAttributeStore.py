@@ -110,6 +110,7 @@ class DapAttributeStore(DapInterface.DapInterface):
             self.log.info(" execute settings    {} = {}".format(k,v))
 
         result = dap_interface_pb2.IdentifierSequence()
+        result.originator = False
         if input_idents.originator:
             for row_key, row in self.table.items():
                 core_ident, agent_ident = row_key
@@ -127,8 +128,7 @@ class DapAttributeStore(DapInterface.DapInterface):
                 if row != None and self.test(row, query_settings):
                     #self.log.info("PASSING: core={}, agent={}".format(core_ident, agent_ident))
                     i = result.identifiers.add()
-                    i.core = core_ident
-                    i.agent = agent_ident
+                    i.CopyFrom(key)
         return result
 
     def update(self, tfv: dap_update_pb2.DapUpdate.TableFieldValue) -> dap_interface_pb2.Successfulness:

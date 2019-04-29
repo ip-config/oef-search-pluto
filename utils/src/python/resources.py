@@ -18,12 +18,13 @@ configured_package = None
 detected_mode = None
 
 m = sys.modules.get("__main__", None)
+#print("::::::::::::::::",m)
 if m and hasattr(m, "__file__"):
     configured_filebase = getattr(m, "__file__")
     if "__main__" in configured_filebase.split('/'):
         configured_filebase = _find__main__(configured_filebase)
         detected_mode = 'bazel'
-        
+
 def initialise(base:str=None, package=None, package_name:str=None):
 
     global configured_package_name

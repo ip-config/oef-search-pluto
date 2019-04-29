@@ -22,9 +22,17 @@ from fetch_teams.oef_core_protocol import query_pb2
 from utils.src.python.Logging import has_logger
 from typing import List
 from dap_api.src.python.network.DapNetwork import dap_network_support
-
-from utils.src.python.out import out
 import utils.src.python.distance as distance
+import os
+
+
+def _load_gensim(model: str, logger):
+    bin_file = os.path.expanduser("~/gensim-data/")+model+".bin"
+    if os.path.exists(bin_file):
+        logger.info("Loading gensim data from binary file: "+bin_file)
+        return gensim.models.KeyedVectors.load(bin_file)
+    logger.warning("No binary gensim data, downloading and loading from tar.gz")
+    return gensim.downloader.load(model)
 
 
 class SearchEngine(DapInterface):
@@ -32,9 +40,9 @@ class SearchEngine(DapInterface):
     @dap_network_support
     def __init__(self, name, config):
         self._storage = {}
-        nltk.download('stopwords')
-        nltk.download('punkt')
-        nltk.download('wordnet')
+        nltk.download('stopwords', quiet=True)
+        nltk.download('punkt', quiet=True)
+        nltk.download('wordnet', quiet=True)
         self._stop_words = set(stopwords.words('english'))
         self._porter = PorterStemmer()
         self._wnl = WordNetLemmatizer()
@@ -47,7 +55,7 @@ class SearchEngine(DapInterface):
         host = config.get("host", None)
         port = config.get("port", None)
 
-        if host != None and port != None:
+        if host is not None and port is not None:
             self.start_network(self, host, port)
 
         self.tablenames = []
@@ -66,7 +74,7 @@ class SearchEngine(DapInterface):
 
     def _string_to_vec(self, description: str):
         if not self._w2v:
-            self._w2v = gensim.downloader.load("glove-wiki-gigaword-50") #"word2vec-google-news-300")
+            self._w2v = _load_gensim("glove-wiki-gigaword-50", self.log) #"word2vec-google-news-300")
 
         #print("Encode desc: ", description)
         if description.find("_") > -1:
@@ -249,6 +257,8 @@ class SearchEngine(DapInterface):
                 self.enc_query = np.add(self.enc_query, self.searchSystem._string_to_vec(self.query_field_value))
             elif self.query_field_type == "data_model":
                 self.enc_query = np.add(self.enc_query, self.searchSystem._dm_to_vec(self.query_field_value))
+            else:
+                print("!!!!!!!!!!!!!!!! WHAT? ", self.query_field_type)
             return self
 
         def setSearchSystem(self, searchSystem):
@@ -278,7 +288,6 @@ class SearchEngine(DapInterface):
                 dist = distance.cosine(data[self.target_field_name], self.enc_query)
                 result.append((*key, dist))
             ordered = sorted(result, key=lambda x: x[2])
-
             res = DapQueryResult(ordered[0][0], ordered[0][1])
             res.score = ordered[0][2]
             yield res
@@ -300,7 +309,6 @@ class SearchEngine(DapInterface):
                 setattr(self, k, funcs['jtoh'](r.get(k, None)))
             return self
 
-
     def configure(self, desc: dap_description_pb2.DapDescription) ->  dap_interface_pb2.Successfulness:
         raise Exception("SearchEngine does not configure via this interface yet.")
 
@@ -309,7 +317,7 @@ class SearchEngine(DapInterface):
         query_memento = proto.query_memento
         graphQuery = SearchEngine.SubQuery().setSearchSystem(self).fromJSON(query_memento.memento.decode("utf-8"))
 
-        if input_idents.HasField('originator') and input_idents.originator:
+        if input_idents.originator:
             idents = None
         else:
             idents = [ DapQueryResult(pb=x) for x in input_idents.identifiers ]
@@ -324,7 +332,7 @@ class SearchEngine(DapInterface):
             c.core = ident.core_id
             c.agent = ident.agent_id
             c.score = ident.score
-            print("SUCCESS:", c.agent)
+            self.info("SUCCESS: ", c)
         return reply
 
     def prepareConstraint(self, proto: dap_interface_pb2.ConstructQueryConstraintObjectRequest) -> dap_interface_pb2.ConstructQueryMementoResponse:

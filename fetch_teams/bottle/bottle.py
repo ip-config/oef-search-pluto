@@ -3674,7 +3674,9 @@ def run(app=None,
                     time.sleep(interval)
                 if p.poll() != 3:
                     if os.path.exists(lockfile): os.unlink(lockfile)
-                    sys.exit(p.poll())
+                    r = p.poll()
+                    print("!!!!!!!! BOTTLE EXIT (LINE 3677)")
+                    sys.exit(r)
         except KeyboardInterrupt:
             pass
         finally:
@@ -3721,6 +3723,7 @@ def run(app=None,
             with bgcheck:
                 server.run(app)
             if bgcheck.status == 'reload':
+                print("!!!!!!!! BOTTLE EXIT (LINE 3726)")
                 sys.exit(3)
         else:
             server.run(app)
@@ -3733,6 +3736,7 @@ def run(app=None,
         if not getattr(server, 'quiet', quiet):
             print_exc()
         time.sleep(interval)
+        print("!!!!!!!! BOTTLE EXIT (LINE 3739)")
         sys.exit(3)
 
 

@@ -23,6 +23,8 @@ for i in range(len(sys.argv)):
         name = sys.argv[i+1]
     elif sys.argv[i] == "--http_port":
         http_port = sys.argv[i+1]
+    elif sys.argv[i] == "--image":
+        img = sys.argv[i+1]
 
 print("Ports to expose: search={}, core={} for node={}".format(search_port, core_port, name))
 

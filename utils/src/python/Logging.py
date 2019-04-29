@@ -3,27 +3,48 @@ import functools
 import colorlog
 import functools
 
-_ID_FLAG = ""
+_HANDLERS = []
+_MIN_LEVEL = logging.INFO
 
 
-def configure(level=logging.INFO, id_flag=""):
-    global _ID_FLAG
+def configure(level=logging.ERROR, file="", file_level=logging.INFO):
+    global _MIN_LEVEL, _HANDLERS
     log_format = '%(asctime)s, %(levelname)s:  - %(name)s ] %(message)s'
     bold_seq = '\033[1m'  #f'{bold_seq} '
     colorlog_format = (
         '%(log_color)s '
         f'{log_format}'
     )
-    colorlog.basicConfig(format=colorlog_format, level=level)
-    logging.basicConfig(format=log_format, level=level)
-    _ID_FLAG = id_flag
+    log_formatter = colorlog.ColoredFormatter(colorlog_format)
+
+    console_handler = colorlog.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+    console_handler.setLevel(level)
+    _HANDLERS.append(console_handler)
+
+    if len(file) > 0:
+        file_handler = logging.FileHandler(file, mode='w')
+        file_handler.setLevel(file_level)
+        file_handler.setFormatter(log_formatter)
+        _HANDLERS.append(file_handler)
+    else:
+        console_handler.setLevel(file_level)
+
+    if file_level < level:
+        _MIN_LEVEL = file_level
+    else:
+        _MIN_LEVEL = level
+    #colorlog.basicConfig(format=colorlog_format, level=level)
+    #logging.basicConfig(format=log_format, level=level)
 
 
 class Logger:
-    def __init__(self, global_name, local_name=None):
+    def __init__(self, global_name, handlers, local_name=None, level=logging.INFO):
         self._logger = None
         self._global_name = global_name
         self._local_name = local_name
+        self._handlers = handlers
+        self._level = level
         self._set_logger()
         self._target_obj = None
 
@@ -32,6 +53,9 @@ class Logger:
         if self._local_name is not None:
             name += ": {}".format(self._local_name)
         self._logger = colorlog.getLogger(name)
+        self._logger.setLevel(self._level)
+        for handler in self._handlers:
+            self._logger.addHandler(handler)
 
     def __getattr__(self, item):
         return getattr(self._logger, item)
@@ -66,16 +90,18 @@ class Logger:
 def has_logger(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        global _HANDLERS, _MIN_LEVEL
         self = args[0]
-        name = self.__class__.__name__+_ID_FLAG
+        name = self.__class__.__name__
         local_name = None
         if "id" in kwargs:
             local_name = kwargs["id"]
-        self.log = Logger(name, local_name)
+        self.log = Logger(name, _HANDLERS, local_name, level=_MIN_LEVEL)
         self.log.expose_log_calls(self)
         return func(*args, **kwargs)
     return wrapper
 
 
 def get_logger(name):
-    return Logger(name+_ID_FLAG)
+    global _HANDLERS, _MIN_LEVEL
+    return Logger(name, _HANDLERS, level=_MIN_LEVEL)

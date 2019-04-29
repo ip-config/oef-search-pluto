@@ -5,3 +5,8 @@ tmp/**
 docker-images/project.tar.gz
 optimframe/src/data/*.xml
 optimframe/src/data/*.asc
+
+**/*.DS_Store
+.clwb
+.idea
+.ijwb

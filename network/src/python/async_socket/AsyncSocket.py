@@ -43,11 +43,13 @@ class TransportCallStore:
 
 
 class Transport:
+    @has_logger
     def __init__(self, reader, writer):
         self._reader = reader
         self._writer = writer
         self._int_size = len(struct.pack("!I", 0))
         self._call_store = TransportCallStore()
+        self._read_lock = asyncio.Lock()
 
     async def write_msg(self, msg: transport_pb2.TransportHeader, data: bytes):
         smsg = msg.SerializeToString()
@@ -100,10 +102,13 @@ class Transport:
             if data is not None:
                 return data
         try:
-            hsize, bsize = await self._read_size()
-            if hsize == 0:
-                return DataWrapper(False, "", b'', 104, "Connection closed by peer (got 0 size)")
-            data = await self._read(hsize+bsize)
+            self.warning("+++++++++ READ MUTEX LOCK WAIT")
+            async with self._read_lock:
+                self.warning("++++++ READ")
+                hsize, bsize = await self._read_size()
+                if hsize == 0:
+                    return DataWrapper(False, "", b'', 104, "Connection closed by peer (got 0 size)")
+                data = await self._read(hsize+bsize)
             msg = transport_pb2.TransportHeader()
             msg.ParseFromString(data[:hsize])
             if msg.status.success:
@@ -146,7 +151,7 @@ def _handler(func):
 
 
 async def _server(func, host, port):
-    server = await asyncio.start_server(_handler(func), host, port)
+    server = await asyncio.start_server(_handler(func), port=port)
     return await server.serve_forever()
 
 

@@ -154,7 +154,7 @@ class OEFSocketAdapterServerBuilder:
         self.loop.run_forever()
 
     async def _create_server(self, adapter, port, loop):
-        server = await asyncio.start_server(socket_message_handler(adapter), self.host, port, loop=loop)
+        server = await asyncio.start_server(socket_message_handler(adapter), port=port, loop=loop)
         return await server.serve_forever()
 
     def create_socket(self, port: int, core_id: str):

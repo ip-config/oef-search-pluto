@@ -14,6 +14,19 @@ py_binary(
     ]
 )
 
+py_library(
+    name = "director",
+    srcs = ["Director.py", "DemoWeatherAgent.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//network/src/python/async_socket:async_socket",
+        "//api/src/proto/director:py_api_pb",
+        "//api/src/proto/core:py_api_pb",
+
+    ],
+    srcs_version = "PY3",
+)
+
 py_binary(
     name = "demo_agents",
     srcs = ["Director.py", "DemoWeatherAgent.py"],
@@ -22,6 +35,7 @@ py_binary(
         "//network/src/python/async_socket:async_socket",
         "//api/src/proto/director:py_api_pb",
         "//api/src/proto/core:py_api_pb",
+        "//dap_2d_geo/test/resources:airports",
 
     ],
     srcs_version = "PY3",

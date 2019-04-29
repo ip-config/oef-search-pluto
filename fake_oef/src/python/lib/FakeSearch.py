@@ -53,6 +53,7 @@ class BroadcastFromNode(HasMessageHandler):
             in results
         ]
 
+
 class LazyW2V:
     def __init__(self, model="glove-wiki-gigaword-50"):
         self._w2v = None

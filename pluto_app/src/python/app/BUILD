@@ -14,6 +14,10 @@ py_library(
         "//api/src/python/core:utils",
         "//api/src/python:communication_handler",
         "//fake_oef/src/python/lib:lib",
-        "//dap_api/experimental/python:network_dap_contract"
+        "//dap_api/experimental/python:network_dap_contract",
+        "//dap_attribute_store/src/python:dap_attribute_store",
+    ],
+    data = [
+        "//cpp_dap_in_memory/src/cpp:cpp_dap_in_memory_server",
     ],
 )

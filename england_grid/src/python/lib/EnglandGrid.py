@@ -25,9 +25,10 @@ class EnglandGrid(object):
             self.region = EnglandGrid.GridEntity._regionnumber
             EnglandGrid.GridEntity._regionnumber +=1
 
-    def __init__(self):
+    def __init__(self, city_limit: int = 50):
         self.entities = {}
         self.entity_locations = {}
+        self.city_limit = city_limit
 
         self.pop = EnglandPopDistro.EnglandPopDistro()
         self.pop.load("optimframe/src/data")
@@ -123,12 +124,14 @@ class EnglandGrid(object):
         with resources.textfile(fn, as_file=True) as fh:
             reader = csv.reader(fh)
             for citynumber, row in enumerate(reader):
-                city = row[0]
-                coords = (int(row[2]), 699-int(row[1]))
-                pop = row[3]
+
+
+                city, southing, easting, pop = row
+                coords = (int(easting), 699-int(southing))
+
                 self.addEntity(EnglandGrid.GridEntity(city, coords, "CITY", { "pop": int(pop) }))
                 cities += 1
-                if cities >= 50:
+                if cities >= self.city_limit:
                     break
 
     def connectAirportsAndCities(self):
@@ -177,6 +180,7 @@ class EnglandGrid(object):
     def loadAirports(self, fn="dap_2d_geo/test/resources/GlobalAirportDatabase.txt", limit=None):
         with resources.textfile(fn, as_file=True) as f:
             for i in f.readlines():
+                #print("I=", i)
                 i = i.strip()
                 parts = i.split(":")
 

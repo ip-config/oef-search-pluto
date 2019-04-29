@@ -137,6 +137,7 @@ def decodeConstraintValue(valueMessage):
         'int64_list':    lambda x: x.v_i64,
 
         'data_model':    lambda x: x.dm,
+        'embedding':    lambda x: x.v_d,
 
         'string_pair':  lambda x: (x.v_s[0], x.v_s[1],),
         'string_pair_list':  lambda x: [ ( x.v_d[i], x.v_d[i+1], ) for i in range(0, len(x.v_d), 2) ],
@@ -155,6 +156,7 @@ def decodeConstraintValue(valueMessage):
 
 def coresToIdentifierSequence(cores: List[DapQueryResult.DapQueryResult]) -> dap_interface_pb2.IdentifierSequence:
     m = dap_interface_pb2.IdentifierSequence()
+    m.originator = False
     if cores != None:
         m.originator = False
         for c in cores:
@@ -185,8 +187,7 @@ def encodeConstraintValue(data, typecode):
         valueMessage.v_d.append(data[1])
 
     elif typecode == 'data_model':
-        print("DATA MODEL")
-        print(data)
+        valueMessage.dm.CopyFrom(data)
 
     elif typecode == 'string_list':
         valueMessage.v_s.extend(data)
