@@ -97,16 +97,15 @@ async def set_locations_and_connections(director: Director, city_num: int):
     for key, entity in grid.entities.items():
         if entity.kind != "CITY":
             continue
-        core_name = next(core_names)
-        print(core_name)
-        a = director.get_address(core_name)
-        core_name = core_name + "-core"
+        name = next(core_names)
+        a = director.get_address(name)
         if len(a) == 0:
             continue
+        core_name = name + "-core"
         print("SET LOCATION {}@{}:{} NODE TO {}".format(core_name, a[0], a[1], entity.name))
         addresses[core_name] = a
-        peers[core_name] = [link[0].name for link in entity.links if link[1] == "GND"]
-        await director.set_location(core_name, core_name.encode("utf-8"), (entity.coords[1], entity.coords[0]))#lon, lat
+        peers[name] = [link[0].name for link in entity.links if link[1] == "GND"]
+        await director.set_location(name, core_name.encode("utf-8"), (entity.coords[1], entity.coords[0]))#lon, lat
     for key in peers:
         targets = [("Search"+str(addresses[peer][1]-40000), addresses[peer][0], addresses[peer][1]-20000)
                    for peer in peers[key] if peer in addresses]
