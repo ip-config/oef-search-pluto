@@ -1,6 +1,3 @@
-[submodule "fetch_teams/oef-core"]
-	path = fetch_teams/oef-core
-	url = https://github.com/qati/oef-core
 [submodule "fetch_teams/oef-core-pluto"]
 	path = fetch_teams/oef-core-pluto
 	url = https://github.com/uvue-git/oef-core-pluto
