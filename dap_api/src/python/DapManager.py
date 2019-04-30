@@ -235,7 +235,7 @@ class DapManager(object):
 
         self.dap_matchers = {}
         self.structures = {}
-        self.attributes_to_daps = {}
+        self.attributes_to_dapnames = {}
 
         for instance_name, instance_object in self.instances.items():
             self.warning("INTERROGATE:" + str(type(instance_object)))
@@ -262,7 +262,7 @@ class DapManager(object):
                             'field_name': field_description_pb.name,
                             'field_type': field_description_pb.type,
                         }
-                    self.attributes_to_daps.setdefault(field_description_pb.name, []).append(instance_name)
+                    self.attributes_to_dapnames.setdefault(field_description_pb.name, []).append(instance_name)
 
     def getInstance(self, name):
         return self.instances[name]
@@ -274,25 +274,47 @@ class DapManager(object):
             r['values'] = list(store.listCores(r['table_name'], r['field_name']))
         return r
 
+    def matchAttributeName(self, pattern, attributeName):
+        if pattern == '*':
+            self.log.info("getDapsForAttributeName YES because {} == *".format(pattern))
+            return True
+        if pattern[0] == '/' and pattern[-1:] == '/':
+            pat = pattern[1:-1]
+            if re.match('^'+pat+'$', attributeName):
+                self.log.info("getDapsForAttributeName YES because {}  matches {} ".format(pat, attributeName))
+                return True
+        if pattern == attributeName:
+            self.log.info("getDapsForAttributeName YES because {} == {} ".format(pattern, attributeName))
+            return True
+        return False
+
     def getDapsForAttributeName(self, attributeName):
         r = set()
-        for k,v in self.attributes_to_daps.items():
-            match = False
-            for atname in [ attributeName, "them." + attributeName ]:
-                if k == '*':
-                    self.log.info("getDapsForAttributeName {} because {} == *".format(v, k))
-                    match = True
-                if k[0] == '/' and k[-1:] == '/':
-                    pat = k[1:-1]
-                    if re.match('^'+pat+'$', atname):
-                        self.log.info("getDapsForAttributeName {} because {}  matches {} ".format(v, pat, atname))
-                        match = True
-                if k == atname:
-                    self.log.info("getDapsForAttributeName {} because {} == {} ".format(v, k, atname))
-                    match = True
-            if match:
-                for dap in v:
-                    r.add(dap)
+        for attribute_name, dap_filter in [
+            (
+                attributeName,
+                lambda x: True,
+            ),
+            (
+                "them." + attributeName,
+                lambda dap: not self.isDap(dap, 'lazy'),
+            ),
+            (
+                "them." + attributeName,
+                lambda dap: len(r)==0 and self.isDap(dap, 'lazy'),
+            ),
+        ]:
+            for attribute_pattern, dapnames in self.attributes_to_dapnames.items():
+                self.log.info("TRYING: {} {}".format(attribute_name, attribute_pattern, dapnames))
+                if not self.matchAttributeName(attribute_pattern, attribute_name):
+                    continue
+                newdaps = set()
+                for dap in dapnames:
+                    self.log.info("getDapsForAttributeName considering {}".format(dap))
+                    if dap_filter(dap):
+                        newdaps.add(dap)
+                r |= newdaps
+        self.log.error("getDapsForAttributeName {} => {}".format(attributeName, r))
         return r
 
     def isDap(self, dapName, *attributes):

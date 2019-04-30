@@ -51,6 +51,8 @@ class DapAttributeStore(DapInterface.DapInterface):
         star_field.name = '/them\\.[A-Za-z][-_A-Za-z0-9]*/'
         star_field.type = '*'
 
+        result.options.append("lazy")
+
         return result
 
     def print(self):
