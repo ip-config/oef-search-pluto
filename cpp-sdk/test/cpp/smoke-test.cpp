@@ -100,7 +100,7 @@ public:
   {
     std::cout << "REQUESTED" << std::endl;
     TestMessage outbound_response_message;
-    outbound_response_message.set_wibble(inbound_request_message.wibble() + "-duck");
+    outbound_response_message.set_wibble(inbound_request_message.wibble() + "-ducks");
     transport -> write(outbound_response_message, "response");
     std::cout << "REQUEST HANDLED" << std::endl;
   }
@@ -144,7 +144,7 @@ public:
       });
 
     TestMessage sender_request_message;
-    sender_request_message.set_wibble("fuck-a");
+    sender_request_message.set_wibble("line-up");
     transport -> read();
     transport -> write(sender_request_message, "request");
   }
@@ -152,7 +152,7 @@ public:
   void handle_response(const TestMessage &inbound_response_message)
   {
     std::cout << "RESPONSE" << std::endl;
-    success = inbound_response_message.wibble() == "fuck-a-duck";
+    success = inbound_response_message.wibble() == "line-up-ducks";
     if (success)
     {
       std::cout << "SUCCESS" << std::endl;
