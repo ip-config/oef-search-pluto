@@ -6,7 +6,7 @@ filegroup(
 genrule(
     name = "oef-core",
     srcs = [
-        "//fetch_teams:oef-core",
+        "//fetch_teams:oef-core-orig",
     ],
     outs = [ "OEFNode" ],
     visibility = ["//visibility:public"],
