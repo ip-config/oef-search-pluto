@@ -5,7 +5,7 @@ ADD project.tar.gz /app
 WORKDIR /app/project
 
 RUN rm -f .bazelrc && \
-    cd fetch_teams/oef-core-pluto && mkdir build && cd build && cmake .. && make -j16 && cd /app/project && \
+    cd fetch_teams/oef-core && mkdir build && cd build && cmake .. && make -j16 && cd /app/project && \
     bazel build network_oef/experimental/python:node --force_python=PY3 && \
     bazel build network_oef/experimental/python/demo:demo_director --force_python=PY3 && \
     cp certificates/src/makefiles/oef-search/oef-search.pem /build/server.pem  && \
