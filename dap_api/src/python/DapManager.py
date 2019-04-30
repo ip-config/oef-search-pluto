@@ -276,15 +276,15 @@ class DapManager(object):
 
     def matchAttributeName(self, pattern, attributeName):
         if pattern == '*':
-            self.log.info("getDapsForAttributeName {} because {} == *".format(attributeName, pattern))
+            self.log.info("getDapsForAttributeName YES because {} == *".format(pattern))
             return True
         if pattern[0] == '/' and pattern[-1:] == '/':
             pat = pattern[1:-1]
             if re.match('^'+pat+'$', attributeName):
-                self.log.info("getDapsForAttributeName {} because {}  matches {} ".format(attributeName, pat, attributeName))
+                self.log.info("getDapsForAttributeName YES because {}  matches {} ".format(pat, attributeName))
                 return True
         if pattern == attributeName:
-            self.log.info("getDapsForAttributeName {} because {} == {} ".format(attributeName, pattern, attributeName))
+            self.log.info("getDapsForAttributeName YES because {} == {} ".format(pattern, attributeName))
             return True
         return False
 
@@ -305,6 +305,7 @@ class DapManager(object):
             ),
         ]:
             for attribute_pattern, dapnames in self.attributes_to_dapnames.items():
+                self.log.info("TRYING: {} {}".format(attribute_name, attribute_pattern, dapnames))
                 if not self.matchAttributeName(attribute_pattern, attribute_name):
                     continue
                 newdaps = set()
@@ -313,6 +314,7 @@ class DapManager(object):
                     if dap_filter(dap):
                         newdaps.add(dap)
                 r |= newdaps
+        self.log.error("getDapsForAttributeName {} => {}".format(attributeName, r))
         return r
 
     def isDap(self, dapName, *attributes):
