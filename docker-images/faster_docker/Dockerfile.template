@@ -1,8 +1,8 @@
 FROM PREV_LOCAL_BUILDER_IMAGE AS builder
 
 RUN ls | grep -v '^bazel-' | grep -v 'fetch_teams' | xargs rm -rf && \
-    cd fetch_teams && ls | grep -v '^oef-core-pluto' | xargs rm -rf && \
-    cd oef-core-pluto && ls | grep -v '^build' | xargs rm -rf
+    cd fetch_teams && ls | grep -v '^oef-core' | xargs rm -rf && \
+    cd oef-core && ls | grep -v '^build' | xargs rm -rf
 
 ADD project.tar.gz /app
 

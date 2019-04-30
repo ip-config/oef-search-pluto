@@ -1,2 +1,1 @@
-api/src/resources/website/js/lib/*  linguist-vendored
-*.js linguist-vendored=false
+api/src/resources/website/js/lib/* linguist-vendored
