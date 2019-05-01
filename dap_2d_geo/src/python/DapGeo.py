@@ -96,10 +96,15 @@ class DapGeo(DapInterface.DapInterface):
                 "htoj": lambda x: x,
                 "jtoh": lambda x: x,
             },
-            "tablename" : {
+            "tablename": {
                 "htoj": lambda x: x,
                 "jtoh": lambda x: x,
             },
+            "fieldname": {
+                "htoj": lambda x: x,
+                "jtoh": lambda x: x,
+            },
+
             "locations" : {
                 "htoj": lambda x: x,
                 "jtoh": lambda x: x,
@@ -110,6 +115,7 @@ class DapGeo(DapInterface.DapInterface):
             self.radius = None
             self.locations = None
             self.tablename = None
+            self.fieldname = None
             self.geo = None
             self.dap = dap
 
@@ -120,6 +126,11 @@ class DapGeo(DapInterface.DapInterface):
             if self.tablename != None and self.tablename != tablename:
                 raise Exception("GeoQuery only supports one tablename")
             self.tablename = tablename
+
+        def setFieldname(self, fieldname):
+            if self.fieldname != None and self.fieldname != fieldname:
+                raise Exception("GeoQuery only supports one fieldname")
+            self.fieldname = fieldname
 
         def addRadius(self, radius):
             if self.radius != None:
@@ -152,11 +163,13 @@ class DapGeo(DapInterface.DapInterface):
         def execute(self, entities):
             r = set()
 
+            distance_calculator = self.fields_by_table[self.tablename][self.fieldname]['distance_calculator']
+
             entities = set(entities)
 
             for location in self.locations:
                 self.dap.info("TRYING:", entities)
-                accepted = list(self.geo.accept(entities, location, self.radius))
+                accepted = list(self.geo.accept(entities, location, self.radius, distance_calculator=distance_calculator))
                 self.dap.info("OK=", accepted)
                 for k in accepted:
                     r.add(k[0])
@@ -201,6 +214,7 @@ class DapGeo(DapInterface.DapInterface):
         geoQuery = DapGeo.DapGeoQuery(self)
         for constraint in proto.constraints:
             geoQuery.setTablename(constraint.target_table_name)
+            geoQuery.setFieldname(constraint.target_field_name.partition('.')[0])
 
         processes = {
             (geoQuery.tablename + ".location", "location"):      lambda q,x: q.addLocation(x),
