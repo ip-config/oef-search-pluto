@@ -8,6 +8,7 @@ from dap_in_memory.src.python import InMemoryDap
 from dap_in_memory.src.python import AddressRegistry
 from dap_in_memory.src.python import DataModelInstanceStore
 from dap_attribute_store.src.python.DapAttributeStore import DapAttributeStore
+from dap_attribute_store.src.python import DapAttributeStore
 import api.src.python.core.ProtoWrappers as ProtoWrappers
 from api.src.python.RouterBuilder import CoreAPIRouterBuilder
 from dap_2d_geo.src.python import DapGeo
@@ -120,10 +121,20 @@ class PlutoApp:
                         "port": self._port_injector.get("in_memory_dap"),
                         "structure": {
                             "value_table": {
-                                "field": "string"
+                                "*.them": "*"
                             }
                         }
                     }
+                },
+                "attrs": {
+                    "class": "DapAttributeStore",
+                    "config": {
+                        "structure": {
+                        },
+                    },
+                    "options": [
+                        "lazy",
+                    ],
                 },
                 #"attributes": {
                 #    "class": "DapAttributeStore",
@@ -177,6 +188,7 @@ class PlutoApp:
             .attribute(AttrName.Value("COUNTRY"), "location_table", "country")\
             .attribute(AttrName.Value("CITY"), "location_table", "city")\
             .attribute(AttrName.Value("NETWORK_ADDRESS"), "address_registry_table", "address_field")\
+            .attribute("data_model_attribute", "", "them.*")\
             .default("default_table", "default_field")\
             .data_model_2("local_dm_table", "data_model_2")\
             .dm_values("local_dm_table", "dm_values")\

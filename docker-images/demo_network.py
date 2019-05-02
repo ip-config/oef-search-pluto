@@ -9,6 +9,8 @@ import os
 import gensim
 import gensim.downloader
 import json
+import nltk
+
 
 def gensim_setup():
     model = "glove-wiki-gigaword-50"
@@ -19,6 +21,16 @@ def gensim_setup():
     gmodel = gensim.downloader.load(model)
     gmodel.init_sims(replace=True)
     gmodel.save(model_bin)
+
+
+def nltk_setup():
+    nltk_dir = os.path.expanduser("~/nltk-data/")
+    if not os.path.exists(nltk_dir+"corpora/stopwords"):
+        nltk.download('stopwords')
+    if not os.path.exists(nltk_dir+"tokenizers/punkt"):
+        nltk.download('punkt', quiet=True)
+    if not os.path.exists(nltk_dir+"corpora/wordnet"):
+        nltk.download('wordnet', quiet=True)
 
 
 def get_workdir(start_dir: str = ""):
@@ -43,12 +55,20 @@ def build(image_tag: str, path: str, fast: bool):
         subprocess.check_call(["docker", "network", "create", "-d", "bridge", "oef_search_net"])
     except Exception as e:
         print("Docker network creation failed: ", str(e))
-    print('Generating source archive... (location: {})'.format(path))
-    cmd = [
-        'git-archive-all', os.path.join(path, 'project.tar.gz')
-    ]
-    subprocess.check_call(cmd, cwd=path)
-    print('Generating source archive...complete')
+    try:
+        print('Generating source archive... (location: {})'.format(path))
+        cmd = [
+            'git-archive-all', os.path.join(path, 'project.tar.gz')
+        ]
+        subprocess.check_call(cmd, cwd=path)
+        print('Generating source archive...complete')
+    except Exception as e:
+        print("Source archive generation failed: ", str(e))
+        if os.path.exists(path+"/project.tar.gz"):
+            print("Using {} as source archive for container building!".format(path+"/project.tar.gz"))
+        else:
+            print("No project source archive found! Can't build container image without it!")
+            exit(1)
 
     builder_image_tag = image_tag+"_builder"
 
@@ -84,6 +104,9 @@ def create_symlinks(target=None):
     print("Gensim setup....")
     gensim_setup()
     print("Gensim setup...complete")
+    print("NLTK setup....")
+    nltk_setup()
+    print("NLTK setup...complete")
 
     files = [
         "gensim-data/glove-wiki-gigaword-50/glove-wiki-gigaword-50.gz",

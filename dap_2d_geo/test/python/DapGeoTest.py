@@ -29,6 +29,9 @@ class DapGeoTest(unittest.TestCase):
                 "config": {
                     "structure": {
                         "location": {
+                            "location": {
+                                'type': 'location'
+                            },
                         },
                     },
                 },

@@ -1,15 +1,15 @@
 FROM oef-search:latest_builder AS builder
 
 RUN ls | grep -v '^bazel-' | grep -v 'fetch_teams' | xargs rm -rf && \
-    cd fetch_teams && ls | grep -v '^oef-core-pluto' | xargs rm -rf && \
-    cd oef-core-pluto && ls | grep -v '^build' | xargs rm -rf
+    cd fetch_teams && ls | grep -v '^oef-core' | xargs rm -rf && \
+    cd oef-core && ls | grep -v '^build' | xargs rm -rf
 
 ADD project.tar.gz /app
 
 WORKDIR /app/project
 
 RUN rm -f .bazelrc && \
-    cd fetch_teams/oef-core-pluto && mkdir build -p && cd build && cmake .. && make -j16 && cd /app/project && \
+    cd fetch_teams/oef-core && mkdir build -p && cd build && cmake .. && make -j16 && cd /app/project && \
     bazel build network_oef/experimental/python:node --force_python=PY3 && \
     bazel build network_oef/experimental/python/demo:demo_director --force_python=PY3 && \
     cp certificates/src/makefiles/oef-search/oef-search.pem /build/server.pem  && \

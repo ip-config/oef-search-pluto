@@ -1,6 +1,6 @@
 filegroup(
     name="oef-core-orig",
-    srcs = ["oef-core-pluto/build/apps/node-pluto/OEFNodePluto"]
+    srcs = ["oef-core/build/apps/node-pluto/OEFNodePluto"]
 )
 
 genrule(

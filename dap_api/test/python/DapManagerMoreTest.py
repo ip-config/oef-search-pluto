@@ -23,7 +23,7 @@ class DapManagerMoreTest(unittest.TestCase):
                 "config": {
                     "structure": {
                         "wobbles": {
-                            "wobbles.location": {
+                            "wobbles": {
                                 "type": "location",
                                 "options": [
                                     "plane",
