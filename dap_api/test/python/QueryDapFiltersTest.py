@@ -68,7 +68,7 @@ class QueryDapFiltersTest(unittest.TestCase):
                 "config": {
                     "structure": {
                         "location": {
-                            "location.location": {
+                            "location": {
                                 "type": "location",
                                 "options": [
                                     "plane",

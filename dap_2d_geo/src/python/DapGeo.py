@@ -28,6 +28,7 @@ class DapGeo(DapInterface.DapInterface):
         self.structure = configuration['structure']
         self.fields_by_table = {}
         self.log.update_local_name("DapGeo("+name+")")
+        self.error("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", json.dumps(self.structure, indent=2))
 
         for table_name, fields in self.structure.items():
             self.geos[table_name] = GeoStore.GeoStore()
@@ -38,8 +39,8 @@ class DapGeo(DapInterface.DapInterface):
                     'distance_calculator': GeoStore.GeoStore.EquirectangularDistance,
                 }
                 if isinstance(config, dict):
-                    r['type'] = config['type']
-                    r['options'] = set(config['options'])
+                    r['type'] = config.get('type', 'location')
+                    r['options'] = set(config.get('options', []))
                 elif isinstance(config, str):
                     r['type'] = config
                     r['options'] = set()
@@ -49,6 +50,8 @@ class DapGeo(DapInterface.DapInterface):
                 if 'os-grid' in r['options']:
                     r['distance_calculator'] = GeoStore.GeoStore.OSGridDistance
 
+                if field_name[-9:] != ".location":
+                    field_name = field_name + ".location"
                 self.fields_by_table.setdefault(table_name, {}).setdefault(field_name, {}).update(r)
 
         self.operatorFactory = DapOperatorFactory.DapOperatorFactory()
@@ -96,10 +99,15 @@ class DapGeo(DapInterface.DapInterface):
                 "htoj": lambda x: x,
                 "jtoh": lambda x: x,
             },
-            "tablename" : {
+            "tablename": {
                 "htoj": lambda x: x,
                 "jtoh": lambda x: x,
             },
+            "fieldname": {
+                "htoj": lambda x: x,
+                "jtoh": lambda x: x,
+            },
+
             "locations" : {
                 "htoj": lambda x: x,
                 "jtoh": lambda x: x,
@@ -110,6 +118,7 @@ class DapGeo(DapInterface.DapInterface):
             self.radius = None
             self.locations = None
             self.tablename = None
+            self.fieldname = None
             self.geo = None
             self.dap = dap
 
@@ -120,6 +129,11 @@ class DapGeo(DapInterface.DapInterface):
             if self.tablename != None and self.tablename != tablename:
                 raise Exception("GeoQuery only supports one tablename")
             self.tablename = tablename
+
+        def setFieldname(self, fieldname):
+            if self.fieldname != None and self.fieldname != fieldname:
+                raise Exception("GeoQuery only supports one fieldname")
+            self.fieldname = fieldname
 
         def addRadius(self, radius):
             if self.radius != None:
@@ -152,11 +166,19 @@ class DapGeo(DapInterface.DapInterface):
         def execute(self, entities):
             r = set()
 
+            distance_calculator = self.dap.fields_by_table.get(self.tablename, {}).get(self.fieldname + '.location', {}).get('distance_calculator', None)
+            if distance_calculator == None:
+                self.dap.error("tn=", self.tablename)
+                self.dap.error("fn=", self.fieldname)
+                self.dap.error(self.dap.fields_by_table)
+                self.dap.error("HORRIBLE FAIL")
+                exit(77)
+
             entities = set(entities)
 
             for location in self.locations:
                 self.dap.info("TRYING:", entities)
-                accepted = list(self.geo.accept(entities, location, self.radius))
+                accepted = list(self.geo.accept(entities, location, self.radius, distance_calculator=distance_calculator))
                 self.dap.info("OK=", accepted)
                 for k in accepted:
                     r.add(k[0])
@@ -201,6 +223,7 @@ class DapGeo(DapInterface.DapInterface):
         geoQuery = DapGeo.DapGeoQuery(self)
         for constraint in proto.constraints:
             geoQuery.setTablename(constraint.target_table_name)
+            geoQuery.setFieldname(constraint.target_field_name.partition('.')[0])
 
         processes = {
             (geoQuery.tablename + ".location", "location"):      lambda q,x: q.addLocation(x),

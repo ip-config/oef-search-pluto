@@ -29,6 +29,9 @@ class PlutoTest(unittest.TestCase):
                 "config": {
                     "structure": {
                         "airports": {
+                            "airports": {
+                                "type": "location"
+                            }
                         },
                     },
                 },

@@ -11,7 +11,7 @@ class GeoStore(object):
         self.distance_limit = 5000000
 
     def place(self, entity, location):
-        self.log.info("PLACE: {} at {}".format(entity, location))
+        #self.log.info("PLACE: {} at {}".format(entity, location))
         self.store[entity] = location
 
     def get(self, entity):
@@ -107,13 +107,10 @@ class GeoStore(object):
             left = (bearing - bearing_width + 360) % 360
             right = (bearing + bearing_width + 360) % 360
 
-        self.info("entities=", entities)
         for entity in list(entities):
-            self.info("entity=", entity)
             r = self.entityToData(location, entity, distance_calculator=distance_calculator)
             if r == None:
                 continue
-            self.info("data=", r)
             _, d, br, target_loc = r
 
             #if d > self.distance_limit:
