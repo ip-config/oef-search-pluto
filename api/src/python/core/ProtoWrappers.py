@@ -107,13 +107,43 @@ class ValueTransformer(object):
         11: (11, "kv", "kv", address_transformer.__get__(object))
     }
 
+    attr_type_map = {
+        0: 5,
+        1: 3,
+        2: 8,
+        3: 2,
+        4: 9
+    }
+
+    @classmethod
+    def update_value(cls, src, dst, type_code = None):
+        new_type, src_name, dst_name, transformer = cls.mapping[src.type if type_code is None else type_code]
+        try:
+            getattr(dst, dst_name).CopyFrom(transformer(getattr(src, src_name)))
+        except AttributeError as e:
+            setattr(dst, dst_name,  transformer(getattr(src, src_name)))
+        return new_type
+
     @classmethod
     def transform(cls, src):
-        new_type, src_name, dst_name, transformer = cls.mapping[src.type]
         res = dap_update_pb2.DapUpdate.DapValue()
+        new_type = cls.update_value(src, res)
         res.type = new_type
-        getattr(res, dst_name).CopyFrom(transformer(getattr(src, src_name)))
         return res
+
+    @classmethod
+    def attr_type_transform(cls, attr_type):
+        return cls.attr_type_map.get(attr_type, 1)
+
+    @classmethod
+    def update_value_from_attr(cls, upd, attribute, values):
+        for kv in values:
+            if kv.key == attribute.name:
+                upd.value.type = cls.attr_type_transform(attribute.type)
+                if upd.value.type != 1:
+                    cls.update_value(kv.value, upd.value, upd.value.type)
+                return
+        upd.value.type = 1
 
 
 class UpdateData:
@@ -178,6 +208,20 @@ class UpdateData:
         upd.value.dm.attributes.extend(data_model.attributes)
         return upd
 
+    def attrUpdFromDataModel(self, core_key, agent_key, data_model, values):
+        tablename = self.db_structure["attributes"]["data_model_attribute"]["table"]
+        upds = []
+        print(data_model)
+        for attribute in data_model.attributes:
+            upd = dap_update_pb2.DapUpdate.TableFieldValue()
+            upd.tablename = tablename
+            upd.fieldname = "them." + attribute.name
+            upd.key.core = core_key
+            upd.key.agent = agent_key
+            ValueTransformer.update_value_from_attr(upd, attribute, values)
+            upds.append(upd)
+        return upds
+
     def updFromDataModelValues(self, key, values, agent_id=None, db_key="dm_instance_values"):
         upd = dap_update_pb2.DapUpdate.TableFieldValue()
         upd.tablename = self.db_structure[db_key]["table"]
@@ -224,9 +268,12 @@ class UpdateData:
                 upd_list.append(self.updFromDataModel(key, origin.data_model))
             for dm_instance in origin.data_models:
                 upd_list.append(self.updFromDataModel(key, dm_instance.model, dm_instance.key))
-                if len(dm_instance.values)>0:
+                if len(dm_instance.values) > 0:
                     upd_list.append(self.updFromDataModel(key, dm_instance.model, dm_instance.key, "dm_instance_model"))
                     upd_list.append(self.updFromDataModelValues(key, dm_instance.values, dm_instance.key))
+                    upd_list.extend(self.attrUpdFromDataModel(key, dm_instance.key, dm_instance.model, dm_instance.values))
+                else:
+                    upd_list.extend(self.attrUpdFromDataModel(key, dm_instance.key, dm_instance.model, []))
             for attr in origin.attributes:
                 upd_list.append(self.updFromAttribute(key, attr))
         upd = dap_update_pb2.DapUpdate()

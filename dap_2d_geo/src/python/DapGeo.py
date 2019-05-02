@@ -163,7 +163,7 @@ class DapGeo(DapInterface.DapInterface):
         def execute(self, entities):
             r = set()
 
-            distance_calculator = self.fields_by_table[self.tablename][self.fieldname]['distance_calculator']
+            distance_calculator = self.dap.fields_by_table[self.tablename][self.fieldname]['distance_calculator']
 
             entities = set(entities)
 
