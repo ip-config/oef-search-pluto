@@ -11,7 +11,6 @@ from dap_api.test.python.DapManagerMoreTest import DapManagerMoreTest
 from dap_api.test.python.QueryDapFiltersTest import QueryDapFiltersTest
 
 from dap_api.test.python.LazyDapTest import LazyDapTest
-from dap_api.test.python.DataModelQueriesBecomeExistsTest import DataModelQueriesBecomeExistsTest
 
 from utils.src.python.Logging import configure as configure_logging
 configure_logging()
