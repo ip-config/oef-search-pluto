@@ -166,12 +166,14 @@ def coresToIdentifierSequence(cores: List[DapQueryResult.DapQueryResult]) -> dap
         m.originator = True
     return m
 
-def encodeConstraintValue(data, typecode):
+def encodeConstraintValue(data, typecode, logger):
     valueMessage = dap_interface_pb2.ValueMessage()
     valueMessage.typecode = typecode
 
     if typecode == 'string':
         valueMessage.s = data
+    elif typecode == 'bool':
+        valueMessage.b = data
     elif typecode == 'float':
         valueMessage.f = data
     elif typecode == 'double':
@@ -235,5 +237,7 @@ def encodeConstraintValue(data, typecode):
         valueMessage.d.append(data[0][1])
         valueMessage.d.append(data[1][0])
         valueMessage.d.append(data[1][1])
+    else:
+        logger.error("encodeConstraintValue doesn't know how to write a '{}'".format(typecode))
 
     return valueMessage

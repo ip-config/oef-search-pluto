@@ -22,6 +22,8 @@ class DapOperatorFactory(object):
     def __init__(self):
         self.store = {}
 
+        #self.add(None, ProtoHelpers.OPERATOR_EQ, "string", lambda a,b: a == b)
+
         self.add("string", ProtoHelpers.OPERATOR_EQ, "string", lambda a,b: a == b)
         self.add("string", ProtoHelpers.OPERATOR_NE, "string", lambda a,b: a != b)
         self.add("string", ProtoHelpers.OPERATOR_LT, "string", lambda a,b: a < b)
