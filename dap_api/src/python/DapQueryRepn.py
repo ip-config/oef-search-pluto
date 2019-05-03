@@ -3,6 +3,7 @@ from abc import abstractmethod
 import json
 
 from fetch_teams.oef_core_protocol import query_pb2
+from utils.src.python.Logging import has_logger
 
 from dap_api.src.python import DapQueryRepnFromProtoBuf
 from dap_api.src.protos import dap_interface_pb2
@@ -121,6 +122,7 @@ class DapQueryRepn(object):
 
 
     class Leaf(object):
+        @has_logger
         def __init__(self,
                 operator=None,
                 query_field_type=None,
@@ -149,7 +151,7 @@ class DapQueryRepn(object):
         def toProto(self, dap_name):
             pb = dap_interface_pb2.ConstructQueryConstraintObjectRequest()
 
-            v = DapInterface.encodeConstraintValue(self.query_field_value, self.query_field_type)
+            v = DapInterface.encodeConstraintValue(self.query_field_value, self.query_field_type, self.log)
 
             pb.query_field_value.CopyFrom(v)
             pb.node_name = self.name
